@@ -1,6 +1,6 @@
 ---
 name: engineering-insights
-description: Captures non-obvious engineering lessons into the touched module's INSIGHTS.md (server / client / reviewer-core / e2e). Use at the end of any substantive (>30 min) coding session as a wrap-up, and mid-session the moment something non-obvious surfaces (a gotcha, a dead end, a fix, a decision). Also use to read the relevant INSIGHTS.md before starting work. Invoke manually with /engineering-insights.
+description: Captures non-obvious engineering lessons into the touched module's INSIGHTS.md (server / client / reviewer-core / e2e). Use at the end of any substantive coding session as a wrap-up (triggered automatically by the Stop hook). Also use to read the relevant INSIGHTS.md before starting work. Invoke manually with /engineering-insights.
 ---
 
 # Engineering Insights
@@ -35,14 +35,13 @@ contradicts the current request, follow the request but flag the conflict.
 
 ## When to capture
 
-Dual trigger:
-- **Wrap-up** — at the end of a substantive session (>30 min) that had a problem,
-  a decision, or a discovery.
-- **Capture-as-you-go** — the moment something non-obvious surfaces mid-session,
-  don't wait for the wrap-up.
+**Wrap-up only** — at the end of a session where source files were actually
+changed. The Stop hook triggers this automatically after every turn; the skill
+decides whether anything is worth writing.
 
-Skip trivial sessions (a rename, a formatting pass, a one-line config tweak with
-no surprise). Signal quality over volume.
+Skip if: no source files changed, session was purely planning/spec/conversation,
+or the session was trivial (a rename, a formatting pass, a one-line config tweak
+with no surprise). Signal quality over volume.
 
 ## The 7 sections — what goes where
 
