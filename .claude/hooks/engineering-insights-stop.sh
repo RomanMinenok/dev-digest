@@ -1,13 +1,22 @@
 #!/usr/bin/env bash
-# Stop hook: force the engineering-insights wrap-up at end of session.
-# Blocks the stop exactly once (loop-safe via stop_hook_active), then lets
-# Claude run the wrap-up and stop normally on the next attempt.
-# Contract: https://code.claude.com/docs/en/hooks (Stop event).
+# Stop hook: trigger the engineering-insights wrap-up when relevant.
+#
+# Logic:
+#   1. If stop_hook_active=true → already continuing from a block, allow stop.
+#   2. If source files were changed (uncommitted changes or recent commits) →
+#      full wrap-up prompt.
+#   3. If no source changes but session may have had a dead end (faulty code
+#      that was reverted) → lightweight dead-end-only prompt.
+#   4. If purely planning/spec/conversation → exit 0, no block.
+#
+# "Source files" excludes INSIGHTS.md, MEMORY.md, and .claude/ meta files so
+# the insights write itself does not re-trigger the hook.
 set -euo pipefail
 
 input="$(cat)"
+PROJ_DIR="${CLAUDE_PROJECT_DIR:-.}"
 
-# Read stop_hook_active. jq if available, else a tolerant grep fallback.
+# ── Loop guard ────────────────────────────────────────────────────────────────
 if command -v jq >/dev/null 2>&1; then
   active="$(printf '%s' "$input" | jq -r '.stop_hook_active // false')"
 else
@@ -18,26 +27,50 @@ else
   fi
 fi
 
-# Already continuing from a previous block → allow the stop (prevents a loop).
 if [ "$active" = "true" ]; then
   exit 0
 fi
 
-# Otherwise block once and tell Claude to run the wrap-up.
-reason="Session wrap-up: invoke the engineering-insights skill. Review this \
+# ── Detect source-file changes ────────────────────────────────────────────────
+# Uncommitted changes (staged or unstaged), excluding meta files.
+has_uncommitted=$(git -C "$PROJ_DIR" status --porcelain 2>/dev/null \
+  | grep -v 'INSIGHTS\.md' \
+  | grep -v 'MEMORY\.md' \
+  | grep -vE '^.. \.claude/' \
+  | grep -c '' || true)
+
+# Commits to source modules in the last 3 hours (covers rebased/amended work).
+has_recent_commits=$(git -C "$PROJ_DIR" log --oneline --since="3 hours ago" \
+  -- 'server/*' 'client/*' 'reviewer-core/*' 'e2e/*' 'scripts/*' 2>/dev/null \
+  | grep -c '' || true)
+
+# ── Choose prompt ─────────────────────────────────────────────────────────────
+if [ "$has_uncommitted" -gt 0 ] || [ "$has_recent_commits" -gt 0 ]; then
+  # Source files changed → full wrap-up.
+  reason="Session wrap-up: invoke the engineering-insights skill. Review this \
 session — if it was substantive (>30 min, with a problem, decision, or \
 discovery), capture the non-obvious lessons into the touched module's \
 INSIGHTS.md (server / client / reviewer-core / e2e), one insight per section, \
 after the dedup + significance gate, plus one dated Session Notes line. If the \
 session was trivial or everything is already recorded, state that nothing is \
 worth capturing and stop."
+else
+  # No source changes. Only worth blocking if a dead end happened (code was
+  # generated, proved faulty, then reverted — leaving git clean but a real
+  # 'What Doesn't Work' lesson). Pure planning/spec/conversation → skip.
+  reason="Session wrap-up (no source-file changes detected): only invoke the \
+engineering-insights skill if this session had a dead end — code was written \
+then reverted, or a non-obvious antipattern was discovered — worth a 'What \
+Doesn't Work' entry. If the session was purely planning, spec-writing, or \
+conversation with no dead ends, state that nothing is worth capturing and stop \
+immediately without writing anything."
+fi
 
-# Emit the block decision as JSON (exit 0). printf keeps the JSON well-formed.
+# ── Emit block ────────────────────────────────────────────────────────────────
 printf '{"decision":"block","reason":%s}\n' "$(
   if command -v jq >/dev/null 2>&1; then
     printf '%s' "$reason" | jq -Rs .
   else
-    # Minimal JSON-string escaping when jq is absent.
     esc=${reason//\\/\\\\}; esc=${esc//\"/\\\"}; esc=${esc//$'\n'/ }
     printf '"%s"' "$esc"
   fi
