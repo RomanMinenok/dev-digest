@@ -7,10 +7,12 @@ export function sizeOf(pr: PrMeta): SizeInfo {
   return { size, lines };
 }
 
+const COST_DIGITS = Number(process.env.NEXT_PUBLIC_COST_FORMAT_DIGITS) || 4;
+
 /** Cost in USD (e.g. "$0.014"). Null → "—". */
 export function formatCost(usd: number | null | undefined): string {
   if (usd == null) return "—";
-  return `$${usd.toFixed(4).replace(/0+$/, "").replace(/\.$/, "")}`;
+  return `$${usd.toFixed(COST_DIGITS).replace(/0+$/, "").replace(/\.$/, "")}`;
 }
 
 /** Compact relative time for the list's UPDATED column (e.g. "3h", "2d"). */

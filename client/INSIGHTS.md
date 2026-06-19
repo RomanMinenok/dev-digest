@@ -20,6 +20,7 @@ shouldn't bite us twice. Referenced from `client/CLAUDE.md` ("read when…").
 
 ## Tool & Library Notes
 <!-- Dependency quirks, version gotchas, env/config oddities. -->
+- `NEXT_PUBLIC_*` env vars are inlined into the bundle at **start time** (`next dev` / `next build`), not at request time. Changing a `NEXT_PUBLIC_*` value in `.env` requires a dev-server restart to take effect — a page refresh is not enough.
 
 ## Recurring Errors & Fixes
 <!-- Error signature → root cause → fix. -->
@@ -27,6 +28,7 @@ shouldn't bite us twice. Referenced from `client/CLAUDE.md` ("read when…").
 
 ## Session Notes
 <!-- Dated wrap-ups, newest first: ### YYYY-MM-DD — <one-line summary> -->
+### 2026-06-19 — NEXT_PUBLIC_COST_FORMAT_DIGITS: env var requires dev-server restart, not just page refresh
 ### 2026-06-18 — Added COST column to PR list, tok·cost badge in RunHistory, COST stat in TraceBody
 
 ## Open Questions
