@@ -2,9 +2,12 @@
 
 import React from "react";
 import { useTranslations } from "next-intl";
+import { useQuery } from "@tanstack/react-query";
 import { Badge, Icon, CircularScore, type IconName } from "@devdigest/ui";
-import type { RunSummary, PrCommit } from "@devdigest/shared";
+import type { RunSummary, PrCommit, ReviewRecord } from "@devdigest/shared";
+import { api } from "@/lib/api";
 import { formatCost } from "../RunTraceDrawer/helpers";
+import { SeverityChips } from "../../../_components/SeverityChips/SeverityChips";
 
 /**
  * PR timeline — every agent run interleaved with the PR's commits, newest-first
@@ -85,15 +88,19 @@ function tsOf(s: string | null | undefined): number {
   return Number.isNaN(n) ? 0 : n;
 }
 
+
 export function RunHistory({
   runs,
   commits = [],
+  prId,
   onOpenTrace,
   onGoToReview,
   onDelete,
 }: {
   runs: RunSummary[];
   commits?: PrCommit[];
+  /** PR internal UUID — enables findings fetch for chip popovers. */
+  prId?: string;
   /** Open the trace + log drawer for a run (the logs icon). */
   onOpenTrace: (runId: string) => void;
   /** Jump to this run's inline review accordion below (clicking the agent name). */
@@ -101,6 +108,25 @@ export function RunHistory({
   onDelete?: (runId: string) => void;
 }) {
   const t = useTranslations("prReview");
+
+  // One request for all reviews on this PR — findings are keyed by run_id.
+  const { data: reviews } = useQuery({
+    queryKey: ["reviews", prId],
+    queryFn: () => api.get<ReviewRecord[]>(`/pulls/${prId}/reviews`),
+    enabled: !!prId,
+    staleTime: 30_000,
+  });
+
+  const findingsByRunId = React.useMemo(() => {
+    const map = new Map<string, ReviewRecord["findings"]>();
+    if (!reviews) return map;
+    for (const r of reviews) {
+      if (r.kind === "review" && r.findings.length > 0 && r.run_id && !map.has(r.run_id)) {
+        map.set(r.run_id, r.findings);
+      }
+    }
+    return map;
+  }, [reviews]);
   if (runs.length === 0 && commits.length === 0) return null;
 
   const items: TimelineItem[] = [
@@ -190,9 +216,20 @@ export function RunHistory({
                 </div>
               )}
               {settled && (
-                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                  {t("runStatus.findings", { count: r.findings_count ?? 0 })}
-                  {(r.blockers ?? 0) > 0 ? t("runStatus.blockers", { count: r.blockers ?? 0 }) : ""}
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <SeverityChips
+                    critical={r.critical_count}
+                    warning={r.warning_count}
+                    suggestion={r.suggestion_count}
+                    interactive={!!prId}
+                    findings={findingsByRunId.get(r.run_id)}
+                    findingsTotal={findingsByRunId.get(r.run_id)?.length}
+                  />
+                  {(r.blockers ?? 0) > 0 && (
+                    <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                      {t("runStatus.blockers", { count: r.blockers ?? 0 })}
+                    </span>
+                  )}
                 </div>
               )}
             </div>

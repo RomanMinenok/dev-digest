@@ -111,5 +111,8 @@ export const RunSummary = z.object({
   score: z.number().int().nullable(),
   blockers: z.number().int().nullable(),
   cost_usd: z.number().nullable(),
+  critical_count: z.number().int().nullable(),
+  warning_count: z.number().int().nullable(),
+  suggestion_count: z.number().int().nullable(),
 });
 export type RunSummary = z.infer<typeof RunSummary>;

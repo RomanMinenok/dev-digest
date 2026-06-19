@@ -17,6 +17,12 @@ shouldn't bite us twice. Referenced from `client/CLAUDE.md` ("read when…").
 
 ## Codebase Patterns
 <!-- Conventions & architectural decisions, with the "why". -->
+- Components shared across a **route subtree** (parent + its `[param]` children) belong in the parent's `_components/` folder, not in `src/components/`. Example: `SeverityChips` is used by both `pulls/_components/PRRow` and `pulls/[number]/_components/RunHistory`, so it lives at `pulls/_components/SeverityChips/`. Only promote to `src/components/` when used across unrelated routes.
+- **Lazy hover-fetch pattern** (React Query): use `enabled: hovered && !!id && hasData` to defer the network call until the user actually hovers over the trigger. Pair with `staleTime: 30_000` to avoid refetching on repeated hovers within 30 s. Implemented in `pulls/_components/PRRow/PRRow.tsx` for the findings popover — avoids N requests on initial list render.
+- **Mismatched hover zones between a block wrapper and an inline-flex child cause popover to never show** — `PRRow` tracked `chipsHovered` on a full-width block `<div>` around `SeverityChips` to gate the lazy fetch. `SeverityChips` tracked its own `hovered` on the smaller `inline-flex` chips area to show the popover. The fetch fired from the large zone; the popover showed from the small zone — they rarely overlapped in practice. Fix: fetch eagerly (gated by `hasFindings`, not by hover) so findings are already loaded when the user hovers the chips. See `PRRow.tsx` — `enabled: !!pr.id && hasFindings` with no hover gate.
+- **Moving hover state inside a component breaks callers that depended on external hover** — `RunSeverityChips` used `enabled: hovered` for lazy React Query fetch, where `hovered` came from its own `useState`. When the hover zone (+ popover) moved inside `SeverityChips`, `RunSeverityChips` lost the hover signal and the fetch never fired. Fix: move the data fetch one level up to `RunHistory` (one `useQuery` per PR page, keyed by `prId`) and pass findings down as props. React Query deduplication still guarantees a single network request even if multiple child components share the same `queryKey`. See `RunHistory.tsx:findingsByRunId`.
+- **Absolutely-positioned popovers inside table rows are clipped by `overflow: hidden`** — `FindingsPopover` used `position: absolute` relative to `SeverityChips`'s wrapper, which is inside a PR list row. The row (or a grid ancestor) has `overflow: hidden`, so the popover was cut off. Fix: use `createPortal(card, document.body)` + `position: fixed` with coordinates from `ref.current.getBoundingClientRect()` captured on mouseenter. The portal escapes all clipping ancestors. See `FindingsPopover.tsx` + `SeverityChips.tsx:handleMouseEnter`.
+- **`pointerEvents: none` on hover popovers** — when a popover is absolutely positioned over its trigger and the popover itself doesn't need to be interactive, set `pointerEvents: none`. Without it, moving the mouse from the trigger div into the popover card fires `mouseLeave` on the trigger and immediately hides the popover, causing flicker. See `FindingsPopover.tsx:44`. If the popover needs to be interactive (links, buttons), extend the hover zone to cover both trigger + popover instead.
 
 ## Tool & Library Notes
 <!-- Dependency quirks, version gotchas, env/config oddities. -->
@@ -24,10 +30,18 @@ shouldn't bite us twice. Referenced from `client/CLAUDE.md` ("read when…").
 
 ## Recurring Errors & Fixes
 <!-- Error signature → root cause → fix. -->
+- **`textDecoration: underline` has no effect on SVG icons inside `display: inline-flex`** — root cause: `text-decoration` only draws under text nodes, not SVG children. Fix: use `borderBottom: "1px solid/dashed/dotted <color>"` + `paddingBottom: 2` on the `inline-flex` span instead — border applies to the element box and covers both icon and number. See `SeverityChips.tsx` interactive chip style.
 - **`TS2322: Type 'number | null | undefined' is not assignable to type 'number | null'` in `RunHistory.test.tsx`** — root cause: `RunSummary` gained a new `nullable()` field (not `nullish()`), so the `Partial<RunSummary>` factory in the test fixture no longer satisfies the full type. Fix: add the new field with an explicit `null` default inside the `run()` factory function (`RunHistory.test.tsx:30`).
 
 ## Session Notes
 <!-- Dated wrap-ups, newest first: ### YYYY-MM-DD — <one-line summary> -->
+### 2026-06-19 — Fix popover clipping: createPortal + position:fixed to escape overflow:hidden table row
+### 2026-06-19 — Fix chip underlines: borderBottom instead of textDecoration to cover SVG icons
+### 2026-06-19 — Fix PR list popover: eager fetch replaces lazy hover-gated fetch to avoid block-vs-inline hover zone mismatch
+### 2026-06-19 — Unified findings popover into SeverityChips; fixed broken lazy-fetch by hoisting query to RunHistory
+### 2026-06-19 — Extended severity chips hover popover + underlines to the agent runs timeline (RunHistory)
+### 2026-06-19 — Added findings hover popover with lazy React Query fetch and interactive underlines on severity chips
+### 2026-06-19 — Added FINDINGS column (severity chips) to PR list and run timeline
 ### 2026-06-19 — NEXT_PUBLIC_COST_FORMAT_DIGITS: env var requires dev-server restart, not just page refresh
 ### 2026-06-18 — Added COST column to PR list, tok·cost badge in RunHistory, COST stat in TraceBody
 

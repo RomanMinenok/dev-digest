@@ -1,4 +1,4 @@
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import type { Db } from '../../../db/client.js';
 import * as t from '../../../db/schema.js';
 import type { RunSummary, RunTrace } from '@devdigest/shared';
@@ -48,24 +48,55 @@ export async function listRunsForPull(
     .leftJoin(t.agents, eq(t.agents.id, t.agentRuns.agentId))
     .where(and(eq(t.agentRuns.workspaceId, workspaceId), eq(t.agentRuns.prId, prId)))
     .orderBy(desc(t.agentRuns.ranAt));
-  return rows.map(({ run, agentName }) => ({
-    run_id: run.id,
-    agent_id: run.agentId,
-    agent_name: agentName ?? null,
-    provider: run.provider,
-    model: run.model,
-    status: run.status,
-    error: run.error,
-    duration_ms: run.durationMs,
-    tokens_in: run.tokensIn,
-    tokens_out: run.tokensOut,
-    findings_count: run.findingsCount,
-    grounding: run.grounding,
-    ran_at: run.ranAt ? run.ranAt.toISOString() : null,
-    score: run.score,
-    blockers: run.blockers,
-    cost_usd: run.costUsd,
-  }));
+
+  // Severity breakdown per run: join findings → reviews → run_id.
+  const runIds = rows.map((r) => r.run.id).filter(Boolean);
+  const severityMap = new Map<string, { critical: number; warning: number; suggestion: number }>();
+  if (runIds.length > 0) {
+    const sevRows = await db
+      .select({
+        runId: t.reviews.runId,
+        severity: t.findings.severity,
+        cnt: sql<number>`count(*)::int`,
+      })
+      .from(t.findings)
+      .innerJoin(t.reviews, eq(t.findings.reviewId, t.reviews.id))
+      .where(inArray(t.reviews.runId, runIds))
+      .groupBy(t.reviews.runId, t.findings.severity);
+    for (const { runId, severity, cnt } of sevRows) {
+      if (!runId) continue;
+      const entry = severityMap.get(runId) ?? { critical: 0, warning: 0, suggestion: 0 };
+      if (severity === 'CRITICAL') entry.critical = cnt;
+      else if (severity === 'WARNING') entry.warning = cnt;
+      else if (severity === 'SUGGESTION') entry.suggestion = cnt;
+      severityMap.set(runId, entry);
+    }
+  }
+
+  return rows.map(({ run, agentName }) => {
+    const sev = severityMap.get(run.id);
+    return {
+      run_id: run.id,
+      agent_id: run.agentId,
+      agent_name: agentName ?? null,
+      provider: run.provider,
+      model: run.model,
+      status: run.status,
+      error: run.error,
+      duration_ms: run.durationMs,
+      tokens_in: run.tokensIn,
+      tokens_out: run.tokensOut,
+      findings_count: run.findingsCount,
+      grounding: run.grounding,
+      ran_at: run.ranAt ? run.ranAt.toISOString() : null,
+      score: run.score,
+      blockers: run.blockers,
+      cost_usd: run.costUsd,
+      critical_count: sev?.critical ?? null,
+      warning_count: sev?.warning ?? null,
+      suggestion_count: sev?.suggestion ?? null,
+    };
+  });
 }
 
 /**
