@@ -22,6 +22,7 @@ shouldn't bite us twice. Referenced from `server/CLAUDE.md` ("read when…").
 ## Codebase Patterns
 <!-- Conventions & architectural decisions, with the "why". -->
 - `ReviewRepository` in `modules/reviews/repository.ts` is a class wrapper around the function-level repos in `repository/run.repo.ts`, `repository/review.repo.ts`, etc. When adding a field to `completeAgentRun`, you must update **both** the underlying function signature in `run.repo.ts` AND the class method signature in `repository.ts` — a mismatch causes a TS error at the `run-executor.ts` call site, not at the definition, which is confusing.
+- `agent_runs` has **no direct FK to `findings`**. The join chain for per-run severity counts is `findings.review_id → reviews.id → reviews.run_id`. To query severity breakdown per run: `JOIN reviews ON findings.review_id = reviews.id WHERE reviews.run_id IN (...)` grouped by `reviews.run_id, findings.severity`. There is no shortcut via `agent_runs` — the link only exists through `reviews`. See `modules/reviews/repository/run.repo.ts:listRunsForPull` and `modules/pulls/routes.ts` for the implemented pattern.
 
 ## Tool & Library Notes
 <!-- Dependency quirks, version gotchas, env/config oddities. -->
@@ -32,6 +33,7 @@ shouldn't bite us twice. Referenced from `server/CLAUDE.md` ("read when…").
 
 ## Session Notes
 <!-- Dated wrap-ups, newest first: ### YYYY-MM-DD — <one-line summary> -->
+### 2026-06-19 — Severity breakdown per run/PR via findings→reviews→run_id join chain (no DB migration needed)
 ### 2026-06-19 — Fix run-executor: use outcome.costUsd (real API cost) instead of always re-estimating
 ### 2026-06-19 — Fix deepseek-v4-flash pricing: table had 2× wrong prices, corrected to $0.07/$0.14 per 1M
 ### 2026-06-19 — Fix PR-list cost: 60-second session window replaces per-agent latest

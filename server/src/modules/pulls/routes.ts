@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
-import { and, desc, eq, inArray } from 'drizzle-orm';
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import type { PrMeta, PrDetail, GitHubClient, PrReviewComment } from '@devdigest/shared';
 import { PrCommentInput } from '@devdigest/shared';
 import * as t from '../../db/schema.js';
@@ -117,15 +117,49 @@ export default async function pullsRoutes(appBase: FastifyInstance) {
     const prIds = rows.map((r) => r.id);
     const latestReviewByPr = new Map<string, { score: number | null }>();
     const latestCostByPr = new Map<string, number | null>();
+    const latestSevByPr = new Map<string, { critical: number; warning: number; suggestion: number }>();
     if (prIds.length > 0) {
       const reviewRows = await container.db
-        .select({ prId: t.reviews.prId, score: t.reviews.score })
+        .select({ prId: t.reviews.prId, score: t.reviews.score, runId: t.reviews.runId })
         .from(t.reviews)
         .where(and(inArray(t.reviews.prId, prIds), eq(t.reviews.kind, 'review')))
         .orderBy(desc(t.reviews.createdAt));
       // Rows are newest-first → first seen per PR is the latest review.
+      const latestRunIdByPr = new Map<string, string>();
       for (const rv of reviewRows) {
-        if (!latestReviewByPr.has(rv.prId)) latestReviewByPr.set(rv.prId, { score: rv.score });
+        if (!latestReviewByPr.has(rv.prId)) {
+          latestReviewByPr.set(rv.prId, { score: rv.score });
+          if (rv.runId) latestRunIdByPr.set(rv.prId, rv.runId);
+        }
+      }
+
+      // Severity breakdown from findings of the latest review per PR.
+      const latestRunIds = [...latestRunIdByPr.values()];
+      if (latestRunIds.length > 0) {
+        const sevRows = await container.db
+          .select({
+            runId: t.reviews.runId,
+            severity: t.findings.severity,
+            cnt: sql<number>`count(*)::int`,
+          })
+          .from(t.findings)
+          .innerJoin(t.reviews, eq(t.findings.reviewId, t.reviews.id))
+          .where(inArray(t.reviews.runId, latestRunIds))
+          .groupBy(t.reviews.runId, t.findings.severity);
+        // Build runId → severity counts, then map back to prId.
+        const sevByRunId = new Map<string, { critical: number; warning: number; suggestion: number }>();
+        for (const { runId, severity, cnt } of sevRows) {
+          if (!runId) continue;
+          const entry = sevByRunId.get(runId) ?? { critical: 0, warning: 0, suggestion: 0 };
+          if (severity === 'CRITICAL') entry.critical = cnt;
+          else if (severity === 'WARNING') entry.warning = cnt;
+          else if (severity === 'SUGGESTION') entry.suggestion = cnt;
+          sevByRunId.set(runId, entry);
+        }
+        for (const [prId, runId] of latestRunIdByPr) {
+          const sev = sevByRunId.get(runId);
+          if (sev) latestSevByPr.set(prId, sev);
+        }
       }
 
       // Cost = sum of all agents in the latest review session per PR.
@@ -183,6 +217,9 @@ export default async function pullsRoutes(appBase: FastifyInstance) {
         updated_at: r.updatedAt?.toISOString() ?? null,
         score: review ? review.score : null,
         cost_usd: latestCostByPr.get(r.id) ?? null,
+        critical_count: latestSevByPr.get(r.id)?.critical ?? null,
+        warning_count: latestSevByPr.get(r.id)?.warning ?? null,
+        suggestion_count: latestSevByPr.get(r.id)?.suggestion ?? null,
       };
     });
   });
