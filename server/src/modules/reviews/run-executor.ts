@@ -211,7 +211,8 @@ export class ReviewRunExecutor {
         },
       });
       const { tokensIn, tokensOut, grounding } = outcome;
-      const costUsd = this.container.priceBook.estimate(agent.model, tokensIn, tokensOut);
+      const costUsd =
+        outcome.costUsd ?? this.container.priceBook.estimate(agent.model, tokensIn, tokensOut);
 
       const keptFindings = outcome.review.findings;
 
