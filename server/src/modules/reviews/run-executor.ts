@@ -211,6 +211,7 @@ export class ReviewRunExecutor {
         },
       });
       const { tokensIn, tokensOut, grounding } = outcome;
+      const costUsd = this.container.priceBook.estimate(agent.model, tokensIn, tokensOut);
 
       const keptFindings = outcome.review.findings;
 
@@ -250,6 +251,7 @@ export class ReviewRunExecutor {
         score: outcome.review.score,
         blockers,
         error: null,
+        costUsd,
       });
 
       const trace: RunTrace = {
@@ -267,6 +269,7 @@ export class ReviewRunExecutor {
           tokens_out: tokensOut,
           findings: findingRows.length,
           grounding,
+          cost_usd: costUsd,
         },
         prompt_assembly: outcome.assembly,
         tool_calls: outcome.chunks.map((c) => ({
