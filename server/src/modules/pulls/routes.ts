@@ -111,12 +111,12 @@ export default async function pullsRoutes(appBase: FastifyInstance) {
       }
     }
 
-    // Latest-review SCORE per PR for the list's score ring. Computed on read
-    // from reviews (no FK denorm); the list is small, so one IN-query + JS
-    // grouping is cheap. (The per-severity FINDINGS breakdown is intentionally
-    // not surfaced on the list — findings live on the PR detail page.)
+    // Latest-review SCORE + COST per PR for the list. Computed on read
+    // from reviews/agent_runs (no FK denorm); the list is small, so one
+    // IN-query + JS grouping is cheap.
     const prIds = rows.map((r) => r.id);
     const latestReviewByPr = new Map<string, { score: number | null }>();
+    const latestCostByPr = new Map<string, number | null>();
     if (prIds.length > 0) {
       const reviewRows = await container.db
         .select({ prId: t.reviews.prId, score: t.reviews.score })
@@ -126,6 +126,35 @@ export default async function pullsRoutes(appBase: FastifyInstance) {
       // Rows are newest-first → first seen per PR is the latest review.
       for (const rv of reviewRows) {
         if (!latestReviewByPr.has(rv.prId)) latestReviewByPr.set(rv.prId, { score: rv.score });
+      }
+
+      // Cost = sum of all agents in the latest review session per PR.
+      // "Session" = all completed runs whose ran_at is within 60 s of the newest
+      // completed run for that PR. Agents in the same "Run Review" click start
+      // within milliseconds of each other (loop inserts), so 60 s is a safe window.
+      const runRows = await container.db
+        .select({ prId: t.agentRuns.prId, costUsd: t.agentRuns.costUsd, ranAt: t.agentRuns.ranAt })
+        .from(t.agentRuns)
+        .where(and(inArray(t.agentRuns.prId, prIds), eq(t.agentRuns.status, 'done')))
+        .orderBy(desc(t.agentRuns.ranAt));
+      // First pass: find the latest ran_at per PR (first row seen = newest).
+      const latestRanAtByPr = new Map<string, number>();
+      for (const rr of runRows) {
+        if (!rr.prId || !rr.ranAt) continue;
+        if (!latestRanAtByPr.has(rr.prId)) latestRanAtByPr.set(rr.prId, rr.ranAt.getTime());
+      }
+      // Second pass: sum cost of all runs within 60 s of the latest ran_at per PR.
+      const SESSION_WINDOW_MS = 60_000;
+      for (const rr of runRows) {
+        if (!rr.prId || !rr.ranAt) continue;
+        const latestMs = latestRanAtByPr.get(rr.prId);
+        if (latestMs === undefined) continue;
+        if (latestMs - rr.ranAt.getTime() > SESSION_WINDOW_MS) continue;
+        if (rr.costUsd != null) {
+          latestCostByPr.set(rr.prId, (latestCostByPr.get(rr.prId) ?? 0) + rr.costUsd);
+        } else if (!latestCostByPr.has(rr.prId)) {
+          latestCostByPr.set(rr.prId, null);
+        }
       }
     }
 
@@ -153,6 +182,7 @@ export default async function pullsRoutes(appBase: FastifyInstance) {
         opened_at: r.openedAt?.toISOString() ?? null,
         updated_at: r.updatedAt?.toISOString() ?? null,
         score: review ? review.score : null,
+        cost_usd: latestCostByPr.get(r.id) ?? null,
       };
     });
   });
