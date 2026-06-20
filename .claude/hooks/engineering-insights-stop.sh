@@ -55,15 +55,8 @@ after the dedup + significance gate, plus one dated Session Notes line. If the \
 session was trivial or everything is already recorded, state that nothing is \
 worth capturing and stop."
 else
-  # No source changes. Only worth blocking if a dead end happened (code was
-  # generated, proved faulty, then reverted — leaving git clean but a real
-  # 'What Doesn't Work' lesson). Pure planning/spec/conversation → skip.
-  reason="Session wrap-up (no source-file changes detected): only invoke the \
-engineering-insights skill if this session had a dead end — code was written \
-then reverted, or a non-obvious antipattern was discovered — worth a 'What \
-Doesn't Work' entry. If the session was purely planning, spec-writing, or \
-conversation with no dead ends, state that nothing is worth capturing and stop \
-immediately without writing anything."
+  # No source changes → nothing to capture, exit silently.
+  exit 0
 fi
 
 # ── Emit block ────────────────────────────────────────────────────────────────
