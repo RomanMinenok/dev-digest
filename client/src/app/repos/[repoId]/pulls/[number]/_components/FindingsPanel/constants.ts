@@ -8,6 +8,13 @@ export const SEVERITY_ORDER: Record<string, number> = {
   INFO: 3,
 };
 
+/** Filter chips rendered in the FindingsPanel toolbar. */
+export const SEVERITY_FILTERS = [
+  { key: "CRITICAL", iconName: "AlertOctagon", color: "var(--crit)" },
+  { key: "WARNING", iconName: "AlertTriangle", color: "var(--warn)" },
+  { key: "SUGGESTION", iconName: "Lightbulb", color: "var(--sugg)" },
+] as const;
+
 /** Confidence below this is hidden when "hide low confidence" is on. */
 export const LOW_CONFIDENCE_THRESHOLD = 0.65;
 

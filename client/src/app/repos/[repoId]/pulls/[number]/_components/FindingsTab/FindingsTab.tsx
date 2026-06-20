@@ -7,6 +7,7 @@ import { RunHistory } from "../RunHistory/RunHistory";
 import { ReviewRunAccordion } from "../ReviewRunAccordion";
 import { s } from "./styles";
 import type { FindingRecord, ReviewRecord, RunSummary, PrCommit } from "@devdigest/shared";
+import { SEVERITY_FILTERS } from "../FindingsPanel/constants";
 import type { UseMutationResult } from "@tanstack/react-query";
 
 interface FindingsTabProps {
@@ -41,6 +42,17 @@ export function FindingsTab({
   onDelete,
   onRunDone,
 }: FindingsTabProps) {
+  const [activeSeverity, setActiveSeverity] = React.useState<string | null>(null);
+
+  const severityCounts = React.useMemo(
+    () =>
+      runs.flatMap((r) => r.findings).reduce<Record<string, number>>((acc, f) => {
+        acc[f.severity] = (acc[f.severity] ?? 0) + 1;
+        return acc;
+      }, {}),
+    [runs],
+  );
+
   const handleCancelAll = useCallback(() => {
     liveRunIds.forEach((id) => cancelMutation.mutate(id));
   }, [liveRunIds, cancelMutation]);
@@ -145,6 +157,27 @@ export function FindingsTab({
       >
         Review runs
       </SectionLabel>
+      {runs.length > 0 && (
+        <div style={s.filterRow}>
+          <span style={s.filterLabel}>Filter:</span>
+          {SEVERITY_FILTERS.map(({ key, iconName, color }) => {
+            const count = severityCounts[key] ?? 0;
+            if (count === 0) return null;
+            const active = activeSeverity === key;
+            const IconComp = Icon[iconName as keyof typeof Icon] as React.ComponentType<{ size?: number }>;
+            return (
+              <span
+                key={key}
+                style={s.filterChip(color, active)}
+                onClick={() => setActiveSeverity(active ? null : key)}
+              >
+                <IconComp size={11} />
+                {key} {count}
+              </span>
+            );
+          })}
+        </div>
+      )}
       {runs.length === 0 ? (
         reviewRunning || liveRunIds.length > 0 ? null : (
           <EmptyState
@@ -165,6 +198,7 @@ export function FindingsTab({
             headSha={headSha}
             targetRunId={target?.runId ?? null}
             targetNonce={target?.n ?? 0}
+            activeSeverity={activeSeverity}
           />
         ))
       )}
