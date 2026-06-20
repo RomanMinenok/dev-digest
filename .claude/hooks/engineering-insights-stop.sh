@@ -51,19 +51,11 @@ if [ "$has_uncommitted" -gt 0 ] || [ "$has_recent_commits" -gt 0 ]; then
 session — if it was substantive (>30 min, with a problem, decision, or \
 discovery), capture the non-obvious lessons into the touched module's \
 INSIGHTS.md (server / client / reviewer-core / e2e), one insight per section, \
-after the dedup + significance gate, plus one dated Session Notes line. If the \
-session was trivial or everything is already recorded, state that nothing is \
-worth capturing and stop."
+after the dedup + significance gate. If the session was trivial or everything \
+is already recorded, state that nothing is worth capturing and stop."
 else
-  # No source changes. Only worth blocking if a dead end happened (code was
-  # generated, proved faulty, then reverted — leaving git clean but a real
-  # 'What Doesn't Work' lesson). Pure planning/spec/conversation → skip.
-  reason="Session wrap-up (no source-file changes detected): only invoke the \
-engineering-insights skill if this session had a dead end — code was written \
-then reverted, or a non-obvious antipattern was discovered — worth a 'What \
-Doesn't Work' entry. If the session was purely planning, spec-writing, or \
-conversation with no dead ends, state that nothing is worth capturing and stop \
-immediately without writing anything."
+  # No source changes → nothing to capture, exit silently.
+  exit 0
 fi
 
 # ── Emit block ────────────────────────────────────────────────────────────────

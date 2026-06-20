@@ -52,7 +52,6 @@ with no surprise). Signal quality over volume.
 | **Codebase Patterns**    | Conventions & architectural decisions (the "why").    |
 | **Tool & Library Notes** | Dependency quirks, version gotchas, env/config oddities. |
 | **Recurring Errors & Fixes** | Error signature → root cause → fix.               |
-| **Session Notes**        | One dated line per wrap-up, newest first.             |
 | **Open Questions**       | Unresolved threads for the next session.              |
 
 ## Quality bar — concrete, not banal
@@ -77,9 +76,7 @@ Rules: one insight per entry; cite evidence as `path/file.ts:line`; include the
 3. For each survivor, run the **dedup + significance gate** (below). Read the
    target file first.
 4. Append the survivors under the correct section of the correct module's file.
-5. Add **one** dated line to that file's `## Session Notes`, newest first:
-   `### YYYY-MM-DD — <one-line summary>` (use today's real date).
-6. If nothing survives the gate, write nothing — an unchanged `INSIGHTS.md` is a
+5. If nothing survives the gate, write nothing — an unchanged `INSIGHTS.md` is a
    valid, expected outcome.
 
 ## Dedup + significance gate (run before any write)
