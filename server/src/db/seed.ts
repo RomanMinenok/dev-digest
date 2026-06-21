@@ -6,7 +6,10 @@ import {
   GENERAL_REVIEWER_PROMPT,
   SECURITY_REVIEWER_PROMPT,
   PERFORMANCE_REVIEWER_PROMPT,
+  TEST_QUALITY_REVIEWER_PROMPT,
+  API_CONTRACT_REVIEWER_PROMPT,
 } from './seed-prompts.js';
+import { SEED_SKILLS } from './seed-skills.js';
 
 /** Default provider/model for the built-in reviewer agents. */
 const DEFAULT_PROVIDER = 'openrouter' as const;
@@ -211,6 +214,28 @@ export async function seed(db: Db): Promise<{ workspaceId: string; userId: strin
       version: 1,
       createdBy: userId,
     },
+    {
+      workspaceId,
+      name: 'Test Quality Reviewer',
+      description: 'Flags uncovered branches, missing corner cases, over-mocking, and flaky tests.',
+      provider: DEFAULT_PROVIDER,
+      model: DEFAULT_MODEL,
+      systemPrompt: TEST_QUALITY_REVIEWER_PROMPT,
+      enabled: true,
+      version: 1,
+      createdBy: userId,
+    },
+    {
+      workspaceId,
+      name: 'API Contract Reviewer',
+      description: 'Detects breaking route, response-shape, and exported-signature changes.',
+      provider: DEFAULT_PROVIDER,
+      model: DEFAULT_MODEL,
+      systemPrompt: API_CONTRACT_REVIEWER_PROMPT,
+      enabled: true,
+      version: 1,
+      createdBy: userId,
+    },
   ];
   for (const a of seedAgents) {
     const [existing] = await db
@@ -218,6 +243,72 @@ export async function seed(db: Db): Promise<{ workspaceId: string; userId: strin
       .from(t.agents)
       .where(and(eq(t.agents.workspaceId, workspaceId), eq(t.agents.name, a.name)));
     if (!existing) await db.insert(t.agents).values(a);
+  }
+
+  // ---- skills (idempotent by name within workspace) ----
+  // On a fresh insert of a skill we also snapshot its version history into
+  // skill_versions (the repository writes a v1 snapshot on insert; here we
+  // replicate that, plus the full v1..v5 history for pr-quality-rubric).
+  for (const s of SEED_SKILLS) {
+    const [existing] = await db
+      .select()
+      .from(t.skills)
+      .where(and(eq(t.skills.workspaceId, workspaceId), eq(t.skills.name, s.name)));
+    if (existing) continue;
+
+    const versions = s.versions ?? [{ version: 1, summary: null, body: s.body }];
+    const headVersion = versions[versions.length - 1]!.version;
+
+    const [skill] = await db
+      .insert(t.skills)
+      .values({
+        workspaceId,
+        name: s.name,
+        description: s.description,
+        type: s.type,
+        source: s.source,
+        body: s.body,
+        enabled: s.enabled,
+        version: headVersion,
+      })
+      .returning();
+
+    // Distinct ascending createdAt per version (oldest first), so the Versions
+    // tab orders correctly. Base the oldest version a few days back.
+    const baseTime = Date.now() - versions.length * 24 * 60 * 60 * 1000;
+    await db.insert(t.skillVersions).values(
+      versions.map((v, i) => ({
+        skillId: skill!.id,
+        version: v.version,
+        summary: v.summary,
+        body: v.body,
+        createdAt: new Date(baseTime + i * 24 * 60 * 60 * 1000),
+      })),
+    );
+  }
+
+  // ---- agent_skills links (idempotent: skip if a link already exists) ----
+  // Re-read ids by name within the workspace, then link skills to agents in order.
+  const agentSkillLinks: Array<{ agent: string; skill: string; order: number }> = [
+    { agent: 'Test Quality Reviewer', skill: 'test-coverage-rubric', order: 0 },
+    { agent: 'Test Quality Reviewer', skill: 'pr-quality-rubric', order: 1 },
+    { agent: 'API Contract Reviewer', skill: 'api-contract-guard', order: 0 },
+    { agent: 'API Contract Reviewer', skill: 'pr-quality-rubric', order: 1 },
+  ];
+  for (const link of agentSkillLinks) {
+    const [agent] = await db
+      .select({ id: t.agents.id })
+      .from(t.agents)
+      .where(and(eq(t.agents.workspaceId, workspaceId), eq(t.agents.name, link.agent)));
+    const [skill] = await db
+      .select({ id: t.skills.id })
+      .from(t.skills)
+      .where(and(eq(t.skills.workspaceId, workspaceId), eq(t.skills.name, link.skill)));
+    if (!agent || !skill) continue;
+    await db
+      .insert(t.agentSkills)
+      .values({ agentId: agent.id, skillId: skill.id, order: link.order })
+      .onConflictDoNothing();
   }
 
   return { workspaceId, userId };

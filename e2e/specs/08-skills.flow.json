@@ -1,0 +1,27 @@
+{
+  "name": "Skills Lab lists seeded skills and opens the tabbed editor",
+  "description": "Loads /skills and confirms the seeded skills render (pr-quality-rubric, test-coverage-rubric, api-contract-guard). Opens pr-quality-rubric, lands on the Preview tab, switches to Versions (asserts the 5-version seeded history + Current badge), then Stats (asserts the real USED BY metric + agents-using panel). Exercises GET /skills, /skills/:id, /skills/:id/versions, /skills/:id/stats and the SkillsListView → SkillEditor tab routing.",
+  "steps": [
+    { "cmd": ["open", "{BASE}/skills"], "label": "load the Skills Lab" },
+    { "cmd": ["wait", "--url", "/skills"], "label": "skills route reached" },
+    { "cmd": ["wait", "--load", "networkidle"], "label": "skills fetch settles" },
+    { "cmd": ["wait", "--text", "pr-quality-rubric"], "label": "seeded rubric skill card visible" },
+    { "cmd": ["wait", "--text", "test-coverage-rubric"], "label": "seeded test-coverage skill card visible" },
+    { "cmd": ["wait", "--text", "api-contract-guard"], "label": "seeded api-contract skill card visible" },
+    { "cmd": ["find", "text", "pr-quality-rubric", "click"], "label": "open the rubric skill" },
+    { "cmd": ["wait", "--url", "/skills/"], "label": "skill detail route reached" },
+    { "cmd": ["wait", "--load", "networkidle"], "label": "skill detail fetch settles" },
+    { "cmd": ["wait", "--text", "Preview"], "label": "default Preview tab renders" },
+    { "cmd": ["find", "role", "button", "click", "--name", "Versions"], "label": "switch to the Versions tab" },
+    { "cmd": ["wait", "--url", "tab=versions"], "label": "versions tab active in url" },
+    { "cmd": ["wait", "--load", "networkidle"], "label": "versions fetch settles" },
+    { "cmd": ["wait", "--text", "Version history"], "label": "version history heading visible" },
+    { "cmd": ["wait", "--text", "5 versions"], "label": "seeded 5-version history present" },
+    { "cmd": ["wait", "--text", "Current"], "label": "current-version badge on the head" },
+    { "cmd": ["find", "role", "button", "click", "--name", "Stats"], "label": "switch to the Stats tab" },
+    { "cmd": ["wait", "--url", "tab=stats"], "label": "stats tab active in url" },
+    { "cmd": ["wait", "--load", "networkidle"], "label": "stats fetch settles" },
+    { "cmd": ["wait", "--text", "USED BY"], "label": "real USED BY metric renders" },
+    { "cmd": ["wait", "--text", "Agents using this skill"], "label": "agents-using panel renders" }
+  ]
+}

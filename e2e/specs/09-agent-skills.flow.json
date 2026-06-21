@@ -1,0 +1,18 @@
+{
+  "name": "Agent editor Skills tab lists workspace skills for a seeded agent",
+  "description": "Opens the seeded Test Quality Reviewer agent, switches to its Skills tab (the editor tab button, disambiguated by role from the sidebar Skills link) and confirms the linking UI renders: the order hint and the seeded skill rows. Exercises GET /agents/:id/skills + GET /skills behind the agent editor Skills tab (Phase 6).",
+  "steps": [
+    { "cmd": ["open", "{BASE}/agents"], "label": "load the agents list" },
+    { "cmd": ["wait", "--url", "/agents"], "label": "agents route reached" },
+    { "cmd": ["wait", "--load", "networkidle"], "label": "agents fetch settles" },
+    { "cmd": ["wait", "--text", "Test Quality Reviewer"], "label": "seeded agent card visible" },
+    { "cmd": ["find", "text", "Test Quality Reviewer", "click"], "label": "open the agent editor" },
+    { "cmd": ["wait", "--url", "/agents/"], "label": "agent editor route reached" },
+    { "cmd": ["wait", "--load", "networkidle"], "label": "agent fetch settles" },
+    { "cmd": ["find", "role", "button", "click", "--name", "Skills"], "label": "switch to the Skills tab (not the sidebar link)" },
+    { "cmd": ["wait", "--url", "tab=skills"], "label": "skills tab active in url" },
+    { "cmd": ["wait", "--load", "networkidle"], "label": "agent-skills fetch settles" },
+    { "cmd": ["wait", "--text", "Order matters"], "label": "skills-tab order hint renders" },
+    { "cmd": ["wait", "--text", "test-coverage-rubric"], "label": "linked seeded skill row renders" }
+  ]
+}

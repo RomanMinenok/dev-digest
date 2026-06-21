@@ -140,6 +140,33 @@ export const CommunitySkill = z.object({
 });
 export type CommunitySkill = z.infer<typeof CommunitySkill>;
 
+// An immutable snapshot of a skill's body, recorded whenever the body changes.
+// `summary` is an optional one-line note describing the change (version title).
+export const SkillVersion = z.object({
+  skill_id: z.string(),
+  version: z.number().int(),
+  summary: z.string().nullable(),
+  body: z.string(),
+  created_at: z.string(),
+});
+export type SkillVersion = z.infer<typeof SkillVersion>;
+
+// Usage/quality stats for a skill. `used_by` + `agents` are real (derived from
+// agent_skills links); the remaining metrics are honest placeholders (null) until
+// a finding→skill attribution pipeline exists. Do NOT fabricate these.
+export const SkillStats = z.object({
+  skill_id: z.string(),
+  used_by: z.number().int(),
+  agents: z.array(z.object({ id: z.string(), name: z.string() })),
+  pull_rate: z.number().nullable(),
+  accept_rate: z.number().nullable(),
+  findings_30d: z.number().nullable(),
+  findings_by_category: z
+    .array(z.object({ category: z.string(), count: z.number().int() }))
+    .nullable(),
+});
+export type SkillStats = z.infer<typeof SkillStats>;
+
 // ---- Conventions ----
 export const ConventionCandidate = z.object({
   id: z.string(),

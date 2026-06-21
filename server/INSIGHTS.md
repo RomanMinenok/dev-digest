@@ -22,10 +22,13 @@ shouldn't bite us twice. Referenced from `server/CLAUDE.md` ("read when…").
 ## Codebase Patterns
 <!-- Conventions & architectural decisions, with the "why". -->
 - `ReviewRepository` in `modules/reviews/repository.ts` is a class wrapper around the function-level repos in `repository/run.repo.ts`, `repository/review.repo.ts`, etc. When adding a field to `completeAgentRun`, you must update **both** the underlying function signature in `run.repo.ts` AND the class method signature in `repository.ts` — a mismatch causes a TS error at the `run-executor.ts` call site, not at the definition, which is confusing.
+- **Linked skills reach a review run ONLY through `run-executor.ts`, not the engine or the agents module.** The engine (`reviewPullRequest`) and `assemblePrompt` already accept a resolved `skills: string[]`, but until `run-executor.ts` loads them, linking a skill to an agent has zero effect on a review. The executor loads them via its constructor-injected agents repo (`this.agents.linkedSkills(agent.id)` = `container.agentsRepo`, already ordered by `agent_skills.order`), filters to `skill.enabled`, and passes `...(skillBodies.length ? { skills } : {})` (omit-when-empty, like `callers`/`repoMap`). The in-prompt gate is therefore **linked AND `enabled`**, enforced at that filter — not in the engine. Skill bodies are passed as trusted instructions (NOT `wrapUntrusted`); the trust mitigation is import-disabled-by-default + manual vetting.
 - `agent_runs` has **no direct FK to `findings`**. The join chain for per-run severity counts is `findings.review_id → reviews.id → reviews.run_id`. To query severity breakdown per run: `JOIN reviews ON findings.review_id = reviews.id WHERE reviews.run_id IN (...)` grouped by `reviews.run_id, findings.severity`. There is no shortcut via `agent_runs` — the link only exists through `reviews`. See `modules/reviews/repository/run.repo.ts:listRunsForPull` and `modules/pulls/routes.ts` for the implemented pattern.
 
 ## Tool & Library Notes
 <!-- Dependency quirks, version gotchas, env/config oddities. -->
+- `@fastify/multipart` must be the **v10** major for Fastify v5 (v9 targets Fastify v4 and silently fails to register types). Register it once in `app.ts` next to cors/helmet with a `limits.fileSize` cap (2 MB for skill import). Gotcha: calling `req.file()` on a request that is NOT `multipart/form-data` (or has no file part) throws the plugin's own error that surfaces as **406**, not a clean 400. Wrap `await req.file()` in try/catch and throw `BadRequestError` so a missing/wrong upload is a 400 (see `modules/skills/routes.ts`, the `/skills/import/preview` handler).
+- `BadRequestError` (400) did not exist in `platform/errors.ts` before the skills module — it was added there. Reuse it; don't reinvent a 400 in a module.
 
 ## Recurring Errors & Fixes
 <!-- Error signature → root cause → fix. -->
@@ -33,6 +36,7 @@ shouldn't bite us twice. Referenced from `server/CLAUDE.md` ("read when…").
 
 ## Session Notes
 <!-- Dated wrap-ups, newest first: ### YYYY-MM-DD — <one-line summary> -->
+### 2026-06-21 — Skills feature: CRUD module + zip/md import (adm-zip, @fastify/multipart v10) + run-executor keystone (inject linked+enabled skill bodies) + seed
 ### 2026-06-19 — Severity breakdown per run/PR via findings→reviews→run_id join chain (no DB migration needed)
 ### 2026-06-19 — Fix run-executor: use outcome.costUsd (real API cost) instead of always re-estimating
 ### 2026-06-19 — Fix deepseek-v4-flash pricing: table had 2× wrong prices, corrected to $0.07/$0.14 per 1M

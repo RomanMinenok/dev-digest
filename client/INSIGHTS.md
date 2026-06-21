@@ -10,9 +10,11 @@ shouldn't bite us twice. Referenced from `client/CLAUDE.md` ("read when…").
 
 ## What Works
 <!-- Approaches/solutions that worked. e.g. "X via Y in src/foo.ts:42 because …" -->
+- **Verifying a new page when you can't click through it: `pnpm build` + a static `t()`-key audit.** `pnpm typecheck` does NOT catch RSC/client-boundary errors or missing-i18n-key crashes; `next build` catches the former (compiles + generates every route) but still NOT the latter — a missing `next-intl` `t("a.b")` key throws only at *render*, so it slips past both typecheck and build. The cheap guard is a node script that flattens `messages/en/<ns>.json` into dotted paths and checks every `t("…")` literal in the route's files resolves (treat `t(\`prefix.${x}\`)` template keys by their static prefix — confirm a child exists). Used to validate the whole `/skills` tree after an agent built it without runtime checks.
 
 ## What Doesn't Work
 <!-- Dead ends & antipatterns. The most valuable & most-skipped section. -->
+- **`apiFetch` (`src/lib/api.ts`) force-sets `content-type: application/json` on any non-null body, which breaks `FormData` uploads** — the browser must set `multipart/form-data; boundary=…` itself, and an explicit JSON content-type overrides it, so the server can't parse the parts. Fix: skip the JSON content-type when `init.body instanceof FormData` (do NOT set content-type at all for FormData). The skill-import upload (`api.upload` → `POST /skills/import/preview`) depends on this.
 - The client has its own vendored copy of shared contracts at `client/src/vendor/shared/contracts/` that is **not auto-synced** with `server/src/vendor/shared/contracts/`. Adding a field to the server copy alone passes server typecheck but breaks client typecheck. Always mirror changes to both copies (`trace.ts` and `platform.ts` were both affected in the cost feature).
 
 ## Codebase Patterns
@@ -37,6 +39,7 @@ shouldn't bite us twice. Referenced from `client/CLAUDE.md` ("read when…").
 
 ## Session Notes
 <!-- Dated wrap-ups, newest first: ### YYYY-MM-DD — <one-line summary> -->
+### 2026-06-21 — Skills feature client: /skills page + tabbed editor, agent Skills tab (native HTML5 DnD), SKILLS LAB nav group, FormData upload support in api.ts
 ### 2026-06-20 — Added severity filter chips to FindingsPanel toolbar (activeSeverity state + visibleFindings extension)
 ### 2026-06-19 — Fix popover clipping: createPortal + position:fixed to escape overflow:hidden table row
 ### 2026-06-19 — Fix chip underlines: borderBottom instead of textDecoration to cover SVG icons
@@ -50,3 +53,4 @@ shouldn't bite us twice. Referenced from `client/CLAUDE.md` ("read when…").
 
 ## Open Questions
 <!-- Unresolved threads for the next session. -->
+- `RunHistory.test.tsx` fails with "No QueryClient set" (5 tests) on `main` independent of the skills work — `RunHistory` calls `useQuery` directly (queryKey `["reviews", prId]`) but the test renders it without a `QueryClientProvider` wrapper. Pre-existing since the 2026-06-19 query-hoist change. Fix is a one-line provider wrap in the test; left untouched as out-of-scope.
