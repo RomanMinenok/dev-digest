@@ -39,6 +39,7 @@ shouldn't bite us twice. Referenced from `client/CLAUDE.md` ("read when…").
 
 ## Session Notes
 <!-- Dated wrap-ups, newest first: ### YYYY-MM-DD — <one-line summary> -->
+### 2026-06-28 — Resolved the pre-existing RunHistory "No QueryClient set" failure (5 tests, see Open Questions 2026-06-21 entry) by wrapping the test render helper in a fresh QueryClientProvider, matching AgentCard.test.tsx. Client now 38/38 green.
 ### 2026-06-21 — Skills feature client: /skills page + tabbed editor, agent Skills tab (native HTML5 DnD), SKILLS LAB nav group, FormData upload support in api.ts
 ### 2026-06-20 — Added severity filter chips to FindingsPanel toolbar (activeSeverity state + visibleFindings extension)
 ### 2026-06-19 — Fix popover clipping: createPortal + position:fixed to escape overflow:hidden table row
