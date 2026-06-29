@@ -178,6 +178,15 @@ export const ConventionCandidate = z.object({
 });
 export type ConventionCandidate = z.infer<typeof ConventionCandidate>;
 
+export const ConventionScanResult = z.object({
+  repo_id: z.string(),
+  repo_name: z.string(),
+  sample_count: z.number().int(),
+  scanned_at: z.string(),
+  candidates: z.array(ConventionCandidate),
+});
+export type ConventionScanResult = z.infer<typeof ConventionScanResult>;
+
 // ---- Agents ----
 export const Provider = z.enum(['openai', 'anthropic', 'openrouter']);
 export type Provider = z.infer<typeof Provider>;

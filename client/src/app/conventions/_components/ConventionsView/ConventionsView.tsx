@@ -5,25 +5,41 @@ import { useTranslations } from "next-intl";
 import { Button, Icon } from "@devdigest/ui";
 import { AppShell } from "../../../../components/app-shell";
 import { ConventionCard } from "./ConventionCard";
-import { MOCK_CONVENTIONS, MOCK_REPO_NAME, MOCK_SAMPLE_COUNT, MOCK_LAST_SCAN } from "./mock";
 import { s } from "./styles";
+import { useActiveRepo } from "../../../../lib/repo-context";
+import { useConventions, useRescanConventions } from "../../../../lib/hooks/conventions";
+import type { ConventionCandidate } from "@devdigest/shared";
+import type { Convention } from "./mock";
 
 type Status = "accepted" | "rejected";
 
-function initStatuses(): Record<string, Status> {
-  return Object.fromEntries(MOCK_CONVENTIONS.map((c) => [c.id, "accepted"]));
+function toConvention(c: ConventionCandidate): Convention {
+  return {
+    id: c.id,
+    title: c.rule,
+    file: c.evidence_path,
+    code: c.evidence_snippet,
+    confidence: Math.round(c.confidence * 100),
+  };
 }
 
 export function ConventionsView() {
   const t = useTranslations("conventions");
+  const { repoId, activeRepo } = useActiveRepo();
+  const conventions = useConventions(repoId);
+  const rescan = useRescanConventions(repoId);
 
-  const [statuses, setStatuses] = React.useState<Record<string, Status>>(initStatuses);
+  const candidates = conventions.data ?? [];
+  const cards = candidates.map(toConvention);
 
-  const acceptedIds = Object.entries(statuses)
-    .filter(([, s]) => s === "accepted")
-    .map(([id]) => id);
-  const acceptedCount = acceptedIds.length;
-  const total = MOCK_CONVENTIONS.length;
+  const [statuses, setStatuses] = React.useState<Record<string, Status>>({});
+
+  React.useEffect(() => {
+    setStatuses(Object.fromEntries(candidates.map((c) => [c.id, "accepted" as Status])));
+  }, [candidates]);
+
+  const acceptedCount = Object.values(statuses).filter((s) => s === "accepted").length;
+  const total = cards.length;
 
   const handleAccept = (id: string) =>
     setStatuses((prev) => ({ ...prev, [id]: "accepted" }));
@@ -32,12 +48,14 @@ export function ConventionsView() {
     setStatuses((prev) => ({ ...prev, [id]: "rejected" }));
 
   const handleDeselectAll = () =>
-    setStatuses(Object.fromEntries(MOCK_CONVENTIONS.map((c) => [c.id, "rejected"])));
+    setStatuses(Object.fromEntries(cards.map((c) => [c.id, "rejected" as Status])));
 
   const crumb = [
     { label: t("page.crumbLab") },
     { label: t("page.crumbConventions"), href: "/conventions" },
   ];
+
+  const repoName = activeRepo?.full_name ?? t("page.repoFallback");
 
   return (
     <AppShell crumb={crumb}>
@@ -47,14 +65,22 @@ export function ConventionsView() {
           <div style={s.headerLeft}>
             <h1 style={s.heading}>
               {t("page.headingPrefix")}
-              <span style={s.headingAccent}>{MOCK_REPO_NAME}</span>
+              <span style={s.headingAccent}>{repoName}</span>
             </h1>
-            <p style={s.subtitle}>
-              {t("page.detectedFrom", { count: MOCK_SAMPLE_COUNT, ago: MOCK_LAST_SCAN })}
-            </p>
+            {cards.length > 0 && (
+              <p style={s.subtitle}>
+                {t("page.detectedFrom", { count: candidates.length, ago: "—" })}
+              </p>
+            )}
           </div>
-          <Button kind="secondary" size="sm" icon="RefreshCw">
-            {t("page.rescan")}
+          <Button
+            kind="secondary"
+            size="sm"
+            icon="RefreshCw"
+            loading={rescan.isPending}
+            onClick={() => rescan.mutate()}
+          >
+            {rescan.isPending ? t("page.scanning") : t("page.rescan")}
           </Button>
         </div>
 
@@ -76,13 +102,13 @@ export function ConventionsView() {
 
         {/* convention cards */}
         <div style={s.list}>
-          {MOCK_CONVENTIONS.map((convention) => (
+          {cards.map((card) => (
             <ConventionCard
-              key={convention.id}
-              convention={convention}
-              accepted={statuses[convention.id] === "accepted"}
-              onAccept={() => handleAccept(convention.id)}
-              onReject={() => handleReject(convention.id)}
+              key={card.id}
+              convention={card}
+              accepted={statuses[card.id] === "accepted"}
+              onAccept={() => handleAccept(card.id)}
+              onReject={() => handleReject(card.id)}
             />
           ))}
         </div>
