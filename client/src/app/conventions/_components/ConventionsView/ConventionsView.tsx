@@ -56,6 +56,9 @@ export function ConventionsView() {
   ];
 
   const repoName = activeRepo?.full_name ?? t("page.repoFallback");
+  const githubFileBase = activeRepo
+    ? `https://github.com/${activeRepo.full_name}/blob/${activeRepo.default_branch}`
+    : undefined;
 
   return (
     <AppShell crumb={crumb}>
@@ -106,6 +109,7 @@ export function ConventionsView() {
             <ConventionCard
               key={card.id}
               convention={card}
+              githubFileBase={githubFileBase}
               accepted={statuses[card.id] === "accepted"}
               onAccept={() => handleAccept(card.id)}
               onReject={() => handleReject(card.id)}

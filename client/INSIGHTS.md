@@ -43,6 +43,7 @@ shouldn't bite us twice. Referenced from `client/CLAUDE.md` ("read when…").
 
 ## Session Notes
 <!-- Dated wrap-ups, newest first: ### YYYY-MM-DD — <one-line summary> -->
+### 2026-06-30 — ConventionCard file path links: anchor to GitHub blob URL built from activeRepo.full_name + default_branch, dashed borderBottom underline
 ### 2026-06-30 — Add ConventionsView RTL tests (7) + server conventions integration tests (7, Docker-gated); AppShell mock pattern for page-level tests
 ### 2026-06-29 — Fix ConventionsView: collapse multi-branch edge-state returns into single render to preserve header+toolbar chrome
 ### 2026-06-29 — Conventions screen wired to real data: useConventions/useRescanConventions hooks, useActiveRepo() context, ConventionCandidate→card mapper, edge states (no-repo, loading, error, empty)

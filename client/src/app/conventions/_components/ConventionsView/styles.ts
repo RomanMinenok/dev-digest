@@ -143,6 +143,14 @@ export const s = {
     color: "var(--text-muted)",
   } satisfies CSSProperties,
 
+  codeFileLink: {
+    fontSize: 12,
+    fontFamily: "var(--font-mono, monospace)",
+    color: "var(--text-muted)",
+    textDecoration: "none",
+    borderBottom: "1px dashed var(--border-strong)",
+  } satisfies CSSProperties,
+
   copyBtn: {
     display: "inline-flex",
     alignItems: "center",
