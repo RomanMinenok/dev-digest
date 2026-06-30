@@ -41,6 +41,7 @@ shouldn't bite us twice. Referenced from `server/CLAUDE.md` ("read when…").
 
 ## Session Notes
 <!-- Dated wrap-ups, newest first: ### YYYY-MM-DD — <one-line summary> -->
+### 2026-06-30 — Add conventions integration tests (7, Docker-gated): routes, hallucination gate, confidence filter, replaceAll idempotency
 ### 2026-06-29 — Diagnosed stale DEFAULTS after vendor file edit: tsx watch misses vendor/ changes, server restart required
 ### 2026-06-29 — Fix conventions feature model default: openai→openrouter/deepseek-v4-flash in both vendor platform.ts copies
 ### 2026-06-29 — Conventions extractor: pure LLM extraction module with anti-hallucination gate + replaceAll repository + fallbackWalk for degraded repo-intel
