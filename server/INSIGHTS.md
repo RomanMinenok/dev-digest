@@ -15,6 +15,7 @@ shouldn't bite us twice. Referenced from `server/CLAUDE.md` ("read when…").
 
 ## What Doesn't Work
 <!-- Dead ends & antipatterns. The most valuable & most-skipped section. -->
+- **`polling/routes.ts` `onConflictDoUpdate` only updates what you explicitly list — diff-size fields were missing and silently stayed stale.** The original set included `title`, `headSha`, `status`, `updatedAt` but omitted `additions`, `deletions`, `filesCount`. Those three are written on initial INSERT (new PRs) but never refreshed, so the SIZE column showed permanently stale values even after a poll. Fix: add them explicitly to the conflict set (`polling/routes.ts:50-60`). Rule: whenever adding a new column to `pull_requests`, check whether it belongs in the conflict-update set too.
 - **New `FEATURE_MODELS` entries must default to `openrouter`, not `openai`** — the `conventions` entry shipped with `defaultProvider: 'openai'`/`defaultModel: 'gpt-5.4'`, which silently demands `OPENAI_API_KEY` at runtime even when the workspace has only `OPENROUTER_API_KEY` configured. Every other feature (`onboarding`, etc.) defaults to `openrouter`. Check `FEATURE_MODELS` in both vendor copies of `platform.ts` (`server/src/vendor/shared/contracts/platform.ts` and `client/src/vendor/shared/contracts/platform.ts`) when adding a new feature — the default propagates directly to `resolveFeatureModel` → `container.llm(provider)`.
 - "Take the single newest completed `agent_run` for PR-list cost" is wrong when multiple agents run together — you get only one agent's cost. The correct definition is **sum of the latest run per agent** (newest `ran_at` per `agent_id`, then sum `cost_usd`). Implemented in `modules/pulls/routes.ts` via a `seenAgentPerPr` Set + accumulator loop over rows sorted `ran_at DESC`.
 - `run-executor.ts` was calling `priceBook.estimate()` unconditionally, discarding `outcome.costUsd` that the engine already computed from the OpenRouter API. The engine (`reviewPullRequest` in `reviewer-core`) returns `costUsd` on the `ReviewOutcome` — always prefer it; fall back to estimate only when null: `outcome.costUsd ?? priceBook.estimate(agent.model, tokensIn, tokensOut)` (fixed in `modules/reviews/run-executor.ts:214`).
@@ -42,6 +43,7 @@ shouldn't bite us twice. Referenced from `server/CLAUDE.md` ("read when…").
 
 ## Session Notes
 <!-- Dated wrap-ups, newest first: ### YYYY-MM-DD — <one-line summary> -->
+### 2026-07-01 — Fix polling onConflictDoUpdate: add additions/deletions/filesCount so SIZE refreshes on existing PRs
 ### 2026-07-01 — Documented vendored-copy drift risk; created contract breach test fixture (PR #4, branch tech/test-api-contract-reviewer)
 ### 2026-06-30 — Add conventions integration tests (7, Docker-gated): routes, hallucination gate, confidence filter, replaceAll idempotency
 ### 2026-06-29 — Diagnosed stale DEFAULTS after vendor file edit: tsx watch misses vendor/ changes, server restart required
