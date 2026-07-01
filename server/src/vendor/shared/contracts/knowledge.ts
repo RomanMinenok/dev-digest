@@ -178,6 +178,15 @@ export const ConventionCandidate = z.object({
 });
 export type ConventionCandidate = z.infer<typeof ConventionCandidate>;
 
+export const ConventionScanResult = z.object({
+  repo_id: z.string(),
+  repo_name: z.string(),
+  sample_count: z.number().int(),
+  scanned_at: z.string(),
+  candidates: z.array(ConventionCandidate),
+});
+export type ConventionScanResult = z.infer<typeof ConventionScanResult>;
+
 // ---- Agents ----
 // 'openrouter' routes through the OpenAI-compatible API (OpenAIProvider with a
 // custom baseURL) — used by the CI runner for cheap models (DeepSeek/GLM/MiniMax).

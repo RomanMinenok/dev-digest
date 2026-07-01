@@ -6,7 +6,7 @@ import React from "react";
 import { useTranslations } from "next-intl";
 import { Icon, Badge, Toggle } from "@devdigest/ui";
 import type { Skill } from "@devdigest/shared";
-import { useUpdateSkill } from "../../../../lib/hooks/skills";
+import { useUpdateSkill, useDeleteSkill } from "../../../../lib/hooks/skills";
 import { typeColor } from "./helpers";
 import { s } from "./styles";
 
@@ -23,6 +23,7 @@ export function SkillCard({
 }) {
   const t = useTranslations("skills");
   const update = useUpdateSkill();
+  const del = useDeleteSkill();
   const color = typeColor(skill.type);
   return (
     <div onClick={onClick} style={s.card(!!active, skill.enabled)}>
@@ -40,6 +41,25 @@ export function SkillCard({
             size={14}
           />
         </div>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (window.confirm(`Delete skill "${skill.name}"? This cannot be undone.`)) del.mutate(skill.id);
+          }}
+          disabled={del.isPending}
+          title="Delete skill"
+          aria-label="Delete skill"
+          style={{
+            background: "none",
+            border: "none",
+            cursor: del.isPending ? "not-allowed" : "pointer",
+            color: "var(--text-muted)",
+            display: "inline-flex",
+            padding: 4,
+          }}
+        >
+          <Icon.Trash size={14} style={del.isPending ? { animation: "ddspin 1s linear infinite" } : undefined} />
+        </button>
       </div>
       <div style={s.description}>{skill.description || t("listItem.noDescription")}</div>
       <div style={s.metaRow}>

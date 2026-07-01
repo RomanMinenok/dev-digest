@@ -11,14 +11,27 @@ import { useCreateSkill } from "../../../../lib/hooks/skills";
 import { DEFAULT_TYPE, MODAL_WIDTH, TYPE_VALUES } from "./constants";
 import { s } from "./styles";
 
-export function CreateSkillModal({ onClose }: { onClose: () => void }) {
+interface InitialValues {
+  name?: string;
+  description?: string;
+  type?: SkillType;
+  body?: string;
+}
+
+export function CreateSkillModal({
+  onClose,
+  initialValues,
+}: {
+  onClose: () => void;
+  initialValues?: InitialValues;
+}) {
   const t = useTranslations("skills");
   const router = useRouter();
   const create = useCreateSkill();
-  const [name, setName] = React.useState("");
-  const [description, setDescription] = React.useState("");
-  const [type, setType] = React.useState<SkillType>(DEFAULT_TYPE);
-  const [body, setBody] = React.useState("");
+  const [name, setName] = React.useState(initialValues?.name ?? "");
+  const [description, setDescription] = React.useState(initialValues?.description ?? "");
+  const [type, setType] = React.useState<SkillType>(initialValues?.type ?? DEFAULT_TYPE);
+  const [body, setBody] = React.useState(initialValues?.body ?? "");
 
   const typeOptions = TYPE_VALUES.map((v) => ({ value: v, label: t(`listItem.type.${v}`) }));
 

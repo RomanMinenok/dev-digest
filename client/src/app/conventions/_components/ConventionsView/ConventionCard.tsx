@@ -14,11 +14,13 @@ function confidenceColor(pct: number): string {
 
 export function ConventionCard({
   convention,
+  githubFileBase,
   accepted,
   onAccept,
   onReject,
 }: {
   convention: Convention;
+  githubFileBase?: string;
   accepted: boolean;
   onAccept: () => void;
   onReject: () => void;
@@ -40,7 +42,18 @@ export function ConventionCard({
 
         <div style={s.codeBlock}>
           <div style={s.codeHeader}>
-            <span style={s.codeFilePath}>{convention.file}</span>
+            {githubFileBase ? (
+              <a
+                href={`${githubFileBase}/${convention.file}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={s.codeFileLink}
+              >
+                {convention.file}
+              </a>
+            ) : (
+              <span style={s.codeFilePath}>{convention.file}</span>
+            )}
             <button style={s.copyBtn} onClick={handleCopy} title="Copy code">
               {copied ? <Icon.Check size={13} /> : <Icon.Copy size={13} />}
             </button>
