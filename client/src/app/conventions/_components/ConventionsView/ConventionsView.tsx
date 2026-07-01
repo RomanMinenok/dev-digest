@@ -8,10 +8,25 @@ import { ConventionCard } from "./ConventionCard";
 import { s } from "./styles";
 import { useActiveRepo } from "../../../../lib/repo-context";
 import { useConventions, useRescanConventions } from "../../../../lib/hooks/conventions";
+import { CreateSkillModal } from "../../../skills/_components/CreateSkillModal";
 import type { ConventionCandidate } from "@devdigest/shared";
+import type { SkillType } from "@devdigest/shared";
 import type { Convention } from "./mock";
 
 type Status = "accepted" | "rejected";
+
+function buildSkillBody(repoName: string, accepted: ConventionCandidate[]): string {
+  const lines = [
+    `# ${repoName}-conventions`,
+    ``,
+    `House conventions for \`${repoName}\`. Flag changes that violate any rule below and cite the offending \`file:line\`.`,
+    ``,
+  ];
+  for (const c of accepted) {
+    lines.push(`## ${c.rule}`, ``);
+  }
+  return lines.join("\n").trimEnd();
+}
 
 function toConvention(c: ConventionCandidate): Convention {
   return {
@@ -33,6 +48,7 @@ export function ConventionsView() {
   const cards = candidates.map(toConvention);
 
   const [statuses, setStatuses] = React.useState<Record<string, Status>>({});
+  const [creating, setCreating] = React.useState(false);
 
   React.useEffect(() => {
     setStatuses(Object.fromEntries(candidates.map((c) => [c.id, "accepted" as Status])));
@@ -60,8 +76,22 @@ export function ConventionsView() {
     ? `https://github.com/${activeRepo.full_name}/blob/${activeRepo.default_branch}`
     : undefined;
 
+  const repoShortName = activeRepo?.full_name?.split("/").pop() ?? "";
+  const acceptedCandidates = candidates.filter((c) => statuses[c.id] === "accepted");
+
   return (
     <AppShell crumb={crumb}>
+      {creating && (
+        <CreateSkillModal
+          onClose={() => setCreating(false)}
+          initialValues={{
+            name: repoShortName ? `${repoShortName}-conventions` : "conventions",
+            description: `house conventions extracted from ${activeRepo?.full_name ?? repoShortName}`,
+            type: "convention" as SkillType,
+            body: buildSkillBody(repoShortName, acceptedCandidates),
+          }}
+        />
+      )}
       <div style={s.page}>
         {/* header */}
         <div style={s.header}>
@@ -98,7 +128,13 @@ export function ConventionsView() {
               {t("page.acceptedOf", { accepted: acceptedCount, total })}
             </span>
           </div>
-          <Button kind="primary" size="sm" icon="Plus" disabled={acceptedCount === 0}>
+          <Button
+            kind="primary"
+            size="sm"
+            icon="Plus"
+            disabled={acceptedCount === 0}
+            onClick={() => setCreating(true)}
+          >
             {t("page.createSkill")}
           </Button>
         </div>
