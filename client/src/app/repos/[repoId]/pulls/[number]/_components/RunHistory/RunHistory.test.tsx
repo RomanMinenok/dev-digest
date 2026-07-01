@@ -7,6 +7,7 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { render, screen, cleanup } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { RunSummary } from "@devdigest/shared";
 import messages from "../../../../../../../../messages/en/prReview.json";
 import { RunHistory } from "./RunHistory";
@@ -39,10 +40,13 @@ function run(o: Partial<RunSummary>): RunSummary {
 }
 
 function renderRuns(runs: RunSummary[]) {
+  const qc = new QueryClient();
   return render(
-    <NextIntlClientProvider locale="en" messages={{ prReview: messages }}>
-      <RunHistory runs={runs} onOpenTrace={() => {}} />
-    </NextIntlClientProvider>,
+    <QueryClientProvider client={qc}>
+      <NextIntlClientProvider locale="en" messages={{ prReview: messages }}>
+        <RunHistory runs={runs} onOpenTrace={() => {}} />
+      </NextIntlClientProvider>
+    </QueryClientProvider>,
   );
 }
 

@@ -183,6 +183,17 @@ export class ReviewRunExecutor {
 
       const task = taskLine(pull) + rankNote;
 
+      // Skills: inject the bodies of this agent's linked AND globally-enabled
+      // skills (in link order). Skills are deliberately trusted instructions —
+      // NOT wrapped as untrusted; the safety gate is import-disabled-by-default +
+      // manual vetting. Omitted entirely when the agent has no enabled link, so
+      // the prompt is identical to the no-skills baseline.
+      const linked = await this.agents.linkedSkills(agent.id);
+      const skillBodies = linked.filter((l) => l.skill.enabled).map((l) => l.skill.body);
+      if (skillBodies.length > 0) {
+        runLog.info(`Injected ${skillBodies.length} enabled skill(s) into the prompt`);
+      }
+
       // ---- Engine: assemble → single-pass → grounding -----------------------
       // The pure review pipeline lives in @devdigest/reviewer-core (shared with
       // the CI runner). The service owns only I/O: repo-intel context resolution
@@ -200,6 +211,9 @@ export class ReviewRunExecutor {
         ...(callersDigest ? { callers: callersDigest } : {}),
         // T3 — repo skeleton, same omit-when-empty contract.
         ...(repoMap ? { repoMap } : {}),
+        // Linked + enabled skill bodies, in link order. Omit-when-empty so an
+        // agent with no enabled skills produces an identical prompt (no block).
+        ...(skillBodies.length ? { skills: skillBodies } : {}),
         // PR author's description/body — untrusted; assemblePrompt wraps +
         // truncates it. Omitted when the PR has no body.
         ...(pull.body ? { prDescription: pull.body } : {}),

@@ -27,6 +27,7 @@ export const skillVersions = pgTable(
       .notNull()
       .references(() => skills.id, { onDelete: 'cascade' }),
     version: integer('version').notNull(),
+    summary: text('summary'),
     body: text('body').notNull(),
     createdAt: now(),
   },

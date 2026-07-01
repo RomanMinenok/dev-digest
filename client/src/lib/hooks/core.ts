@@ -82,7 +82,7 @@ export function useAddRepo() {
 export function useRefreshRepo() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (repoId: string) => api.post<Repo>(`/repos/${repoId}/refresh`),
+    mutationFn: (repoId: string) => api.post<{ synced: number; reviewTriggered: boolean }>(`/repos/${repoId}/poll`),
     onSuccess: (_d, repoId) => {
       qc.invalidateQueries({ queryKey: ["repos"] });
       qc.invalidateQueries({ queryKey: ["pulls", repoId] });

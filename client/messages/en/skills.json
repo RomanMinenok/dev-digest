@@ -7,6 +7,7 @@
     "searchPlaceholder": "Search skills…",
     "loadError": "Could not load skills.",
     "menu": {
+      "fromScratch": "Create from scratch",
       "fromFile": "Import from file",
       "fromUrl": "Import from URL",
       "community": "Search community skills…"
@@ -31,14 +32,26 @@
     }
   },
   "drawer": {
-    "title": "Add a skill",
-    "subtitle": "Import from a file, a URL, or search vetted community skills",
+    "title": "Import a skill",
+    "subtitle": "Pick a Markdown file or a zip archive; the skill core is extracted server-side.",
     "tabs": {
       "file": "From file",
       "url": "From URL",
       "community": "Community"
     },
-    "importFailed": "Import failed"
+    "importFailed": "Import failed",
+    "pickFile": "Choose file",
+    "pickHint": "Accepts .md, .markdown, .txt or .zip.",
+    "extracting": "Extracting…",
+    "previewHeading": "Extracted skill",
+    "name": "Name",
+    "description": "Description",
+    "type": "Type",
+    "body": "Skill body (Markdown)",
+    "cancel": "Cancel",
+    "save": "Save skill",
+    "saving": "Saving…",
+    "defaultName": "imported-skill"
   },
   "file": {
     "nameLabel": "Skill name",
@@ -74,6 +87,8 @@
   "listItem": {
     "needsVetting": "needs vetting",
     "vettingTitle": "Untrusted source — vet before enabling",
+    "noDescription": "No description",
+    "agentCount": "{count, plural, =0 {0 agents} one {# agent} other {# agents}}",
     "type": {
       "rubric": "rubric",
       "convention": "convention",
@@ -96,6 +111,78 @@
     "untrustedNotice": "This skill came from an untrusted source. Its body is stored as data (delimiter-wrapped) and must be vetted before it is enabled for an agent.",
     "bodyLabel": "Skill body (Markdown)",
     "bodyHint": "Saving a changed body creates a new immutable version.",
-    "version": "v{version}"
+    "version": "v{version}",
+    "title": "Preview",
+    "subtitle": "Rendered as the reviewing agent receives it."
+  },
+  "editor": {
+    "runOnEvals": "Run on evals",
+    "runOnEvalsTooltip": "Coming soon",
+    "tabs": {
+      "config": "Config",
+      "preview": "Preview",
+      "evals": "Evals",
+      "stats": "Stats",
+      "versions": "Versions"
+    }
+  },
+  "config": {
+    "title": "Configuration",
+    "name": "Name",
+    "description": "Description",
+    "descriptionHint": "A short directive describing what this skill instructs the reviewing agent to do.",
+    "type": "Type",
+    "body": "Skill body (Markdown)",
+    "bodyHint": "Injected verbatim into the agent's prompt when this skill is linked and enabled.",
+    "enabled": "Enabled",
+    "summary": "Summary of change",
+    "summaryHint": "Optional one-line note saved as this version's title.",
+    "summaryPlaceholder": "e.g. Tightened scope rule",
+    "save": "Save",
+    "saving": "Saving…",
+    "savedToast": "Saved as v{version}."
+  },
+  "stats": {
+    "usedBy": "USED BY",
+    "usedByUnit": "agents",
+    "pullFreq": "PULL FREQ",
+    "acceptRate": "ACCEPT RATE",
+    "findings30d": "FINDINGS (30D)",
+    "noData": "no data yet",
+    "agentsUsing": "Agents using this skill",
+    "agentsEmpty": "No agents link this skill yet.",
+    "openAgent": "Open",
+    "findingsByCategory": "Findings by category"
+  },
+  "versions": {
+    "title": "Version history",
+    "count": "{count} versions",
+    "sub": "Every body change is stored as an immutable version, so any review is reproducible.",
+    "current": "Current",
+    "summaryEmpty": "—",
+    "diff": "Diff",
+    "restore": "Restore",
+    "restoredToast": "Restored v{version} as a new version.",
+    "diffTitle": "Diff — v{version} vs current",
+    "diffSubtitle": "Lines added (green) or removed (red) relative to the current body.",
+    "diffClose": "Close"
+  },
+  "evals": {
+    "stub": "Evals arrive in a later lesson."
+  },
+  "create": {
+    "title": "Create a skill",
+    "subtitle": "Write a skill from scratch. It is enabled by default.",
+    "name": "Name",
+    "namePlaceholder": "pr-quality-rubric",
+    "description": "Description",
+    "descriptionPlaceholder": "What this skill instructs the agent to do",
+    "type": "Type",
+    "body": "Skill body (Markdown)",
+    "bodyPlaceholder": "# Rule\nDescribe the rule…",
+    "cancel": "Cancel",
+    "create": "Create",
+    "creating": "Creating…",
+    "defaultName": "new-skill"
   }
 }
