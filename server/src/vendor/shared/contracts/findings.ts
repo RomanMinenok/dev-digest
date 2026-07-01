@@ -52,7 +52,6 @@ export const Finding = z.object({
   file: z.string(),
   start_line: z.number().int(),
   end_line: z.number().int(),
-  rationale: z.string(), // markdown
   suggestion: z.string().nullish(), // markdown
   confidence: z.number().min(0).max(1),
   kind: FindingKind.nullish(),
