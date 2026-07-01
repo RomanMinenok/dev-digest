@@ -40,9 +40,10 @@ export default async function reposRoutes(appBase: FastifyInstance) {
     return service.refresh(workspaceId, req.params.id);
   });
 
-  app.delete('/repos/:id', { schema: { params: IdParams } }, async (req) => {
+  app.get('/repos/:id/status', { schema: { params: IdParams } }, async (req) => {
     const { workspaceId } = await getContext(app.container, req);
-    await service.remove(workspaceId, req.params.id);
-    return { deleted: req.params.id };
+    const repos = await service.list(workspaceId);
+    const repo = repos.find((r) => r.id === req.params.id);
+    return { id: req.params.id, found: !!repo };
   });
 }
