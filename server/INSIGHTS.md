@@ -37,6 +37,7 @@ shouldn't bite us twice. Referenced from `server/CLAUDE.md` ("read when…").
 - **`tsx watch` does not reliably hot-reload changes inside `src/vendor/`** — module-level constants computed at startup (e.g. `DEFAULTS` in `modules/settings/feature-models.ts`, computed from `FEATURE_MODELS`) stay stale after editing a vendor file until the server process is fully restarted. A page refresh is not enough. If a runtime behavior doesn't reflect a vendor-file change, restart the server manually (`Ctrl+C` → `pnpm dev`).
 - `@fastify/multipart` must be the **v10** major for Fastify v5 (v9 targets Fastify v4 and silently fails to register types). Register it once in `app.ts` next to cors/helmet with a `limits.fileSize` cap (2 MB for skill import). Gotcha: calling `req.file()` on a request that is NOT `multipart/form-data` (or has no file part) throws the plugin's own error that surfaces as **406**, not a clean 400. Wrap `await req.file()` in try/catch and throw `BadRequestError` so a missing/wrong upload is a 400 (see `modules/skills/routes.ts`, the `/skills/import/preview` handler).
 - `BadRequestError` (400) did not exist in `platform/errors.ts` before the skills module — it was added there. Reuse it; don't reinvent a 400 in a module.
+- **A zod field with `.default(0)` is still REQUIRED in the TS type produced by `z.infer<>`** — `.default()` only makes the field optional on `.parse()` *input*, not in the inferred output type used when a plain object literal is typed as `Agent` (e.g. test fixtures, hand-built DTOs). Adding `skill_count: z.number().int().default(0)` to the `Agent` contract broke two client test fixtures (`AgentCard.test.tsx`, `AgentEditor.test.tsx`) with "Property missing" until the field was added explicitly — TS didn't treat it as optional despite the runtime default.
 
 ## Recurring Errors & Fixes
 <!-- Error signature → root cause → fix. -->
@@ -44,6 +45,7 @@ shouldn't bite us twice. Referenced from `server/CLAUDE.md` ("read when…").
 
 ## Session Notes
 <!-- Dated wrap-ups, newest first: ### YYYY-MM-DD — <one-line summary> -->
+### 2026-07-02 — Fix GET /agents missing skill_count: JOIN agent_skills in AgentsRepository.list(), add field to both vendored Agent contracts, wire it through to AgentCard on the client (was a dead prop)
 ### 2026-07-02 — Added security-rubric + performance-rubric skills and linked every seed agent to ≥1 skill (Security/Performance/General Reviewer were previously unlinked)
 ### 2026-07-01 — Fix polling onConflictDoUpdate: add additions/deletions/filesCount so SIZE refreshes on existing PRs
 ### 2026-07-01 — Documented vendored-copy drift risk; created contract breach test fixture (PR #4, branch tech/test-api-contract-reviewer)
