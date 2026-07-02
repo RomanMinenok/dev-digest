@@ -3,6 +3,7 @@ name: test-writer
 description: Use to write or extend automated tests for a scoped change — backend (Fastify + Drizzle/Postgres, Vitest) or UI (React + Next.js 15, Vitest + React Testing Library). Reads the code, TESTING.md, and the module's INSIGHTS.md first, follows the repo's test conventions and its typological philosophy, tests behaviour at the seams (not implementation details), then runs the touched package's suite and iterates until green — showing real output, never a fabricated pass. Runs safely in parallel (own git worktree). Do NOT use to write production code (that is the implementer) or to review/verify other agents' work.
 tools: Read, Edit, Write, Bash, Grep, Glob, Skill
 model: sonnet
+effort: medium
 isolation: worktree
 skills:
   - react-testing-library

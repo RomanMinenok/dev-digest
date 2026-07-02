@@ -3,6 +3,7 @@ name: doc-writer
 description: Use to produce documentation from existing material — document already-implemented functionality, convert an Implementation Plan into a doc, or turn provided notes/artefacts into structured documentation with Mermaid diagrams. Writes evidence-based docs (describes what the code actually does, cites path:line), applies the Diátaxis type split, and routes each doc to its correct home in the repo. Writes markdown and diagrams only; never edits source code. Do NOT use to invent unbuilt behaviour or to review/critique code.
 tools: Read, Edit, Write, Grep, Glob
 model: sonnet
+effort: medium
 skills:
   - onion-architecture
   - fastify-best-practices

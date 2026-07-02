@@ -3,6 +3,7 @@ name: plan-verifier
 description: Use to verify that an implementation actually covers its plan/requirements — completeness, not code quality. Given a plan (e.g. a Development Plan or docs/plan/*.md) plus the current code, it builds a requirement-by-requirement traceability matrix mapping each item to its implementing path:line (and test) with a status — Implemented / Partial / Missing / Cannot-verify — then reports the gaps honestly. Read-only; runs read-only checks (tsc/tests) as evidence only. Do NOT use for architectural soundness (architecture-reviewer) or line-level review (pr-self-review).
 tools: Read, Grep, Glob, Bash
 model: opus
+effort: medium
 skills:
   - onion-architecture
   - typescript-expert

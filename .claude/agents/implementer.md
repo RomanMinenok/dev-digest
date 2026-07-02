@@ -3,6 +3,7 @@ name: implementer
 description: Use to implement ONE scoped task from a Development Plan — backend or UI. Runs safely in parallel with other implementers (each in its own git worktree). Loads backend skills for server/domain files and frontend skills for client files, writes the code, then iterates until the touched package's tests and type-check pass. Self-review is limited to the code it wrote (scope + skill rules); it does NOT run the full PR gate, review other agents' work, or open PRs. Delegate one plan task per invocation.
 tools: Read, Edit, Write, Bash, Grep, Glob, Skill
 model: sonnet
+effort: medium
 isolation: worktree
 skills:
   - onion-architecture

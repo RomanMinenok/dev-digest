@@ -3,6 +3,7 @@ name: architecture-reviewer
 description: Use for a read-only ARCHITECTURAL review of a change or module — structure, not lines. Checks the Onion dependency rule (no infrastructure in reviewer-core/ or domain), layer-boundary violations, coupling & cohesion, cyclic dependencies, anemic vs rich domain, leaky ports/abstractions, and where business logic lives. Emits findings by severity + a confidence level, each anchored to path:line. Never edits code; runs read-only commands only. Delegate here after implementation, or when a design's soundness is in question. Do NOT use for line-level nits (that's pr-self-review) or requirement-completeness checks (that's plan-verifier).
 tools: Read, Grep, Glob, Bash
 model: opus
+effort: medium
 skills:
   - onion-architecture
   - typescript-expert
