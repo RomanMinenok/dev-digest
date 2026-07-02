@@ -54,9 +54,12 @@ interface CandidateRef {
 
 const MD_LINK_RE = /\[[^\]]*]\(([^)\s]+\.md)\)/gi;
 const BARE_MD_RE = /(?:^|[\s(])([\w./-]+\.md)(?=[\s)]|$)/gi;
-const ISSUE_REF_RE = /#(\d+)/g;
 const ISSUE_URL_RE = /https?:\/\/github\.com\/[\w.-]+\/[\w.-]+\/(?:issues|pull)\/(\d+)/gi;
 const URL_RE = /https?:\/\/[^\s)]+/gi;
+// NOTE: bare `#123` refs are deliberately NOT parsed. Per the plan (Option A),
+// issue context comes only from the already-resolved PRIMARY `linked_issue` on
+// PrDetail — reusing the existing resolveLinkedIssue path with no new GitHub
+// port. Full github.com issue/PR URLs in the body are still captured (below).
 
 /** Priority order from the plan (§1, §3): lower number = kept first under budget. */
 const PRIORITY = {

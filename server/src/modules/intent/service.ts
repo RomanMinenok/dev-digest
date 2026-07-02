@@ -3,7 +3,7 @@ import type { Container } from '../../platform/container.js';
 import { NotFoundError } from '../../platform/errors.js';
 import { loadDiff, diffFromPrFiles } from '../reviews/diff-loader.js';
 import { ReviewRepository } from '../reviews/repository.js';
-import type { Logger } from '../reviews/run-executor.js';
+import type { PinoLike as Logger } from '../../platform/run-logger.js';
 import { resolveFeatureModel } from '../settings/feature-models.js';
 import { resolveSpecContext } from './spec-resolver.js';
 import { buildIntentInput, estimateFullDiffTokens } from './input-builder.js';
