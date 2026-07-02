@@ -38,8 +38,8 @@ function DiffLine({
     );
   }
 
-  const lineNo = ln.newNo ?? ln.oldNo;
-  const finding = lineNo != null ? findingForLine(findings, path, lineNo) : undefined;
+  const displayNo = ln.newNo ?? ln.oldNo;
+  const finding = ln.newNo != null ? findingForLine(findings, path, ln.newNo) : undefined;
   const stripeColor = finding ? SEV_COLOR[finding.severity] ?? SEV_COLOR_FALLBACK : null;
   const sign = ln.kind === "add" ? "+" : ln.kind === "del" ? "−" : "";
 
@@ -47,7 +47,7 @@ function DiffLine({
     <div style={s.codeLineWrap(stripeColor)}>
       <div style={lineRowFor(ln.kind)}>
         <span className="mono tnum" style={dv.lineNo}>
-          {lineNo ?? ""}
+          {displayNo ?? ""}
         </span>
         <span className="mono" style={lineSignFor(ln.kind)}>
           {sign}
@@ -55,7 +55,7 @@ function DiffLine({
         <span className="mono" style={dv.lineText}>
           {ln.text || " "}
         </span>
-        {finding && lineNo === finding.start_line && (
+        {finding && ln.newNo === finding.start_line && (
           <button
             style={s.findingBadgeButton}
             onClick={() => onFindingClick(finding.id)}

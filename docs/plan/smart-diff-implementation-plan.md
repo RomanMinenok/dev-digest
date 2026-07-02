@@ -136,6 +136,18 @@ sources.
     additionally gates the badge on `lineNo === finding.start_line`. No
     server/contract change — `finding_lines` isn't used for this matching at
     all (only for the collapsed-row indicator dot).
+12. **(2026-07-02, post-launch fix) `DiffLine` must cross-reference findings
+    using `ln.newNo` only, never `ln.newNo ?? ln.oldNo`.** `finding.start_line`/
+    `end_line` are always new-file line numbers, but `parsePatch` only sets
+    `oldNo` (not `newNo`) on deleted lines — so the `??` fallback silently fed
+    old-file coordinates into a new-file-anchored comparison. Whenever a
+    deleted line's old-line number numerically coincided with an unrelated
+    finding's new-line range, that deleted line got a false-positive severity
+    stripe and a duplicate badge (user-visible as "more warning badges than
+    findings" on PR #23 / `NewTimeAttackButton.tsx`). Fix: `DiffLine` now
+    computes `displayNo = ln.newNo ?? ln.oldNo` for the visible line-number
+    column only, and matches/badges strictly on `ln.newNo`. See
+    `client/INSIGHTS.md` Recurring Errors & Fixes for the full trace.
 
 ### Known contract gap (documented, not fixed)
 `SmartDiffFile` (`path, pseudocode_summary?, additions, deletions,
