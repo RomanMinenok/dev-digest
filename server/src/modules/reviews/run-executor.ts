@@ -194,6 +194,20 @@ export class ReviewRunExecutor {
         runLog.info(`Injected ${skillBodies.length} enabled skill(s) into the prompt`);
       }
 
+      // Declared intent (Phase 7): read the PR's STORED intent (never compute
+      // here — lazy compute/recompute is the intent module's job). Mapped to the
+      // engine's snake_case scope shape. Injected omit-when-empty below, so a PR
+      // with no stored intent yields a byte-identical prompt.
+      const storedIntent = await this.container.intentRepo.get(pull.id);
+      const intent = storedIntent
+        ? {
+            intent: storedIntent.intent,
+            in_scope: storedIntent.inScope,
+            out_of_scope: storedIntent.outOfScope,
+          }
+        : undefined;
+      if (intent) runLog.info('Injected declared intent + scope rule into the prompt');
+
       // ---- Engine: assemble → single-pass → grounding -----------------------
       // The pure review pipeline lives in @devdigest/reviewer-core (shared with
       // the CI runner). The service owns only I/O: repo-intel context resolution
@@ -214,6 +228,10 @@ export class ReviewRunExecutor {
         // Linked + enabled skill bodies, in link order. Omit-when-empty so an
         // agent with no enabled skills produces an identical prompt (no block).
         ...(skillBodies.length ? { skills: skillBodies } : {}),
+        // Declared intent + scope rule (Phase 7). Omit-when-empty: no stored
+        // intent → identical prompt. The engine wraps the intent text as
+        // untrusted and appends the trusted "one signal finding" scope rule.
+        ...(intent ? { intent } : {}),
         // PR author's description/body — untrusted; assemblePrompt wraps +
         // truncates it. Omitted when the PR has no body.
         ...(pull.body ? { prDescription: pull.body } : {}),
