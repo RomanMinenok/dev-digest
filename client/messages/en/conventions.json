@@ -26,6 +26,9 @@
     "accepted": "Accepted",
     "accepting": "Accepting…",
     "reject": "Reject",
-    "acceptAsSkill": "Accept as Skill"
+    "acceptAsSkill": "Accept as Skill",
+    "editTitle": "Click to edit rule",
+    "save": "Save",
+    "cancel": "Cancel"
   }
 }

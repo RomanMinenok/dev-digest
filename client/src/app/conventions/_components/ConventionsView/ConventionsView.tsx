@@ -28,10 +28,10 @@ function buildSkillBody(repoName: string, accepted: ConventionCandidate[]): stri
   return lines.join("\n").trimEnd();
 }
 
-function toConvention(c: ConventionCandidate): Convention {
+function toConvention(c: ConventionCandidate, titleOverride?: string): Convention {
   return {
     id: c.id,
-    title: c.rule,
+    title: titleOverride ?? c.rule,
     file: c.evidence_path,
     code: c.evidence_snippet,
     confidence: Math.round(c.confidence * 100),
@@ -45,10 +45,15 @@ export function ConventionsView() {
   const rescan = useRescanConventions(repoId);
 
   const candidates = conventions.data ?? [];
-  const cards = candidates.map(toConvention);
 
   const [statuses, setStatuses] = React.useState<Record<string, Status>>({});
+  const [edits, setEdits] = React.useState<Record<string, string>>({});
   const [creating, setCreating] = React.useState(false);
+
+  const cards = candidates.map((c) => toConvention(c, edits[c.id]));
+
+  const handleEditSave = (id: string, title: string) =>
+    setEdits((prev) => ({ ...prev, [id]: title }));
 
   React.useEffect(() => {
     setStatuses(Object.fromEntries(candidates.map((c) => [c.id, "accepted" as Status])));
@@ -77,7 +82,12 @@ export function ConventionsView() {
     : undefined;
 
   const repoShortName = activeRepo?.full_name?.split("/").pop() ?? "";
-  const acceptedCandidates = candidates.filter((c) => statuses[c.id] === "accepted");
+  const acceptedCandidates = candidates
+    .filter((c) => statuses[c.id] === "accepted")
+    .map((c) => {
+      const override = edits[c.id];
+      return override ? { ...c, rule: override } : c;
+    });
 
   return (
     <AppShell crumb={crumb}>
@@ -149,6 +159,7 @@ export function ConventionsView() {
               accepted={statuses[card.id] === "accepted"}
               onAccept={() => handleAccept(card.id)}
               onReject={() => handleReject(card.id)}
+              onEditSave={(title) => handleEditSave(card.id, title)}
             />
           ))}
         </div>

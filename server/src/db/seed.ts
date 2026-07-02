@@ -290,6 +290,9 @@ export async function seed(db: Db): Promise<{ workspaceId: string; userId: strin
   // ---- agent_skills links (idempotent: skip if a link already exists) ----
   // Re-read ids by name within the workspace, then link skills to agents in order.
   const agentSkillLinks: Array<{ agent: string; skill: string; order: number }> = [
+    { agent: 'General Reviewer', skill: 'pr-quality-rubric', order: 0 },
+    { agent: 'Security Reviewer', skill: 'security-rubric', order: 0 },
+    { agent: 'Performance Reviewer', skill: 'performance-rubric', order: 0 },
     { agent: 'Test Quality Reviewer', skill: 'test-coverage-rubric', order: 0 },
     { agent: 'Test Quality Reviewer', skill: 'pr-quality-rubric', order: 1 },
     { agent: 'API Contract Reviewer', skill: 'api-contract-guard', order: 0 },

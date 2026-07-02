@@ -240,6 +240,58 @@ Prefer \`async\`/\`await\` over \`.then()\`/\`.catch()\` promise chains.
 
 > Imported, un-vetted skill. Review before enabling for any agent.`;
 
+// =============================================================== security-rubric
+
+export const SECURITY_RUBRIC_BODY = `# Security Rubric
+
+Review the diff for security defects. Report only concrete, defensible
+findings, each citing an exact file:line.
+
+## Secrets & credentials
+- Hardcoded API keys, tokens, passwords, or connection strings.
+- Secrets logged, echoed in error messages, or committed to fixtures.
+
+## Injection
+- Unsanitised input reaching a SQL query, shell command, or template sink.
+- SSRF: user-controlled URLs/hosts passed to an outbound request without an
+  allowlist.
+
+## AuthZ / AuthN
+- Missing or incorrect authorization check on a route or query.
+- Missing workspace/tenant scope on a data query.
+
+## Lethal trifecta
+- A component with untrusted input, access to sensitive data, AND the ability
+  to communicate externally (exfiltration path) — flag even if each piece
+  alone looks safe.
+
+Cite the exact file:line and state the exploitable input.`;
+
+// ============================================================ performance-rubric
+
+export const PERFORMANCE_RUBRIC_BODY = `# Performance Rubric
+
+Review the diff for performance regressions. Report only concrete, defensible
+findings, each citing an exact file:line.
+
+## N+1 queries
+- A query issued inside a loop where a single batched/JOIN query would do.
+
+## Missing indexes
+- A new query filtering or sorting on an unindexed column, especially on a
+  large or growing table.
+
+## Hot-path allocations
+- Unnecessary object/array allocation, JSON parse/stringify, or deep clone
+  inside a frequently-called function or request handler.
+
+## Unbounded operations
+- Loading an entire table/collection into memory instead of paginating.
+- Unbounded loops or recursion driven by user-controlled input.
+
+Cite the exact file:line and state the workload that would trigger the
+regression.`;
+
 // ============================================================ seed skill table
 
 export interface SeedSkill {
@@ -287,5 +339,21 @@ export const SEED_SKILLS: readonly SeedSkill[] = [
     source: 'extracted',
     enabled: false,
     body: NO_THEN_CHAINS_BODY,
+  },
+  {
+    name: 'security-rubric',
+    description: 'Flags hardcoded secrets, injection/SSRF, missing authz, and the lethal trifecta.',
+    type: 'rubric',
+    source: 'manual',
+    enabled: true,
+    body: SECURITY_RUBRIC_BODY,
+  },
+  {
+    name: 'performance-rubric',
+    description: 'Flags N+1 queries, missing indexes, hot-path allocations, and unbounded operations.',
+    type: 'rubric',
+    source: 'manual',
+    enabled: true,
+    body: PERFORMANCE_RUBRIC_BODY,
   },
 ];

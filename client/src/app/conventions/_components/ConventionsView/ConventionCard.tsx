@@ -18,15 +18,19 @@ export function ConventionCard({
   accepted,
   onAccept,
   onReject,
+  onEditSave,
 }: {
   convention: Convention;
   githubFileBase?: string;
   accepted: boolean;
   onAccept: () => void;
   onReject: () => void;
+  onEditSave: (title: string) => void;
 }) {
   const t = useTranslations("conventions");
   const [copied, setCopied] = React.useState(false);
+  const [editing, setEditing] = React.useState(false);
+  const [draft, setDraft] = React.useState(convention.title);
 
   const handleCopy = React.useCallback(() => {
     navigator.clipboard.writeText(convention.code).then(() => {
@@ -35,10 +39,71 @@ export function ConventionCard({
     });
   }, [convention.code]);
 
+  const startEditing = () => {
+    setDraft(convention.title);
+    setEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setDraft(convention.title);
+    setEditing(false);
+  };
+
+  const saveEditing = () => {
+    const trimmed = draft.trim();
+    if (trimmed && trimmed !== convention.title) {
+      onEditSave(trimmed);
+    }
+    setEditing(false);
+  };
+
   return (
     <div style={s.card}>
       <div style={s.cardLeft}>
-        <p style={s.cardTitle}>{convention.title}</p>
+        {editing ? (
+          <div style={s.titleEditWrap}>
+            <textarea
+              style={s.titleTextarea}
+              value={draft}
+              autoFocus
+              rows={2}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  e.preventDefault();
+                  cancelEditing();
+                } else if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                  e.preventDefault();
+                  saveEditing();
+                }
+              }}
+            />
+            <div style={s.titleEditActions}>
+              <Button kind="primary" size="sm" onClick={saveEditing}>
+                {t("card.save")}
+              </Button>
+              <Button kind="secondary" size="sm" onClick={cancelEditing}>
+                {t("card.cancel")}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <p
+            style={s.cardTitle}
+            role="button"
+            tabIndex={0}
+            title={t("card.editTitle")}
+            onClick={startEditing}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                startEditing();
+              }
+            }}
+          >
+            {convention.title}
+          </p>
+        )}
 
         <div style={s.codeBlock}>
           <div style={s.codeHeader}>
