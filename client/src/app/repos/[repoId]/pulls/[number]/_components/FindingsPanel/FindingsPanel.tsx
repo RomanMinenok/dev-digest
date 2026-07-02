@@ -18,12 +18,15 @@ export function FindingsPanel({
   repoFullName,
   headSha,
   activeSeverity = null,
+  targetFindingId = null,
 }: {
   findings: FindingRecord[];
   prId: string;
   repoFullName?: string | null;
   headSha?: string | null;
   activeSeverity?: string | null;
+  /** Finding to focus/expand/scroll to on mount (e.g. from a Smart Diff badge click). */
+  targetFindingId?: string | null;
 }) {
   const t = useTranslations("prReview");
   const action = useFindingAction();
@@ -34,6 +37,16 @@ export function FindingsPanel({
     () => visibleFindings(findings, hideLow, activeSeverity),
     [findings, hideLow, activeSeverity],
   );
+
+  React.useEffect(() => {
+    if (!targetFindingId) return;
+    const idx = shown.findIndex((f) => f.id === targetFindingId);
+    if (idx >= 0) setFocusIdx(idx);
+    document
+      .querySelector(`[data-finding-id="${targetFindingId}"]`)
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetFindingId]);
 
   // j/k navigation + a/d shortcuts on the focused finding (keyboard).
   React.useEffect(() => {
@@ -67,8 +80,8 @@ export function FindingsPanel({
             <FindingCard
               key={f.id}
               f={f}
-              focused={i === focusIdx}
-              defaultExpanded={i === 0}
+              focused={i === focusIdx || f.id === targetFindingId}
+              defaultExpanded={i === 0 || f.id === targetFindingId}
               pending={action.isPending}
               repoFullName={repoFullName}
               headSha={headSha}

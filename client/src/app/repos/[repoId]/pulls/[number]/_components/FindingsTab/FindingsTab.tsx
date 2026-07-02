@@ -22,6 +22,8 @@ interface FindingsTabProps {
   /** owner/repo + head sha — used to deep-link a finding's file:line to GitHub. */
   repoFullName?: string | null;
   headSha?: string | null;
+  /** Finding to focus/expand/scroll to (e.g. arriving from a Smart Diff badge click). */
+  targetFindingId?: string | null;
   onOpenTrace: (id: string) => void;
   onDelete: (id: string) => void;
   onRunDone: () => void;
@@ -38,6 +40,7 @@ export function FindingsTab({
   cancelMutation,
   repoFullName,
   headSha,
+  targetFindingId,
   onOpenTrace,
   onDelete,
   onRunDone,
@@ -82,6 +85,15 @@ export function FindingsTab({
   const handleGoToReview = useCallback((runId: string) => {
     setTarget((p) => ({ runId, n: (p?.n ?? 0) + 1 }));
   }, []);
+
+  // Smart Diff badge click → land on the finding's own run accordion (reuses
+  // the same open+scroll mechanism as the Timeline → Review-runs navigation).
+  React.useEffect(() => {
+    if (!targetFindingId) return;
+    const owner = runs.find((r) => r.findings.some((f) => f.id === targetFindingId));
+    if (owner?.run_id) setTarget((p) => ({ runId: owner.run_id!, n: (p?.n ?? 0) + 1 }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetFindingId]);
 
   return (
     <section>
@@ -199,6 +211,7 @@ export function FindingsTab({
             targetRunId={target?.runId ?? null}
             targetNonce={target?.n ?? 0}
             activeSeverity={activeSeverity}
+            targetFindingId={targetFindingId}
           />
         ))
       )}

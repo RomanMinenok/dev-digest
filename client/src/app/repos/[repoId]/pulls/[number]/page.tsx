@@ -14,6 +14,7 @@ import { PrDetailHeader } from "./_components/PrDetailHeader";
 import { OverviewTab } from "./_components/OverviewTab";
 import { FindingsTab } from "./_components/FindingsTab";
 import { DiffTab } from "./_components/DiffTab";
+import { sessionWindowFindings } from "./_components/SmartDiffViewer/helpers";
 import RunTraceDrawer from "./_components/RunTraceDrawer";
 import { usePullDetail, usePulls } from "../../../../../lib/hooks";
 import { useQueryClient } from "@tanstack/react-query";
@@ -59,13 +60,25 @@ export default function PRDetailPage() {
 
   const tab = search.get("tab") ?? "overview";
   const traceRunId = search.get("trace");
-  const setParam = (key: string, val: string | null) => {
+  const diffOrder = search.get("order") === "smart" ? "smart" : "original";
+  const findingId = search.get("findingId");
+  const setParams = (entries: Record<string, string | null>, opts?: { scroll?: boolean }) => {
     const sp = new URLSearchParams(search.toString());
-    if (val == null) sp.delete(key);
-    else sp.set(key, val);
-    router.replace(`/repos/${repoId}/pulls/${number}${sp.toString() ? `?${sp.toString()}` : ""}`);
+    for (const [key, val] of Object.entries(entries)) {
+      if (val == null) sp.delete(key);
+      else sp.set(key, val);
+    }
+    router.replace(`/repos/${repoId}/pulls/${number}${sp.toString() ? `?${sp.toString()}` : ""}`, {
+      scroll: opts?.scroll ?? true,
+    });
   };
+  const setParam = (key: string, val: string | null) => setParams({ [key]: val });
   const setTab = (t: string) => setParam("tab", t);
+  // Smart Diff → Findings tab navigation: switch tab + target the finding in
+  // one URL update (two sequential setParam calls would race on stale search).
+  // scroll:false — Next.js's default scroll-to-top on navigation would fight
+  // FindingsPanel's own scrollIntoView to the target finding card.
+  const onFindingClick = (id: string) => setParams({ tab: "findings", findingId: id }, { scroll: false });
 
   // Reviews come newest-first; each is its own run (grouped into accordions).
   const runs = reviews ?? [];
@@ -75,6 +88,13 @@ export default function PRDetailPage() {
   );
   const lethalTrifecta = allFindings.filter((f) => f.kind === "lethal_trifecta");
   const findingsCount = allFindings.length;
+  // Smart Diff only overlays "findings from the last review" (Decision 2's
+  // 60s session window) — not every finding ever recorded on the PR, unlike
+  // allFindings above (used by the Findings tab / lethal-trifecta banner).
+  const smartDiffFindings: FindingRecord[] = React.useMemo(
+    () => sessionWindowFindings(runs),
+    [reviews],
+  );
 
   const repoName = activeRepo?.full_name ?? repoId;
   // The real "owner/repo" (null until the repo is loaded) — used to build
@@ -148,6 +168,7 @@ export default function PRDetailPage() {
             repoFullName={repoFullName}
             headSha={pr.head_sha}
             cancelMutation={cancel}
+            targetFindingId={findingId}
             onOpenTrace={(id) => setParam("trace", id)}
             onDelete={(id) => {
               if (window.confirm("Delete this run from history? (its logs are removed too)"))
@@ -167,6 +188,10 @@ export default function PRDetailPage() {
             filesCount={pr.files_count}
             files={pr.files}
             canComment={pr.status === "open"}
+            order={diffOrder}
+            onSetOrder={(o) => setParam("order", o === "original" ? null : o)}
+            findings={smartDiffFindings}
+            onFindingClick={onFindingClick}
           />
         )}
       </div>

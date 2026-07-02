@@ -3,9 +3,12 @@
 import React from "react";
 import { SectionLabel, Button } from "@devdigest/ui";
 import { DiffViewer, type DiffCommentApi } from "@/components/diff-viewer";
-import { usePrComments, useCreatePrComment } from "@/lib/hooks/reviews";
+import { usePrComments, useCreatePrComment, useSmartDiff } from "@/lib/hooks/reviews";
 import { notify } from "@/lib/toast";
-import type { PrFile } from "@devdigest/shared";
+import { SmartDiffViewer } from "../SmartDiffViewer";
+import type { FindingRecord, PrFile } from "@devdigest/shared";
+
+type DiffOrder = "smart" | "original";
 
 interface DiffTabProps {
   prId: string | null;
@@ -13,13 +16,28 @@ interface DiffTabProps {
   files: PrFile[];
   /** Inline commenting is offered only on open PRs (GitHub rejects otherwise). */
   canComment?: boolean;
+  /** URL-backed ("?order=") — default "original", so existing links are unaffected. */
+  order: DiffOrder;
+  onSetOrder: (order: DiffOrder) => void;
+  findings: FindingRecord[];
+  onFindingClick: (findingId: string) => void;
 }
 
-export function DiffTab({ prId, filesCount, files, canComment }: DiffTabProps) {
+export function DiffTab({
+  prId,
+  filesCount,
+  files,
+  canComment,
+  order,
+  onSetOrder,
+  findings,
+  onFindingClick,
+}: DiffTabProps) {
   const { data: comments } = usePrComments(prId);
   const create = useCreatePrComment(prId);
   // Comments start hidden so the diff is clean by default — toggle to reveal.
   const [showComments, setShowComments] = React.useState(false);
+  const { data: smartDiff, isLoading: smartDiffLoading } = useSmartDiff(prId, order === "smart");
 
   const commentCount = comments?.length ?? 0;
 
@@ -45,21 +63,51 @@ export function DiffTab({ prId, filesCount, files, canComment }: DiffTabProps) {
       <SectionLabel
         icon="Code"
         right={
-          commentCount > 0 ? (
-            <Button
-              kind="ghost"
-              size="sm"
-              icon={showComments ? "EyeOff" : "Eye"}
-              onClick={() => setShowComments((v) => !v)}
-            >
-              {showComments ? "Hide comments" : "Show comments"} ({commentCount})
-            </Button>
-          ) : undefined
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ display: "flex", border: "1px solid var(--border)", borderRadius: 6, overflow: "hidden" }}>
+              <Button
+                kind="ghost"
+                size="sm"
+                active={order === "smart"}
+                onClick={() => onSetOrder("smart")}
+              >
+                Smart order
+              </Button>
+              <Button
+                kind="ghost"
+                size="sm"
+                active={order === "original"}
+                onClick={() => onSetOrder("original")}
+              >
+                Original order
+              </Button>
+            </div>
+            {order === "original" && commentCount > 0 && (
+              <Button
+                kind="ghost"
+                size="sm"
+                icon={showComments ? "EyeOff" : "Eye"}
+                onClick={() => setShowComments((v) => !v)}
+              >
+                {showComments ? "Hide comments" : "Show comments"} ({commentCount})
+              </Button>
+            )}
+          </div>
         }
       >
         Files changed · {filesCount} files
       </SectionLabel>
-      <DiffViewer files={files} commenting={commenting} />
+      {order === "smart" ? (
+        <SmartDiffViewer
+          data={smartDiff}
+          isLoading={smartDiffLoading}
+          files={files}
+          findings={findings}
+          onFindingClick={onFindingClick}
+        />
+      ) : (
+        <DiffViewer files={files} commenting={commenting} />
+      )}
     </section>
   );
 }

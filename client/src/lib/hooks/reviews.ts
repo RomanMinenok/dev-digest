@@ -13,6 +13,7 @@ import type {
   ReviewRunResponse,
   RunEvent,
   RunSummary,
+  SmartDiff,
 } from "@devdigest/shared";
 
 // ---- Active (in-flight) runs — server-side source of truth ----
@@ -53,6 +54,17 @@ export function usePrReviews(prId: string | null | undefined) {
     queryKey: ["reviews", prId],
     queryFn: () => api.get<ReviewRecord[]>(`/pulls/${prId}/reviews`),
     enabled: !!prId,
+  });
+}
+
+// ---- Smart Diff (role-grouped files + findings overlay + split suggestion) --
+/** Fetched only when the caller enables it (e.g. "Smart order" toggle is on) —
+   opt-in, not a default-tab eager fetch. */
+export function useSmartDiff(prId: string | null | undefined, enabled: boolean) {
+  return useQuery({
+    queryKey: ["smart-diff", prId],
+    queryFn: () => api.get<SmartDiff>(`/pulls/${prId}/smart-diff`),
+    enabled: enabled && !!prId,
   });
 }
 

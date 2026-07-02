@@ -32,6 +32,7 @@ export function ReviewRunAccordion({
   targetRunId = null,
   targetNonce = 0,
   activeSeverity = null,
+  targetFindingId = null,
 }: {
   review: ReviewRecord;
   prId: string;
@@ -43,6 +44,8 @@ export function ReviewRunAccordion({
   targetRunId?: string | null;
   targetNonce?: number;
   activeSeverity?: string | null;
+  /** Finding to focus/expand/scroll to inside this run's FindingsPanel. */
+  targetFindingId?: string | null;
 }) {
   const [open, setOpen] = React.useState(defaultOpen);
   const rootRef = React.useRef<HTMLDivElement | null>(null);
@@ -155,6 +158,7 @@ export function ReviewRunAccordion({
             repoFullName={repoFullName}
             headSha={headSha}
             activeSeverity={activeSeverity}
+            targetFindingId={targetFindingId}
           />
         </div>
       )}
