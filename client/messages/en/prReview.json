@@ -107,5 +107,19 @@
     "goToReview": "Jump to this run’s findings below",
     "openTrace": "Open run trace & logs",
     "deleteRun": "Delete run"
+  },
+  "intent": {
+    "title": "Intent",
+    "inScope": "In scope",
+    "outOfScope": "Out of scope",
+    "computedBy": "computed by {model} · {time}",
+    "sources": "Sources:",
+    "recompute": "Recompute",
+    "recomputing": "Recomputing…",
+    "recomputeAriaLabel": "Recompute the declared intent for this pull request",
+    "loading": "Deriving intent…",
+    "empty": "No intent computed yet for this pull request.",
+    "error": "Couldn’t load the declared intent.",
+    "retry": "Retry"
   }
 }

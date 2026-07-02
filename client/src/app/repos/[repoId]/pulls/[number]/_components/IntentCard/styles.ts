@@ -1,0 +1,86 @@
+import type { CSSProperties } from "react";
+
+/** Co-located styles for IntentCard. Card chrome stays constant across
+    loading/empty/error/loaded states — only the inner content varies. */
+export const s = {
+  wrap: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 14,
+    padding: 18,
+    borderRadius: 10,
+    border: "1px solid var(--border)",
+    background: "var(--bg-elevated)",
+  } satisfies CSSProperties,
+  headerRow: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  } satisfies CSSProperties,
+  sentence: {
+    fontSize: 14,
+    lineHeight: 1.55,
+    color: "var(--text-primary)",
+  } satisfies CSSProperties,
+  scopeGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 16,
+  } satisfies CSSProperties,
+  scopeCol: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+    minWidth: 0,
+  } satisfies CSSProperties,
+  scopeLabel: {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    fontSize: 12,
+    fontWeight: 700,
+    letterSpacing: "0.05em",
+    textTransform: "uppercase",
+    color: "var(--text-muted)",
+  } satisfies CSSProperties,
+  scopeList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+    margin: 0,
+    paddingLeft: 18,
+    fontSize: 13,
+    lineHeight: 1.5,
+    color: "var(--text-secondary)",
+  } satisfies CSSProperties,
+  metaRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    fontSize: 12,
+    color: "var(--text-muted)",
+  } satisfies CSSProperties,
+  sourcesRow: {
+    display: "flex",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 8,
+    fontSize: 12,
+    color: "var(--text-muted)",
+  } satisfies CSSProperties,
+  sourceItem: (included: boolean): CSSProperties => ({
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 5,
+    padding: "2px 8px",
+    borderRadius: 5,
+    fontSize: 12,
+    background: included ? "var(--accent-bg)" : "var(--bg-hover)",
+    color: included ? "var(--accent-text)" : "var(--text-muted)",
+  }),
+  emptyBody: {
+    fontSize: 13,
+    color: "var(--text-muted)",
+  } satisfies CSSProperties,
+} as const;
