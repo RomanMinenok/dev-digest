@@ -140,6 +140,33 @@ export const CommunitySkill = z.object({
 });
 export type CommunitySkill = z.infer<typeof CommunitySkill>;
 
+// An immutable snapshot of a skill's body, recorded whenever the body changes.
+// `summary` is an optional one-line note describing the change (version title).
+export const SkillVersion = z.object({
+  skill_id: z.string(),
+  version: z.number().int(),
+  summary: z.string().nullable(),
+  body: z.string(),
+  created_at: z.string(),
+});
+export type SkillVersion = z.infer<typeof SkillVersion>;
+
+// Usage/quality stats for a skill. `used_by` + `agents` are real (derived from
+// agent_skills links); the remaining metrics are honest placeholders (null) until
+// a finding→skill attribution pipeline exists. Do NOT fabricate these.
+export const SkillStats = z.object({
+  skill_id: z.string(),
+  used_by: z.number().int(),
+  agents: z.array(z.object({ id: z.string(), name: z.string() })),
+  pull_rate: z.number().nullable(),
+  accept_rate: z.number().nullable(),
+  findings_30d: z.number().nullable(),
+  findings_by_category: z
+    .array(z.object({ category: z.string(), count: z.number().int() }))
+    .nullable(),
+});
+export type SkillStats = z.infer<typeof SkillStats>;
+
 // ---- Conventions ----
 export const ConventionCandidate = z.object({
   id: z.string(),
@@ -150,6 +177,15 @@ export const ConventionCandidate = z.object({
   accepted: z.boolean(),
 });
 export type ConventionCandidate = z.infer<typeof ConventionCandidate>;
+
+export const ConventionScanResult = z.object({
+  repo_id: z.string(),
+  repo_name: z.string(),
+  sample_count: z.number().int(),
+  scanned_at: z.string(),
+  candidates: z.array(ConventionCandidate),
+});
+export type ConventionScanResult = z.infer<typeof ConventionScanResult>;
 
 // ---- Agents ----
 // 'openrouter' routes through the OpenAI-compatible API (OpenAIProvider with a
@@ -188,6 +224,9 @@ export const Agent = z.object({
   // Inject repo-intel context (repo skeleton + callers + rank note) into this
   // agent's review prompt. Default on; gated again by the global flag.
   repo_intel: z.boolean().default(true),
+  // Number of skills linked to this agent (agent_skills). Populated by the
+  // repository's list() JOIN; defaults to 0 for call sites that don't join.
+  skill_count: z.number().int().default(0),
 });
 export type Agent = z.infer<typeof Agent>;
 

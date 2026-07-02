@@ -1,6 +1,7 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
+import multipart from '@fastify/multipart';
 import rateLimit from '@fastify/rate-limit';
 import { FastifySSEPlugin } from 'fastify-sse-v2';
 import {
@@ -89,6 +90,9 @@ export async function buildApp(opts: BuildAppOptions = {}): Promise<FastifyInsta
   await app.register(helmet);
   await app.register(cors, { origin: [config.webOrigin], credentials: true });
   await app.register(FastifySSEPlugin);
+  // Multipart uploads (skill import). 2 MB file cap — skill markdown/zips are
+  // small; protects against oversized payloads.
+  await app.register(multipart, { limits: { fileSize: 2 * 1024 * 1024 } });
 
   // Global rate limit. Disabled under test so integration suites can hammer
   // endpoints via inject(); per-route overrides live on the routes themselves.

@@ -5,11 +5,15 @@
     "headingPrefix": "Conventions in ",
     "repoFallback": "repo",
     "subtitle": "Scan the cloned repo to surface house-rules — each backed by evidence you can turn into a Skill.",
+    "detectedFrom": "Detected from {count} sample files · last scan {ago}",
     "scanning": "Scanning…",
     "rescan": "Re-scan",
     "runExtraction": "Run extraction",
     "extractionFailed": "Extraction failed",
     "loadError": "Could not load conventions.",
+    "deselectAll": "Deselect all",
+    "acceptedOf": "{accepted} of {total} accepted",
+    "createSkill": "Create skill",
     "empty": {
       "title": "No conventions extracted yet",
       "body": "Scan the repo to surface house-rules — naming, error handling, structure — each backed by evidence you can turn into a Skill.",
@@ -21,6 +25,10 @@
     "confidence": "Confidence",
     "accepted": "Accepted",
     "accepting": "Accepting…",
-    "acceptAsSkill": "Accept as Skill"
+    "reject": "Reject",
+    "acceptAsSkill": "Accept as Skill",
+    "editTitle": "Click to edit rule",
+    "save": "Save",
+    "cancel": "Cancel"
   }
 }

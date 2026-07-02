@@ -1,4 +1,4 @@
-import { and, asc, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import type { Db } from '../../db/client.js';
 import * as t from '../../db/schema.js';
 import type { CiFailOn, Provider, ReviewStrategy } from '@devdigest/shared';
@@ -48,11 +48,29 @@ export interface LinkedSkillRow {
   order: number;
 }
 
+/** An agent row plus its linked-skill count (from the `list()` JOIN). */
+export type AgentRowWithSkillCount = AgentRow & { skillCount: number };
+
 export class AgentsRepository {
   constructor(private db: Db) {}
 
-  async list(workspaceId: string): Promise<AgentRow[]> {
-    return this.db.select().from(t.agents).where(eq(t.agents.workspaceId, workspaceId));
+  /** Agents for a workspace, each annotated with its linked-skill count. Equivalent to:
+   *  SELECT agents.*, COUNT(agent_skills.skill_id)::int AS skill_count
+   *  FROM agents
+   *  LEFT JOIN agent_skills ON agent_skills.agent_id = agents.id
+   *  WHERE agents.workspace_id = $1
+   *  GROUP BY agents.id; */
+  async list(workspaceId: string): Promise<AgentRowWithSkillCount[]> {
+    const rows = await this.db
+      .select({
+        agent: t.agents,
+        skillCount: sql<number>`count(${t.agentSkills.skillId})::int`,
+      })
+      .from(t.agents)
+      .leftJoin(t.agentSkills, eq(t.agentSkills.agentId, t.agents.id))
+      .where(eq(t.agents.workspaceId, workspaceId))
+      .groupBy(t.agents.id);
+    return rows.map((r) => ({ ...r.agent, skillCount: r.skillCount }));
   }
 
   async listEnabled(workspaceId: string): Promise<AgentRow[]> {

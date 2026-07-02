@@ -24,6 +24,7 @@ sharing code through tsconfig path aliases — **not** a pnpm workspace.
 - A `*_SONNET.md` file in the root is a draft from another model — not authoritative.
 
 ## Session context (learnings loop)
+0 **Before** implementing anything ALWAYS ask for permission with a plan presented. *Do not* execute any plans without my explicit confirmation.
 - **Before** working in a module, read its `INSIGHTS.md` and treat it as
   high-confidence guidance (a `UserPromptSubmit` hook nudges this).
 - **After** a substantive session, the `engineering-insights` skill writes the
