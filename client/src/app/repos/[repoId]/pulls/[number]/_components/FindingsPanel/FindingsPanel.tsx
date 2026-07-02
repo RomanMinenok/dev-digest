@@ -42,9 +42,16 @@ export function FindingsPanel({
     if (!targetFindingId) return;
     const idx = shown.findIndex((f) => f.id === targetFindingId);
     if (idx >= 0) setFocusIdx(idx);
-    document
-      .querySelector(`[data-finding-id="${targetFindingId}"]`)
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    // The owning ReviewRunAccordion may still be mid-expand (it opens in the
+    // same commit that mounts us) — wait a frame so the card's real layout
+    // position is settled before centering on it, otherwise it lands at a
+    // pre-expand offset that can end up off-screen.
+    const raf = requestAnimationFrame(() => {
+      document
+        .querySelector(`[data-finding-id="${targetFindingId}"]`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [targetFindingId]);
 
