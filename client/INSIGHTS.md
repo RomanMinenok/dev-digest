@@ -35,6 +35,8 @@ shouldn't bite us twice. Referenced from `client/CLAUDE.md` ("read when…").
 - **Course lesson scaffolding: check `helpers.ts` and `messages/en/` before wiring a new route** — When adding a route that corresponds to a future lesson (conventions, eval-dashboard, etc.), `client/src/components/app-shell/helpers.ts:activeKeyFor` likely already returns the correct sidebar key for that path, and a skeleton i18n file may already exist under `client/messages/en/`. Found both pre-wired for `/conventions` before adding any code. Creating duplicates or overwriting them causes subtle drift, so always read those two locations first.
 - **`_components/` promotion to `src/components/` is skipped when the refactor would exceed the task scope** — the rule "promote to `src/components/` when used across unrelated routes" yields to CLAUDE.md's "no refactor beyond what the task requires." Result: `CreateSkillModal` (under `skills/_components/`) is cross-imported by `ConventionsView` without being moved. The cross-import is intentional, not a bug. If a future task widens the sharing further, that is the moment to promote. See `app/conventions/_components/ConventionsView/ConventionsView.tsx:11`.
 
+- **Convention title edits are client-side-only state, mirroring accept/reject — there is no `PATCH /repos/:repoId/conventions/:id` endpoint.** `ConventionsView.tsx` keeps an `edits: Record<string, string>` map (id → overridden title) alongside `statuses`; `toConvention()` applies the override for display, and `acceptedCandidates` applies it again before `buildSkillBody()` so the edited text reaches the generated skill. If a future lesson needs edits to survive a rescan/refresh, add the PATCH route in `server/src/modules/conventions/routes.ts` first — right now a `rescan` overwrites the query cache and silently drops any in-progress edits.
+
 ## Tool & Library Notes
 <!-- Dependency quirks, version gotchas, env/config oddities. -->
 - `NEXT_PUBLIC_*` env vars are inlined into the bundle at **start time** (`next dev` / `next build`), not at request time. Changing a `NEXT_PUBLIC_*` value in `.env` requires a dev-server restart to take effect — a page refresh is not enough.
@@ -46,6 +48,7 @@ shouldn't bite us twice. Referenced from `client/CLAUDE.md` ("read when…").
 
 ## Session Notes
 <!-- Dated wrap-ups, newest first: ### YYYY-MM-DD — <one-line summary> -->
+### 2026-07-02 — Added inline edit to ConventionCard titles (click → textarea + Save/Cancel, Esc/Cmd+Enter shortcuts); edits tracked as client-side state in ConventionsView (edits map), no backend PATCH endpoint exists yet
 ### 2026-07-02 — Fix missing skill-count badge: wired the always-unused `skillCount` prop into AgentCard's two real call sites (AgentsListView, agents/[id]/page.tsx) after adding skill_count to the Agent contract/server response
 ### 2026-07-01 — Fix Refresh button: useRefreshRepo → /poll (PR sync) not /refresh (clone job); SIZE column now updates on existing PRs
 ### 2026-06-30 — Wire "Create Skill" on /conventions: CreateSkillModal reused with initialValues (name/description/type/body pre-filled from accepted ConventionCandidates); cross-route _components import kept intentionally

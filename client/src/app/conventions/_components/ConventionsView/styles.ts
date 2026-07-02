@@ -120,6 +120,35 @@ export const s = {
     fontStyle: "italic",
     color: "var(--text-primary)",
     letterSpacing: "-0.01em",
+    cursor: "pointer",
+    borderRadius: 4,
+    outline: "none",
+  } satisfies CSSProperties,
+
+  titleEditWrap: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+  } satisfies CSSProperties,
+
+  titleTextarea: {
+    fontSize: 15,
+    fontWeight: 500,
+    fontStyle: "italic",
+    color: "var(--text-primary)",
+    letterSpacing: "-0.01em",
+    fontFamily: "inherit",
+    resize: "vertical" as const,
+    padding: "8px 10px",
+    borderRadius: 7,
+    border: "1px solid var(--border-strong)",
+    background: "var(--bg-elevated)",
+    outline: "none",
+  } satisfies CSSProperties,
+
+  titleEditActions: {
+    display: "flex",
+    gap: 8,
   } satisfies CSSProperties,
 
   codeBlock: {
