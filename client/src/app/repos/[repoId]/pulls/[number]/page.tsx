@@ -80,6 +80,24 @@ export default function PRDetailPage() {
   // FindingsPanel's own scrollIntoView to the target finding card.
   const onFindingClick = (id: string) => setParams({ tab: "findings", findingId: id }, { scroll: false });
 
+  // Preserve the Files-changed tab's scroll offset across a badge-click round
+  // trip (diff → findings → back to diff). `<main>` (AppFrame) is the real
+  // scroll container, not `window` — see client/INSIGHTS.md. DiffTab unmounts
+  // on tab switch, so this can't live as local state inside it; it has to
+  // survive here in the parent.
+  const diffScrollTop = React.useRef(0);
+  React.useEffect(() => {
+    if (tab !== "diff") return;
+    const main = document.querySelector("main");
+    if (!main) return;
+    main.scrollTop = diffScrollTop.current;
+    const onScroll = () => {
+      diffScrollTop.current = main.scrollTop;
+    };
+    main.addEventListener("scroll", onScroll);
+    return () => main.removeEventListener("scroll", onScroll);
+  }, [tab]);
+
   // Reviews come newest-first; each is its own run (grouped into accordions).
   const runs = reviews ?? [];
   const allFindings: FindingRecord[] = React.useMemo(
