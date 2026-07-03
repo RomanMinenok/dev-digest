@@ -24,6 +24,9 @@ interface FindingsTabProps {
   headSha?: string | null;
   /** Finding to focus/expand/scroll to (e.g. arriving from a Smart Diff badge click). */
   targetFindingId?: string | null;
+  /** Bubbled up once the target finding has been scrolled to, so the caller can
+   *  clear targetFindingId and avoid replaying the scroll on a later revisit. */
+  onScrolledToTarget?: () => void;
   onOpenTrace: (id: string) => void;
   onDelete: (id: string) => void;
   onRunDone: () => void;
@@ -41,6 +44,7 @@ export function FindingsTab({
   repoFullName,
   headSha,
   targetFindingId,
+  onScrolledToTarget,
   onOpenTrace,
   onDelete,
   onRunDone,
@@ -212,6 +216,7 @@ export function FindingsTab({
             targetNonce={target?.n ?? 0}
             activeSeverity={activeSeverity}
             targetFindingId={targetFindingId}
+            onScrolledToTarget={onScrolledToTarget}
           />
         ))
       )}

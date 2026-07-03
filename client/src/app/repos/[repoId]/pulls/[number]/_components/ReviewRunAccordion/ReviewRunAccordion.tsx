@@ -33,6 +33,7 @@ export function ReviewRunAccordion({
   targetNonce = 0,
   activeSeverity = null,
   targetFindingId = null,
+  onScrolledToTarget,
 }: {
   review: ReviewRecord;
   prId: string;
@@ -46,6 +47,8 @@ export function ReviewRunAccordion({
   activeSeverity?: string | null;
   /** Finding to focus/expand/scroll to inside this run's FindingsPanel. */
   targetFindingId?: string | null;
+  /** Bubbled up from FindingsPanel once the target finding has been scrolled to. */
+  onScrolledToTarget?: () => void;
 }) {
   const [open, setOpen] = React.useState(defaultOpen);
   const rootRef = React.useRef<HTMLDivElement | null>(null);
@@ -165,6 +168,7 @@ export function ReviewRunAccordion({
             headSha={headSha}
             activeSeverity={activeSeverity}
             targetFindingId={targetFindingId}
+            onScrolledToTarget={onScrolledToTarget}
           />
         </div>
       )}

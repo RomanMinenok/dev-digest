@@ -19,6 +19,7 @@ export function FindingsPanel({
   headSha,
   activeSeverity = null,
   targetFindingId = null,
+  onScrolledToTarget,
 }: {
   findings: FindingRecord[];
   prId: string;
@@ -27,6 +28,10 @@ export function FindingsPanel({
   activeSeverity?: string | null;
   /** Finding to focus/expand/scroll to on mount (e.g. from a Smart Diff badge click). */
   targetFindingId?: string | null;
+  /** Called once the target finding has been scrolled to (or confirmed absent from
+   *  this panel) — the caller uses this to clear `targetFindingId` so a later
+   *  plain tab revisit doesn't replay the scroll animation. */
+  onScrolledToTarget?: () => void;
 }) {
   const t = useTranslations("prReview");
   const action = useFindingAction();
@@ -41,7 +46,8 @@ export function FindingsPanel({
   React.useEffect(() => {
     if (!targetFindingId) return;
     const idx = shown.findIndex((f) => f.id === targetFindingId);
-    if (idx >= 0) setFocusIdx(idx);
+    if (idx < 0) return; // finding isn't in this panel (or filtered out) — not our target to own
+    setFocusIdx(idx);
     // The owning ReviewRunAccordion may still be mid-expand (it opens in the
     // same commit that mounts us) — wait a frame so the card's real layout
     // position is settled before centering on it, otherwise it lands at a
@@ -50,6 +56,9 @@ export function FindingsPanel({
       document
         .querySelector(`[data-finding-id="${targetFindingId}"]`)
         ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      // Consume the target so a later plain revisit to this tab (targetFindingId
+      // still truthy but nothing new to scroll to) doesn't replay the animation.
+      onScrolledToTarget?.();
     });
     return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps

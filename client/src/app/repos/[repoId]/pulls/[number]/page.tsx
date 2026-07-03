@@ -80,23 +80,30 @@ export default function PRDetailPage() {
   // FindingsPanel's own scrollIntoView to the target finding card.
   const onFindingClick = (id: string) => setParams({ tab: "findings", findingId: id }, { scroll: false });
 
-  // Preserve the Files-changed tab's scroll offset across a badge-click round
-  // trip (diff → findings → back to diff). `<main>` (AppFrame) is the real
-  // scroll container, not `window` — see client/INSIGHTS.md. DiffTab unmounts
-  // on tab switch, so this can't live as local state inside it; it has to
-  // survive here in the parent.
-  const diffScrollTop = React.useRef(0);
+  // Preserve each tab's scroll offset across switches — e.g. a badge-click
+  // round trip (diff → findings → back to diff), or just leaving/returning to
+  // Agent runs. `<main>` (AppFrame) is the real scroll container, not `window`
+  // — see client/INSIGHTS.md. DiffTab/FindingsTab unmount on tab switch, so
+  // this can't live as local state inside them; it has to survive here in the
+  // parent, keyed by tab.
+  const tabScrollTop = React.useRef<Record<string, number>>({});
   React.useEffect(() => {
-    if (tab !== "diff") return;
+    if (tab !== "diff" && tab !== "findings") return;
     const main = document.querySelector("main");
     if (!main) return;
-    main.scrollTop = diffScrollTop.current;
+    main.scrollTop = tabScrollTop.current[tab] ?? 0;
     const onScroll = () => {
-      diffScrollTop.current = main.scrollTop;
+      tabScrollTop.current[tab] = main.scrollTop;
     };
     main.addEventListener("scroll", onScroll);
     return () => main.removeEventListener("scroll", onScroll);
   }, [tab]);
+  // Once a Smart Diff badge click has scrolled to its target finding, drop
+  // findingId from the URL — otherwise every later revisit to Agent runs
+  // (tab switch back, or the scroll-restore effect above) would find the same
+  // targetFindingId still set and replay the scroll-to-card animation on top
+  // of the just-restored scroll position.
+  const onScrolledToTarget = () => setParams({ findingId: null }, { scroll: false });
 
   // Reviews come newest-first; each is its own run (grouped into accordions).
   const runs = reviews ?? [];
@@ -187,6 +194,7 @@ export default function PRDetailPage() {
             headSha={pr.head_sha}
             cancelMutation={cancel}
             targetFindingId={findingId}
+            onScrolledToTarget={onScrolledToTarget}
             onOpenTrace={(id) => setParam("trace", id)}
             onDelete={(id) => {
               if (window.confirm("Delete this run from history? (its logs are removed too)"))
