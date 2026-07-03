@@ -40,7 +40,6 @@ export function findingRowToDto(row: FindingRow): ReviewDtoFinding {
     file: row.file,
     start_line: row.startLine,
     end_line: row.endLine,
-    rationale: row.rationale,
     suggestion: row.suggestion ?? null,
     confidence: row.confidence,
     kind: (row.kind as Finding['kind']) ?? 'finding',
