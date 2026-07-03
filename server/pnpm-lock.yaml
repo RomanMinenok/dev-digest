@@ -1,5 +1,6 @@
 lockfileVersion: '9.0'
 
+# Regenerated as part of classifier demo PR (no dependency changes).
 settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
