@@ -176,4 +176,11 @@ export class ReviewService {
   async getRunTrace(runId: string): Promise<RunTrace | undefined> {
     return this.repo.getRunTrace(runId);
   }
+
+  /** True if any target agent already has an in-flight run for this PR. */
+  async hasActiveRun(workspaceId: string, prId: string, targets: AgentRow[]): Promise<boolean> {
+    const active = await this.activeRuns(workspaceId, prId);
+    const activeAgentIds = new Set(active.map((run) => run.agent_id));
+    return targets.some((agent) => activeAgentIds.has(agent.id));
+  }
 }
