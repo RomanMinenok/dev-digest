@@ -14,6 +14,7 @@ import { PrDetailHeader } from "./_components/PrDetailHeader";
 import { OverviewTab } from "./_components/OverviewTab";
 import { FindingsTab } from "./_components/FindingsTab";
 import { DiffTab } from "./_components/DiffTab";
+import { sessionWindowFindings } from "./_components/SmartDiffViewer/helpers";
 import RunTraceDrawer from "./_components/RunTraceDrawer";
 import { usePullDetail, usePulls } from "../../../../../lib/hooks";
 import { useQueryClient } from "@tanstack/react-query";
@@ -59,13 +60,50 @@ export default function PRDetailPage() {
 
   const tab = search.get("tab") ?? "overview";
   const traceRunId = search.get("trace");
-  const setParam = (key: string, val: string | null) => {
+  const diffOrder = search.get("order") === "smart" ? "smart" : "original";
+  const findingId = search.get("findingId");
+  const setParams = (entries: Record<string, string | null>, opts?: { scroll?: boolean }) => {
     const sp = new URLSearchParams(search.toString());
-    if (val == null) sp.delete(key);
-    else sp.set(key, val);
-    router.replace(`/repos/${repoId}/pulls/${number}${sp.toString() ? `?${sp.toString()}` : ""}`);
+    for (const [key, val] of Object.entries(entries)) {
+      if (val == null) sp.delete(key);
+      else sp.set(key, val);
+    }
+    router.replace(`/repos/${repoId}/pulls/${number}${sp.toString() ? `?${sp.toString()}` : ""}`, {
+      scroll: opts?.scroll ?? true,
+    });
   };
+  const setParam = (key: string, val: string | null) => setParams({ [key]: val });
   const setTab = (t: string) => setParam("tab", t);
+  // Smart Diff → Findings tab navigation: switch tab + target the finding in
+  // one URL update (two sequential setParam calls would race on stale search).
+  // scroll:false — Next.js's default scroll-to-top on navigation would fight
+  // FindingsPanel's own scrollIntoView to the target finding card.
+  const onFindingClick = (id: string) => setParams({ tab: "findings", findingId: id }, { scroll: false });
+
+  // Preserve each tab's scroll offset across switches — e.g. a badge-click
+  // round trip (diff → findings → back to diff), or just leaving/returning to
+  // Agent runs. `<main>` (AppFrame) is the real scroll container, not `window`
+  // — see client/INSIGHTS.md. DiffTab/FindingsTab unmount on tab switch, so
+  // this can't live as local state inside them; it has to survive here in the
+  // parent, keyed by tab.
+  const tabScrollTop = React.useRef<Record<string, number>>({});
+  React.useEffect(() => {
+    if (tab !== "diff" && tab !== "findings") return;
+    const main = document.querySelector("main");
+    if (!main) return;
+    main.scrollTop = tabScrollTop.current[tab] ?? 0;
+    const onScroll = () => {
+      tabScrollTop.current[tab] = main.scrollTop;
+    };
+    main.addEventListener("scroll", onScroll);
+    return () => main.removeEventListener("scroll", onScroll);
+  }, [tab]);
+  // Once a Smart Diff badge click has scrolled to its target finding, drop
+  // findingId from the URL — otherwise every later revisit to Agent runs
+  // (tab switch back, or the scroll-restore effect above) would find the same
+  // targetFindingId still set and replay the scroll-to-card animation on top
+  // of the just-restored scroll position.
+  const onScrolledToTarget = () => setParams({ findingId: null }, { scroll: false });
 
   // Reviews come newest-first; each is its own run (grouped into accordions).
   const runs = reviews ?? [];
@@ -75,6 +113,13 @@ export default function PRDetailPage() {
   );
   const lethalTrifecta = allFindings.filter((f) => f.kind === "lethal_trifecta");
   const findingsCount = allFindings.length;
+  // Smart Diff only overlays "findings from the last review" (Decision 2's
+  // 60s session window) — not every finding ever recorded on the PR, unlike
+  // allFindings above (used by the Findings tab / lethal-trifecta banner).
+  const smartDiffFindings: FindingRecord[] = React.useMemo(
+    () => sessionWindowFindings(runs),
+    [reviews],
+  );
 
   const repoName = activeRepo?.full_name ?? repoId;
   // The real "owner/repo" (null until the repo is loaded) — used to build
@@ -134,7 +179,7 @@ export default function PRDetailPage() {
       />
 
       <div style={{ padding: "24px 32px 44px", display: "flex", flexDirection: "column", gap: 24, maxWidth: 1080, margin: "0 auto" }}>
-        {tab === "overview" && <OverviewTab prBody={pr.body} />}
+        {tab === "overview" && <OverviewTab prId={prId} prBody={pr.body} />}
 
         {tab === "findings" && (
           <FindingsTab
@@ -148,6 +193,8 @@ export default function PRDetailPage() {
             repoFullName={repoFullName}
             headSha={pr.head_sha}
             cancelMutation={cancel}
+            targetFindingId={findingId}
+            onScrolledToTarget={onScrolledToTarget}
             onOpenTrace={(id) => setParam("trace", id)}
             onDelete={(id) => {
               if (window.confirm("Delete this run from history? (its logs are removed too)"))
@@ -167,6 +214,10 @@ export default function PRDetailPage() {
             filesCount={pr.files_count}
             files={pr.files}
             canComment={pr.status === "open"}
+            order={diffOrder}
+            onSetOrder={(o) => setParam("order", o === "original" ? null : o)}
+            findings={smartDiffFindings}
+            onFindingClick={onFindingClick}
           />
         )}
       </div>

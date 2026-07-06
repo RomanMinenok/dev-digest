@@ -13,6 +13,22 @@ export const Intent = z.object({
 });
 export type Intent = z.infer<typeof Intent>;
 
+export const IntentSource = z.object({
+  type: z.enum(['pr_body', 'linked_issue', 'repo_md', 'pr_md', 'external_url']),
+  ref: z.string(),
+  included: z.boolean(),
+});
+export type IntentSource = z.infer<typeof IntentSource>;
+
+export const PrIntent = Intent.extend({
+  pr_id: z.string(),
+  model: z.string().nullish(),
+  head_sha: z.string().nullish(),
+  updated_at: z.string().nullish(),
+  sources: z.array(IntentSource).nullish(),
+});
+export type PrIntent = z.infer<typeof PrIntent>;
+
 // ---- Blast radius ----
 export const ChangedSymbol = z.object({
   name: z.string(),

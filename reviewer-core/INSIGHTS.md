@@ -16,6 +16,7 @@ bit us and shouldn't bite us twice. Referenced from `reviewer-core/CLAUDE.md`.
 
 ## Codebase Patterns
 <!-- Conventions & architectural decisions, with the "why". -->
+- **Adding a new prompt section (omit-when-empty, byte-identical baseline).** Three steps: (1) add the optional field to `ReviewInput` in `src/review/run.ts` and thread it through the single `promptParts` object (`src/review/run.ts:130`) — that object feeds BOTH the whole-diff assembly AND the per-chunk loop, so threading it once covers both paths; (2) in `src/prompt.ts` build the section only when the field is present and push it into `userSections` only when truthy (so an absent field changes nothing); (3) add a matching `.nullish()` field to `PromptAssembly` in the vendored `trace.ts` — in BOTH `server/` and `client/` copies (no auto-sync) — or the assembly object won't typecheck. `test/prompt.test.ts` guards the no-section path as byte-identical to the old prompt — run it after. Worked example: the `intent` slot (`## Declared intent` = `wrapUntrusted('intent', …)` followed by a TRUSTED, unwrapped scope rule) in `src/prompt.ts`.
 
 ## Tool & Library Notes
 <!-- Dependency quirks, version gotchas, env/config oddities. -->
@@ -25,6 +26,7 @@ bit us and shouldn't bite us twice. Referenced from `reviewer-core/CLAUDE.md`.
 
 ## Session Notes
 <!-- Dated wrap-ups, newest first: ### YYYY-MM-DD — <one-line summary> -->
+### 2026-07-02 — Added the Declared-intent prompt slot (wrapUntrusted intent + trusted one-signal-finding scope rule) threaded via promptParts + PromptAssembly.intent; omit-when-empty keeps the no-intent prompt byte-identical (23 tests green)
 
 ## Open Questions
 <!-- Unresolved threads for the next session. -->

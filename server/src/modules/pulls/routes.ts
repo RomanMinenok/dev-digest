@@ -1,13 +1,14 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
-import type { PrMeta, PrDetail, GitHubClient, PrReviewComment } from '@devdigest/shared';
+import type { PrMeta, PrDetail, GitHubClient, PrReviewComment, SmartDiff } from '@devdigest/shared';
 import { PrCommentInput } from '@devdigest/shared';
 import * as t from '../../db/schema.js';
 import { getContext } from '../_shared/context.js';
 import { IdParams } from '../_shared/schemas.js';
 import { AppError, NotFoundError } from '../../platform/errors.js';
 import { deriveReviewStatus } from './status.js';
+import { PullsService } from './service.js';
 
 /**
  * F1 — pulls module. PR import via Octokit (list + per-PR detail).
@@ -22,6 +23,7 @@ import { deriveReviewStatus } from './status.js';
 export default async function pullsRoutes(appBase: FastifyInstance) {
   const app = appBase.withTypeProvider<ZodTypeProvider>();
   const { container } = app;
+  const pullsService = new PullsService(container);
 
   app.get('/repos/:id/pulls', { schema: { params: IdParams } }, async (req): Promise<PrMeta[]> => {
     const { workspaceId } = await getContext(container, req);
@@ -317,6 +319,15 @@ export default async function pullsRoutes(appBase: FastifyInstance) {
       };
     }
   });
+
+  app.get(
+    '/pulls/:id/smart-diff',
+    { schema: { params: IdParams } },
+    async (req): Promise<SmartDiff> => {
+      const { workspaceId } = await getContext(container, req);
+      return pullsService.smartDiff(workspaceId, req.params.id);
+    },
+  );
 
   // ---- Inline review comments (Files changed tab) -------------------------
   // Proxied live to GitHub (no local persistence): GET reflects existing PR

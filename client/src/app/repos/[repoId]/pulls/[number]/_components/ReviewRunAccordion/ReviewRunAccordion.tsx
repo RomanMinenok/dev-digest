@@ -32,6 +32,8 @@ export function ReviewRunAccordion({
   targetRunId = null,
   targetNonce = 0,
   activeSeverity = null,
+  targetFindingId = null,
+  onScrolledToTarget,
 }: {
   review: ReviewRecord;
   prId: string;
@@ -43,16 +45,26 @@ export function ReviewRunAccordion({
   targetRunId?: string | null;
   targetNonce?: number;
   activeSeverity?: string | null;
+  /** Finding to focus/expand/scroll to inside this run's FindingsPanel. */
+  targetFindingId?: string | null;
+  /** Bubbled up from FindingsPanel once the target finding has been scrolled to. */
+  onScrolledToTarget?: () => void;
 }) {
   const [open, setOpen] = React.useState(defaultOpen);
   const rootRef = React.useRef<HTMLDivElement | null>(null);
   React.useEffect(() => {
     if (review.run_id && review.run_id === targetRunId) {
       setOpen(true);
-      rootRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      // When a specific finding is targeted (Smart Diff badge click),
+      // FindingsPanel scrolls+centers that exact card — don't also scroll
+      // the accordion here, or the two scrollIntoView calls race and the
+      // card ends up randomly positioned (or off-screen).
+      if (!targetFindingId) {
+        rootRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [targetRunId, targetNonce, review.run_id]);
+  }, [targetRunId, targetNonce, review.run_id, targetFindingId]);
   const del = useDeleteReview(prId);
   const findings = review.findings;
   const blockers = findings.filter((f) => f.severity === "CRITICAL" && !f.dismissed_at).length;
@@ -155,6 +167,8 @@ export function ReviewRunAccordion({
             repoFullName={repoFullName}
             headSha={headSha}
             activeSeverity={activeSeverity}
+            targetFindingId={targetFindingId}
+            onScrolledToTarget={onScrolledToTarget}
           />
         </div>
       )}

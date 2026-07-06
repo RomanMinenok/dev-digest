@@ -71,6 +71,13 @@ export interface ReviewInput {
   /** PR author's description/body (untrusted; truncated + delimiter-wrapped in
       the prompt). Empty/undefined → section omitted. */
   prDescription?: string;
+  /**
+   * The PR's declared intent (in/out-of-scope), resolved upstream by the caller
+   * (the engine performs no intent I/O — see the header note). Rendered as a
+   * delimiter-wrapped block + trusted scope rule in the prompt. Undefined →
+   * section omitted (byte-identical baseline).
+   */
+  intent?: { intent: string; in_scope: string[]; out_of_scope: string[] };
   /** Task framing line, e.g. "Review PR #482 …". */
   task?: string;
   /** Override the structured-output retry budget. */
@@ -135,6 +142,7 @@ export async function reviewPullRequest(input: ReviewInput): Promise<ReviewOutco
     callers: input.callers,
     repoMap: input.repoMap,
     prDescription: input.prDescription,
+    intent: input.intent,
     task: input.task,
   };
 
