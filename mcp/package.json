@@ -1,0 +1,23 @@
+{
+  "name": "@devdigest/mcp",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Local MCP server exposing DevDigest review tools over stdio, backed by the running @devdigest/api.",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "inspect": "npx @modelcontextprotocol/inspector tsx src/index.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

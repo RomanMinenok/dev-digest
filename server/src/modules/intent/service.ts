@@ -26,12 +26,12 @@ export class IntentService {
     this.reviewRepo = new ReviewRepository(container.db);
   }
 
-  /** Cached DTO if present AND fresh (stored head_sha === current PR head); else recomputes. */
+  /** Cached DTO if a row already exists (regardless of head_sha staleness); computes only when empty. A stale row is only refreshed via the manual `recompute` trigger. */
   async getOrCompute(workspaceId: string, prId: string, logger?: Logger): Promise<PrIntent | null> {
-    const { pull } = await this.loadPullAndRepo(workspaceId, prId);
+    await this.loadPullAndRepo(workspaceId, prId);
 
     const existing = await this.repo.get(prId);
-    if (existing && existing.headSha === pull.headSha) {
+    if (existing) {
       return toDto(existing);
     }
 

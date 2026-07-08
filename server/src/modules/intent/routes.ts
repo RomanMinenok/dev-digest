@@ -9,7 +9,7 @@ import { IntentService } from './service.js';
  * `modules/conventions/routes.ts`: thin Fastify handlers delegating to the
  * Application-layer service, workspace-scoped via `getContext`.
  *
- *   GET  /pulls/:id/intent            → lazy compute-or-cached (200, PrIntent | null)
+ *   GET  /pulls/:id/intent            → compute only if empty, else return cached (200, PrIntent | null)
  *   POST /pulls/:id/intent/recompute  → always recompute (empty body)
  */
 export default async function intentRoutes(appBase: FastifyInstance) {

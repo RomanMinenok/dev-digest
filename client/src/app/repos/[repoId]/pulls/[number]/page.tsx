@@ -91,7 +91,12 @@ export default function PRDetailPage() {
     if (tab !== "diff" && tab !== "findings") return;
     const main = document.querySelector("main");
     if (!main) return;
-    main.scrollTop = tabScrollTop.current[tab] ?? 0;
+    // A pending Smart Diff target finding means FindingsPanel owns the scroll
+    // (centers on the target card) — restoring the saved offset here would
+    // race it and land on a random position. See client/INSIGHTS.md.
+    if (!(tab === "findings" && findingId)) {
+      main.scrollTop = tabScrollTop.current[tab] ?? 0;
+    }
     const onScroll = () => {
       tabScrollTop.current[tab] = main.scrollTop;
     };
