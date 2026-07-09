@@ -121,5 +121,21 @@
     "empty": "No intent computed yet for this pull request.",
     "error": "Couldn’t load the declared intent.",
     "retry": "Retry"
+  },
+  "blast": {
+    "title": "Blast Radius",
+    "loading": "Computing blast radius…",
+    "empty": "No blast radius data yet for this pull request.",
+    "error": "Couldn’t load the blast radius.",
+    "retry": "Retry",
+    "counts": "{symbols} symbols · {callers} callers · {endpoints} endpoints · {crons} cron",
+    "viewToggle": "View mode",
+    "tree": "Tree",
+    "graph": "Graph",
+    "graphComingSoon": "Graph (coming soon)",
+    "explain": "Explain",
+    "explaining": "Explaining…",
+    "noCallers": "No known callers.",
+    "callersCount": "{count} callers"
   }
 }

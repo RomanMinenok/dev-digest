@@ -65,8 +65,32 @@ export const ConventionsOut = z.object({
 });
 export type ConventionsOut = z.infer<typeof ConventionsOut>;
 
+export const BlastChangedSymbolOut = z.object({
+  name: z.string(),
+  file: z.string(),
+  kind: z.string(),
+});
+export type BlastChangedSymbolOut = z.infer<typeof BlastChangedSymbolOut>;
+
+export const BlastCallerOut = z.object({
+  name: z.string(),
+  file: z.string(),
+  line: z.number().int(),
+});
+export type BlastCallerOut = z.infer<typeof BlastCallerOut>;
+
+export const BlastDownstreamOut = z.object({
+  symbol: z.string(),
+  callers: z.array(BlastCallerOut),
+  endpoints: z.array(z.string()),
+  crons: z.array(z.string()),
+});
+export type BlastDownstreamOut = z.infer<typeof BlastDownstreamOut>;
+
 export const BlastRadiusOut = z.object({
-  status: z.literal('not_implemented'),
-  message: z.string(),
+  status: z.enum(['full', 'partial', 'degraded']),
+  changed_symbols: z.array(BlastChangedSymbolOut),
+  downstream: z.array(BlastDownstreamOut),
+  summary: z.string(),
 });
 export type BlastRadiusOut = z.infer<typeof BlastRadiusOut>;

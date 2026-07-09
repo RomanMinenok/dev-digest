@@ -66,6 +66,32 @@ export interface ConventionCandidateDto {
   accepted: boolean;
 }
 
+export interface BlastChangedSymbolDto {
+  name: string;
+  file: string;
+  kind: string;
+}
+
+export interface BlastCallerDto {
+  name: string;
+  file: string;
+  line: number;
+}
+
+export interface DownstreamImpactDto {
+  symbol: string;
+  callers: BlastCallerDto[];
+  endpoints_affected: string[];
+  crons_affected: string[];
+}
+
+export interface BlastRadiusDto {
+  changed_symbols: BlastChangedSymbolDto[];
+  downstream: DownstreamImpactDto[];
+  status: 'full' | 'partial' | 'degraded';
+  summary: string;
+}
+
 /** Thrown by the http-client adapter; mapped to MCP `isError` results in tools/*.ts. */
 export class ApiError extends Error {
   constructor(
@@ -85,4 +111,5 @@ export interface DevDigestApiClient {
   startReview(prId: string, agentId: string): Promise<StartReviewResultDto>;
   getReviews(prId: string): Promise<ReviewDto[]>;
   getConventions(repoId: string): Promise<ConventionCandidateDto[]>;
+  getBlast(prId: string): Promise<BlastRadiusDto>;
 }

@@ -10,6 +10,7 @@ function fakeClient(repos: RepoDto[], pulls: Record<string, PullDto[]> = {}): De
     startReview: async () => ({ pr_id: '', runs: [] }),
     getReviews: async () => [],
     getConventions: async () => [],
+    getBlast: async () => ({ changed_symbols: [], downstream: [], status: 'full', summary: '' }),
   };
 }
 

@@ -1,5 +1,6 @@
 import type {
   AgentDto,
+  BlastRadiusDto,
   ConventionCandidateDto,
   DevDigestApiClient,
   PullDto,
@@ -53,6 +54,10 @@ export class HttpClient implements DevDigestApiClient {
 
   async getConventions(repoId: string): Promise<ConventionCandidateDto[]> {
     return this.get<ConventionCandidateDto[]>(`/repos/${encodeURIComponent(repoId)}/conventions`);
+  }
+
+  async getBlast(prId: string): Promise<BlastRadiusDto> {
+    return this.get<BlastRadiusDto>(`/pulls/${encodeURIComponent(prId)}/blast`);
   }
 
   private async get<T>(path: string): Promise<T> {

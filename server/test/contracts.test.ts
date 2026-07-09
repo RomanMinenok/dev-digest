@@ -80,6 +80,7 @@ describe('AI contracts parse fixtures', () => {
             crons_affected: ['c'],
           },
         ],
+        status: 'full',
         summary: 's',
       }),
     ).not.toThrow();

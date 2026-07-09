@@ -5,6 +5,7 @@ import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { registerListAgentsTool } from '../tools/list-agents.js';
 import { registerGetConventionsTool } from '../tools/get-conventions.js';
 import { registerGetBlastRadiusTool } from '../tools/get-blast-radius.js';
+import { BlastService } from '../services/blast.service.js';
 import { Resolver } from '../resolver.js';
 import type { DevDigestApiClient } from '../ports.js';
 
@@ -23,6 +24,7 @@ function fakeClient(overrides: Partial<DevDigestApiClient> = {}): DevDigestApiCl
     startReview: async () => ({ pr_id: '', runs: [] }),
     getReviews: async () => [],
     getConventions: async () => [],
+    getBlast: async () => ({ changed_symbols: [], downstream: [], status: 'full', summary: '' }),
     ...overrides,
   };
 }
@@ -72,9 +74,25 @@ describe('devdigest_get_conventions tool', () => {
 });
 
 describe('devdigest_get_blast_radius tool', () => {
-  it('always returns status not_implemented and never throws', async () => {
+  it('returns structured blast data for a known repo/PR', async () => {
+    const client = fakeClient({
+      listPulls: async () => [{ id: 'pr-1', number: 1 }],
+      getBlast: async () => ({
+        changed_symbols: [{ name: 'foo', file: 'src/foo.ts', kind: 'function' }],
+        downstream: [
+          {
+            symbol: 'foo',
+            callers: [{ name: 'bar', file: 'src/bar.ts', line: 12 }],
+            endpoints_affected: ['GET /foo'],
+            crons_affected: [],
+          },
+        ],
+        status: 'full',
+        summary: '',
+      }),
+    });
     const server = new McpServer({ name: 'test', version: '0.0.0' });
-    registerGetBlastRadiusTool(server);
+    registerGetBlastRadiusTool(server, new BlastService(client, new Resolver(client)));
     const mcpClient = await connectedClient(server);
 
     const result = await mcpClient.callTool({
@@ -82,6 +100,31 @@ describe('devdigest_get_blast_radius tool', () => {
       arguments: { repo: 'acme/widgets', pr_number: 1 },
     });
     expect(result.isError).toBeFalsy();
-    expect(result.structuredContent).toMatchObject({ status: 'not_implemented' });
+    expect(result.structuredContent).toEqual({
+      status: 'full',
+      changed_symbols: [{ name: 'foo', file: 'src/foo.ts', kind: 'function' }],
+      downstream: [
+        {
+          symbol: 'foo',
+          callers: [{ name: 'bar', file: 'src/bar.ts', line: 12 }],
+          endpoints: ['GET /foo'],
+          crons: [],
+        },
+      ],
+      summary: '',
+    });
+  });
+
+  it('maps an unknown repo to isError:true', async () => {
+    const client = fakeClient({ listRepos: async () => [] });
+    const server = new McpServer({ name: 'test', version: '0.0.0' });
+    registerGetBlastRadiusTool(server, new BlastService(client, new Resolver(client)));
+    const mcpClient = await connectedClient(server);
+
+    const result = await mcpClient.callTool({
+      name: 'devdigest_get_blast_radius',
+      arguments: { repo: 'nope/nope', pr_number: 1 },
+    });
+    expect(result.isError).toBe(true);
   });
 });

@@ -1,26 +1,29 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { GetBlastRadiusInput } from '../schemas.js';
 import { BlastRadiusOut } from '../output-schemas.js';
+import type { BlastService } from '../services/blast.service.js';
+import { toErrorResult } from './tool-error.js';
 
-/** STUB — no endpoint exists server-side. Always returns not_implemented; never throws, 0 HTTP calls. */
-export function registerGetBlastRadiusTool(server: McpServer): void {
+export function registerGetBlastRadiusTool(server: McpServer, service: BlastService): void {
   server.registerTool(
     'devdigest_get_blast_radius',
     {
-      title: 'Get PR blast radius (not implemented)',
+      title: 'Get PR blast radius',
       description:
-        "STUB — blast radius is NOT implemented. Always returns status:'not_implemented'. " +
-        'Do not rely on it; proceed without blast-radius data.',
+        "Returns the blast radius of a PR: changed symbols, their callers, and downstream HTTP " +
+        "endpoints/cron jobs. Pass repo as 'owner/name'. status reflects the code index's health " +
+        "(full/partial/degraded) — degraded means the result is best-effort.",
       inputSchema: GetBlastRadiusInput.shape,
       outputSchema: BlastRadiusOut,
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async () => {
-      const result: BlastRadiusOut = {
-        status: 'not_implemented',
-        message: 'Blast radius is not implemented yet — proceed without it; do not rely on this tool.',
-      };
-      return { content: [{ type: 'text', text: result.message }], structuredContent: result };
+    async ({ repo, pr_number }) => {
+      try {
+        const { out, text } = await service.get({ repo, pr_number });
+        return { content: [{ type: 'text', text }], structuredContent: out };
+      } catch (err) {
+        return toErrorResult(err);
+      }
     },
   );
 }

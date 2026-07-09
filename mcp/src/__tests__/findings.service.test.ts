@@ -26,6 +26,7 @@ function fakeClient(reviews: ReviewDto[]): DevDigestApiClient {
     startReview: async () => ({ pr_id: 'pr-1', runs: [] }),
     getReviews: async () => reviews,
     getConventions: async () => [],
+    getBlast: async () => ({ changed_symbols: [], downstream: [], status: 'full', summary: '' }),
   };
 }
 

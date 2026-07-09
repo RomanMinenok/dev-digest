@@ -11,6 +11,7 @@ function fakeClient(overrides: Partial<DevDigestApiClient>): DevDigestApiClient 
     startReview: async () => ({ pr_id: 'pr-1', runs: [{ run_id: 'run-1', agent_id: 'a1', agent_name: 'Reviewer' }] }),
     getReviews: async () => [],
     getConventions: async () => [],
+    getBlast: async () => ({ changed_symbols: [], downstream: [], status: 'full', summary: '' }),
     ...overrides,
   };
 }

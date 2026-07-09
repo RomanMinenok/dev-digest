@@ -6,6 +6,7 @@ import { HttpClient } from './http-client.js';
 import { Resolver } from './resolver.js';
 import { RunAgentService } from './services/run-agent.service.js';
 import { FindingsService } from './services/findings.service.js';
+import { BlastService } from './services/blast.service.js';
 import { registerListAgentsTool } from './tools/list-agents.js';
 import { registerRunAgentOnPrTool } from './tools/run-agent-on-pr.js';
 import { registerGetFindingsTool } from './tools/get-findings.js';
@@ -19,6 +20,7 @@ async function main(): Promise<void> {
   const resolver = new Resolver(client);
   const runAgentService = new RunAgentService(client, resolver, config.runPollBudgetMs);
   const findingsService = new FindingsService(client, resolver);
+  const blastService = new BlastService(client, resolver);
 
   const server = new McpServer({ name: 'devdigest-mcp', version: '0.0.0' });
 
@@ -26,7 +28,7 @@ async function main(): Promise<void> {
   registerRunAgentOnPrTool(server, runAgentService);
   registerGetFindingsTool(server, findingsService);
   registerGetConventionsTool(server, client, resolver);
-  registerGetBlastRadiusTool(server);
+  registerGetBlastRadiusTool(server, blastService);
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
