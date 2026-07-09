@@ -5,7 +5,7 @@ import type { PinoLike as Logger } from '../../platform/run-logger.js';
 import { resolveFeatureModel } from '../settings/feature-models.js';
 import { BlastRepository } from './repository.js';
 import { assembleBlast } from './helpers.js';
-import { buildBlastSummaryInput, SYSTEM_PROMPT } from './summary-prompt.js';
+import { buildBlastSummaryInput, BlastSummary, SYSTEM_PROMPT } from './summary-prompt.js';
 
 /**
  * Application layer for Blast Radius (docs/plan/blast_radius_plan.md). Thin
@@ -47,15 +47,17 @@ export class BlastService {
     }
 
     try {
-      const res = await llm.complete({
+      const res = await llm.completeStructured({
         model,
+        schema: BlastSummary,
+        schemaName: 'blast_summary',
         temperature: 0,
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: buildBlastSummaryInput(blast) },
         ],
       });
-      return { summary: res.text };
+      return { summary: res.data.summary };
     } catch (err) {
       logger?.warn({ err }, 'blast: explain LLM call failed');
       return { summary: '' };

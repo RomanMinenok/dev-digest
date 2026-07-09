@@ -135,14 +135,16 @@ d('Blast module (Testcontainers pg)', () => {
   });
 
   it('POST /pulls/:id/blast/explain returns the mocked summary via one LLM call', async () => {
-    const llm = new MockLLMProvider('openai', { completionText: 'This change reaches one HTTP endpoint.' });
+    // openrouter only implements completeStructured (server/INSIGHTS.md) — the
+    // real bug this test now guards: explain() must NOT call `.complete()`.
+    const llm = new MockLLMProvider('openai', { structured: { summary: 'This change reaches one HTTP endpoint.' } });
     const app = await makeApp({ llm: { openrouter: llm } });
     const pr = await setupPr();
 
     const res = await app.inject({ method: 'POST', url: `/pulls/${pr.id}/blast/explain` });
     expect(res.statusCode).toBe(200);
     expect(res.json().summary).toBe('This change reaches one HTTP endpoint.');
-    expect(llm.calls.filter((c) => c.method === 'complete')).toHaveLength(1);
+    expect(llm.calls.filter((c) => c.method === 'completeStructured')).toHaveLength(1);
 
     await app.close();
   });
