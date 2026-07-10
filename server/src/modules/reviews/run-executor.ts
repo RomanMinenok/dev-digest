@@ -6,7 +6,7 @@ import * as schema from '../../db/schema.js';
 import type { AgentRow } from '../../db/rows.js';
 import type { ReviewRepository, FindingRow, PullRow, ReviewRow } from './repository.js';
 import { REVIEW_STRATEGY } from './constants.js';
-import { taskLine } from './helpers.js';
+import { taskLine, resolveAttachedDocPaths } from './helpers.js';
 import { loadDiff } from './diff-loader.js';
 
 /** Thrown by a run when the user cancels it mid-flight (between map files). */
@@ -206,32 +206,14 @@ export class ReviewRunExecutor {
         runLog.info(`Injected ${skillBodies.length} enabled skill(s) into the prompt`);
       }
 
-      // T12 — attached project-context docs (SPEC-01). Ordered union of the
-      // agent's own context_docs + each linked-AND-enabled skill's
-      // context_docs (same linked+enabled gate and order source as skill
-      // bodies above), deduped by path with first occurrence winning — the
-      // agent's own docs come first, then skill-inherited docs in skill link
-      // order (AC-16/AC-17).
-      const docPaths: string[] = [];
-      const seenDocPaths = new Set<string>();
-      for (const p of agent.contextDocs ?? []) {
-        if (!seenDocPaths.has(p)) {
-          seenDocPaths.add(p);
-          docPaths.push(p);
-        }
-      }
-      for (const l of linked) {
-        if (!l.skill.enabled) continue;
-        for (const p of l.skill.contextDocs ?? []) {
-          if (!seenDocPaths.has(p)) {
-            seenDocPaths.add(p);
-            docPaths.push(p);
-          }
-        }
-      }
+      // T12 — attached project-context docs (SPEC-01, AC-16/AC-8). Ordered
+      // union of the agent's own context_docs + each linked-AND-enabled
+      // skill's context_docs — see resolveAttachedDocPaths for the
+      // dedup/order rule (agent's own docs first, first-occurrence wins).
+      const docPaths = resolveAttachedDocPaths(agent.contextDocs, linked);
 
       const specs: string[] = [];
-      const specsRead: { path: string; content: string | null }[] = [];
+      const specsRead: RunTrace['specs_read'] = [];
       for (const path of docPaths) {
         try {
           const content = await this.container.git.readFile({ owner: repo.owner, name: repo.name }, path);

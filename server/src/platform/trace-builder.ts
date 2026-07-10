@@ -30,7 +30,7 @@ export interface BuildTraceInput {
   toolCalls: ToolCall[];
   rawOutput: string;
   memoryPulled: MemoryPulled[];
-  specsRead: { path: string; content: string | null }[];
+  specsRead: RunTrace['specs_read'];
   log: RunLogLine[];
 }
 
