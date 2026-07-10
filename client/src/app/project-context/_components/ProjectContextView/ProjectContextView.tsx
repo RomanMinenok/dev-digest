@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { Skeleton, EmptyState, ErrorState } from "@devdigest/ui";
 import { AppShell } from "../../../../components/app-shell";
@@ -10,6 +10,7 @@ import { useContextDocs } from "../../../../lib/hooks/context-docs";
 import { useAgents } from "../../../../lib/hooks/agents";
 import { ApiError } from "../../../../lib/api";
 import { DocRow } from "./DocRow";
+import { PreviewDrawer } from "./PreviewDrawer";
 import { s } from "./styles";
 import { SKELETON_ROWS } from "./constants";
 import { agentsUsingDoc, formatTokenCount } from "./helpers";
@@ -26,6 +27,7 @@ export function ProjectContextView() {
   const { repoId, reposLoaded } = useActiveRepo();
   const contextDocs = useContextDocs(repoId);
   const agents = useAgents();
+  const [openPath, setOpenPath] = useState<string | null>(null);
 
   const crumb = [{ label: t("page.crumbLab") }, { label: t("page.crumbTitle") }];
 
@@ -71,6 +73,7 @@ export function ProjectContextView() {
               key={doc.path}
               doc={doc}
               usedByAgents={agentsUsingDoc(doc.path, agentList)}
+              onOpen={setOpenPath}
             />
           ))}
         </div>
@@ -98,6 +101,9 @@ export function ProjectContextView() {
         </div>
         <div style={s.body}>{content}</div>
       </div>
+      {openPath && (
+        <PreviewDrawer repoId={repoId} path={openPath} onClose={() => setOpenPath(null)} />
+      )}
     </AppShell>
   );
 }

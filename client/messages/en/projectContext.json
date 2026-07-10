@@ -18,5 +18,9 @@
   "row": {
     "usedBy": "{count, plural, one {Used by # agent} other {Used by # agents}}",
     "notAttached": "Not attached to any agent"
+  },
+  "preview": {
+    "tokens": "{count} tokens",
+    "error": "Could not load this document."
   }
 }

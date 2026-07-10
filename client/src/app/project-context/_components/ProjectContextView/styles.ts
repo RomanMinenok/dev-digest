@@ -59,6 +59,7 @@ export const s = {
     alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
+    cursor: "pointer",
   } satisfies CSSProperties,
 
   rowPath: {
@@ -117,5 +118,13 @@ export const s = {
   footerScanned: {
     color: "var(--text-secondary)",
     marginLeft: "auto",
+  } satisfies CSSProperties,
+
+  previewBody: {
+    whiteSpace: "pre-wrap" as const,
+    fontFamily: "var(--font-mono, monospace)",
+    fontSize: 13,
+    lineHeight: 1.6,
+    color: "var(--text-primary)",
   } satisfies CSSProperties,
 } as const;
