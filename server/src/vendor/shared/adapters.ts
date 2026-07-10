@@ -233,6 +233,14 @@ export interface GitClient {
   log(repo: RepoRef, path?: string): Promise<GitCommit[]>;
   readFile(repo: RepoRef, path: string): Promise<string>;
   clonePathFor(repo: RepoRef): string;
+  /**
+   * Every `.md` file in `repo`'s clone (repo-relative, forward-slash paths),
+   * at any depth, excluding standard excluded dirs (`.git`, `node_modules`,
+   * etc). Backs project-context discovery (SPEC-01) — keeps the raw
+   * filesystem walk behind this port so Application-layer callers never
+   * import fs directly.
+   */
+  listMarkdownFiles(repo: RepoRef): Promise<{ path: string; size_bytes: number }[]>;
 }
 
 // ---------- CodeIndex (ripgrep + tree-sitter) ----------

@@ -1,5 +1,4 @@
 import type { ContextDoc, GitClient, RepoRef } from '@devdigest/shared';
-import { walkMarkdownFiles } from './walk.js';
 import { ProjectContextRepository } from './repository.js';
 import { buildDiscoveryList, estimateTokens, unionAttachedPaths } from './helpers.js';
 
@@ -24,13 +23,13 @@ export class ProjectContextService {
   /**
    * Discover every `.md` file in `ref`'s clone (T6's walk) and annotate each
    * with how many agents (agents only — AC-4) currently have it attached.
-   * Uses `GitClient.clonePathFor` to resolve the clone root deterministically
-   * — no DB repo-row lookup needed here.
+   * Goes through `GitClient.listMarkdownFiles` (not a direct fs import) so
+   * this Application-layer method stays free of any concrete Infrastructure
+   * dependency — the walk itself lives in `SimpleGitClient`.
    */
   async discover(workspaceId: string, ref: RepoRef): Promise<ContextDoc[]> {
-    const clonePath = this.git.clonePathFor(ref);
     const [files, agentDocs] = await Promise.all([
-      walkMarkdownFiles(clonePath),
+      this.git.listMarkdownFiles(ref),
       this.repo.listAgentContextDocs(workspaceId),
     ]);
     return buildDiscoveryList(files, agentDocs);

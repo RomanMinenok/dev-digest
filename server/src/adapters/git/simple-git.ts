@@ -11,6 +11,7 @@ import type {
   GitCommit,
 } from '@devdigest/shared';
 import { parseUnifiedDiff } from './diff-parser.js';
+import { walkMarkdownFiles } from '../../modules/project-context/walk.js';
 
 /**
  * Depth fetched by `sync()`. Deeper than the shallow clone (CLONE_DEPTH=1) so the
@@ -146,6 +147,17 @@ export class SimpleGitClient implements GitClient {
       throw new Error(`readFile: path escapes clone root: ${path}`);
     }
     return readFile(target, 'utf8');
+  }
+
+  /**
+   * Discovery walk for project-context (SPEC-01) — implements the `GitClient`
+   * port so `ProjectContextService` never imports the fs walk directly
+   * (architecture-review finding: keep `.md` walk/read out of `service.ts`
+   * bodies). The walk logic itself stays in `modules/project-context/walk.ts`;
+   * only the call site moved here, behind the port.
+   */
+  async listMarkdownFiles(repo: RepoRef): Promise<{ path: string; size_bytes: number }[]> {
+    return walkMarkdownFiles(this.clonePathFor(repo));
   }
 }
 
