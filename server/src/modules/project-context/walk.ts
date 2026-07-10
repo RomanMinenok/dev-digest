@@ -29,8 +29,9 @@ export interface MarkdownFile {
 
 /**
  * Recursively walk `root`, returning every `.md` file found (repo-relative,
- * forward-slash-normalized paths), excluding `EXCLUDED_DIRS` and never
- * following symlinks.
+ * forward-slash-normalized paths), excluding `EXCLUDED_DIRS`, any dotfile or
+ * dot-folder (`.claude`, `.github`, `.vscode`, hidden `.md` files, ...), and
+ * never following symlinks.
  */
 export async function walkMarkdownFiles(root: string): Promise<MarkdownFile[]> {
   const out: MarkdownFile[] = [];
@@ -52,6 +53,8 @@ async function walkDir(root: string, dir: string, out: MarkdownFile[]): Promise<
   for (const entry of entries) {
     if (entry.isSymbolicLink()) continue; // never follow symlinks (loops, perf)
     const name = entry.name;
+
+    if (name.startsWith('.')) continue; // hidden file/dir (.claude, .github, .DS_Store, ...)
 
     if (entry.isDirectory()) {
       if (EXCLUDED_SET.has(name)) continue;
