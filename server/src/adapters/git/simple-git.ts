@@ -1,5 +1,5 @@
 import { simpleGit, type SimpleGit } from 'simple-git';
-import { join } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 import { mkdir, readFile, access, rm } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import type {
@@ -74,6 +74,16 @@ export class SimpleGitClient implements GitClient {
     await this.git(repo).fetch(['origin', `pull/${n}/head:pr-${n}`]);
   }
 
+  async checkoutPullHead(repo: RepoRef, n: number): Promise<{ head: string }> {
+    // Reuse fetchPullHead to land the local `pr-<n>` ref, then hard-reset the
+    // working tree onto it — safe here because we never commit to or run code
+    // from the clone (same rationale as `sync()`).
+    await this.fetchPullHead(repo, n);
+    const g = this.git(repo);
+    await g.reset(['--hard', `pr-${n}`]);
+    return { head: (await g.revparse(['HEAD'])).trim() };
+  }
+
   async sync(repo: RepoRef, branch: string): Promise<{ head: string }> {
     // Resync the read-only mirror to upstream. A bare `fetch` only moves
     // `origin/<branch>`, so we `reset --hard` to advance local HEAD + worktree —
@@ -127,7 +137,15 @@ export class SimpleGitClient implements GitClient {
   }
 
   async readFile(repo: RepoRef, path: string): Promise<string> {
-    return readFile(join(this.clonePathFor(repo), path), 'utf8');
+    const root = this.clonePathFor(repo);
+    const target = resolve(root, path);
+    // Path-traversal guard: refuse a `path` that resolves outside the clone
+    // root (e.g. `../../etc/passwd`). Defense in depth — callers should only
+    // ever pass paths discovered by a repo-wide walk, but never trust that.
+    if (target !== root && !target.startsWith(root + sep)) {
+      throw new Error(`readFile: path escapes clone root: ${path}`);
+    }
+    return readFile(target, 'utf8');
   }
 }
 
