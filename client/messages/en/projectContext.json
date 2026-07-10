@@ -1,0 +1,22 @@
+{
+  "page": {
+    "crumbLab": "Skills Lab",
+    "crumbTitle": "Project Context",
+    "heading": "Project Context",
+    "subtitle": "Every markdown file discovered in this repo's clone. Attach docs to an Agent's Context tab or a Skill's Project context section to include them in reviews.",
+    "loadError": "Could not load discovered docs.",
+    "empty": {
+      "title": "No spec files yet",
+      "body": "No markdown files were found anywhere in this repo's clone."
+    },
+    "footer": {
+      "discovered": "{count, plural, one {# file discovered} other {# files discovered}}",
+      "tokens": "{count} tokens attached",
+      "scannedNow": "Scanned just now"
+    }
+  },
+  "row": {
+    "usedBy": "{count, plural, one {Used by # agent} other {Used by # agents}}",
+    "notAttached": "Not attached to any agent"
+  }
+}
