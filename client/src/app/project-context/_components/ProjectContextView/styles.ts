@@ -1,15 +1,24 @@
 import type { CSSProperties } from "react";
+import { LIST_WIDTH } from "./constants";
 
 export const s = {
-  page: {
+  shell: {
     display: "flex",
-    flexDirection: "column",
     height: "calc(100vh - 52px)",
     overflow: "hidden",
   } satisfies CSSProperties,
 
+  list: {
+    width: LIST_WIDTH,
+    flexShrink: 0,
+    borderRight: "1px solid var(--border)",
+    display: "flex",
+    flexDirection: "column",
+    background: "var(--bg-surface)",
+  } satisfies CSSProperties,
+
   header: {
-    padding: "28px 32px 20px",
+    padding: "20px 20px 16px",
     borderBottom: "1px solid var(--border)",
     display: "flex",
     flexDirection: "column",
@@ -18,17 +27,17 @@ export const s = {
   } satisfies CSSProperties,
 
   heading: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: 700,
     letterSpacing: "-0.02em",
   } satisfies CSSProperties,
 
   subtitle: {
-    fontSize: 13,
+    fontSize: 12,
     color: "var(--text-muted)",
   } satisfies CSSProperties,
 
-  body: {
+  listBody: {
     flex: 1,
     overflow: "auto",
     display: "flex",
@@ -39,27 +48,34 @@ export const s = {
     display: "flex",
     flexDirection: "column",
     gap: 10,
-    padding: "20px 32px",
+    padding: "16px 20px",
   } satisfies CSSProperties,
 
-  list: {
+  rows: {
     flex: 1,
     display: "flex",
     flexDirection: "column",
-    gap: 8,
-    padding: "20px 32px",
+    gap: 6,
+    padding: "12px",
   } satisfies CSSProperties,
 
   row: {
     borderRadius: 8,
-    border: "1px solid var(--border)",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: "var(--border)",
     background: "var(--bg-surface)",
-    padding: "10px 14px",
+    padding: "10px 12px",
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 12,
+    gap: 8,
     cursor: "pointer",
+  } satisfies CSSProperties,
+
+  rowActive: {
+    borderColor: "var(--border-strong)",
+    background: "var(--bg-elevated)",
   } satisfies CSSProperties,
 
   rowPath: {
@@ -75,7 +91,7 @@ export const s = {
   } satisfies CSSProperties,
 
   rowPathText: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: "var(--font-mono, monospace)",
     color: "var(--text-primary)",
     overflow: "hidden",
@@ -86,8 +102,8 @@ export const s = {
   usedByBtn: {
     display: "inline-flex",
     alignItems: "center",
-    padding: "4px 10px",
-    fontSize: 12,
+    padding: "3px 8px",
+    fontSize: 11,
     fontWeight: 500,
     borderRadius: 6,
     border: "1px solid var(--border-strong)",
@@ -99,25 +115,72 @@ export const s = {
   } satisfies CSSProperties,
 
   usedByNone: {
-    fontSize: 12,
+    fontSize: 11,
     color: "var(--text-muted)",
     flexShrink: 0,
   } satisfies CSSProperties,
 
   footer: {
     flexShrink: 0,
-    padding: "12px 32px",
+    padding: "10px 20px",
     borderTop: "1px solid var(--border)",
     display: "flex",
     alignItems: "center",
-    gap: 16,
-    fontSize: 12,
+    gap: 12,
+    fontSize: 11,
     color: "var(--text-muted)",
+    flexWrap: "wrap" as const,
   } satisfies CSSProperties,
 
   footerScanned: {
     color: "var(--text-secondary)",
     marginLeft: "auto",
+  } satisfies CSSProperties,
+
+  detail: {
+    flex: 1,
+    minWidth: 0,
+    display: "flex",
+    flexDirection: "column",
+  } satisfies CSSProperties,
+
+  detailEmpty: {
+    flex: 1,
+    display: "grid",
+    placeItems: "center",
+    minWidth: 0,
+  } satisfies CSSProperties,
+
+  detailHead: {
+    flexShrink: 0,
+    padding: "16px 28px",
+    borderBottom: "1px solid var(--border)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  } satisfies CSSProperties,
+
+  detailPath: {
+    fontSize: 14,
+    fontWeight: 600,
+    fontFamily: "var(--font-mono, monospace)",
+    color: "var(--text-primary)",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap" as const,
+  } satisfies CSSProperties,
+
+  detailTokens: {
+    fontSize: 12,
+    color: "var(--text-muted)",
+    flexShrink: 0,
+  } satisfies CSSProperties,
+
+  detailBody: {
+    flex: 1,
+    overflow: "auto",
+    padding: "20px 28px",
   } satisfies CSSProperties,
 
   previewBody: {

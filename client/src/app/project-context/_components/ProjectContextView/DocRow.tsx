@@ -10,22 +10,28 @@ import { agentContextDeepLink } from "./helpers";
 interface DocRowProps {
   doc: ContextDoc;
   usedByAgents: Agent[];
+  active: boolean;
   onOpen: (path: string) => void;
 }
 
 /** One discovered doc row: full repo-relative path + "Used by N agents".
- * Clicking anywhere on the row opens its content in the right-side preview
- * drawer. When N > 0 the "used by" count is itself a clickable control
- * listing the agents using it, each deep-linking into that agent's Context
- * tab (spec Edge cases) — its click is stopped from also opening the drawer.
- * When N = 0 it's plain text — no control. */
-export function DocRow({ doc, usedByAgents, onOpen }: DocRowProps) {
+ * Clicking anywhere on the row selects it, showing its content in the
+ * detail panel to the right. When N > 0 the "used by" count is itself a
+ * clickable control listing the agents using it, each deep-linking into
+ * that agent's Context tab (spec Edge cases) — its click is stopped from
+ * also selecting the row. When N = 0 it's plain text — no control. */
+export function DocRow({ doc, usedByAgents, active, onOpen }: DocRowProps) {
   const t = useTranslations("projectContext");
   const router = useRouter();
   const count = usedByAgents.length;
 
   return (
-    <div style={s.row} onClick={() => onOpen(doc.path)} role="button" tabIndex={0}>
+    <div
+      style={active ? { ...s.row, ...s.rowActive } : s.row}
+      onClick={() => onOpen(doc.path)}
+      role="button"
+      tabIndex={0}
+    >
       <div style={s.rowPath}>
         <Icon.FileText size={14} style={s.rowIcon} />
         <span style={s.rowPathText} title={doc.path}>
