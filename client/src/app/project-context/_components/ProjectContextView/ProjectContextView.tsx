@@ -82,7 +82,6 @@ export function ProjectContextView() {
             <DocRow
               key={doc.path}
               doc={doc}
-              usedByAgents={agentsUsingDoc(doc.path, agentList)}
               active={doc.path === selectedPath}
               onOpen={setSelectedPath}
             />
@@ -114,7 +113,11 @@ export function ProjectContextView() {
           <div style={s.listBody}>{content}</div>
         </div>
         {selectedPath ? (
-          <DocDetail repoId={repoId} path={selectedPath} />
+          <DocDetail
+            repoId={repoId}
+            path={selectedPath}
+            usedByAgents={agentsUsingDoc(selectedPath, agentList)}
+          />
         ) : (
           <div style={s.detailEmpty} />
         )}

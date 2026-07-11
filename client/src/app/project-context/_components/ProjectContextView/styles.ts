@@ -88,6 +88,13 @@ export const s = {
   rowIcon: {
     color: "var(--text-muted)",
     flexShrink: 0,
+    marginTop: 2,
+  } satisfies CSSProperties,
+
+  rowIconActive: {
+    color: "var(--blue-text, #60a5fa)",
+    flexShrink: 0,
+    marginTop: 2,
   } satisfies CSSProperties,
 
   rowPathText: {
@@ -97,6 +104,42 @@ export const s = {
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap" as const,
+  } satisfies CSSProperties,
+
+  rowMain: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 3,
+    minWidth: 0,
+  } satisfies CSSProperties,
+
+  rowFileName: {
+    fontSize: 13,
+    fontWeight: 600,
+    color: "var(--text-primary)",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap" as const,
+  } satisfies CSSProperties,
+
+  rowDirText: {
+    fontSize: 11,
+    fontFamily: "var(--font-mono, monospace)",
+    color: "var(--text-muted)",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap" as const,
+  } satisfies CSSProperties,
+
+  rootBadge: {
+    display: "inline-flex",
+    alignItems: "center",
+    padding: "3px 8px",
+    fontSize: 10,
+    fontWeight: 700,
+    letterSpacing: "0.03em",
+    borderRadius: 6,
+    flexShrink: 0,
   } satisfies CSSProperties,
 
   usedByBtn: {
@@ -159,6 +202,13 @@ export const s = {
     alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
+  } satisfies CSSProperties,
+
+  detailHeadRight: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    flexShrink: 0,
   } satisfies CSSProperties,
 
   detailPath: {

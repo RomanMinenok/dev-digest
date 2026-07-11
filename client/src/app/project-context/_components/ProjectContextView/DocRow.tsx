@@ -1,29 +1,24 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
-import { Dropdown, Icon } from "@devdigest/ui";
-import type { Agent, ContextDoc } from "@devdigest/shared";
+import { Icon } from "@devdigest/ui";
+import type { ContextDoc } from "@devdigest/shared";
 import { s } from "./styles";
-import { agentContextDeepLink } from "./helpers";
+import { docRootLabel, docRootBadgeColor, docFileName, docDirName } from "./helpers";
 
 interface DocRowProps {
   doc: ContextDoc;
-  usedByAgents: Agent[];
   active: boolean;
   onOpen: (path: string) => void;
 }
 
-/** One discovered doc row: full repo-relative path + "Used by N agents".
- * Clicking anywhere on the row selects it, showing its content in the
- * detail panel to the right. When N > 0 the "used by" count is itself a
- * clickable control listing the agents using it, each deep-linking into
- * that agent's Context tab (spec Edge cases) — its click is stopped from
- * also selecting the row. When N = 0 it's plain text — no control. */
-export function DocRow({ doc, usedByAgents, active, onOpen }: DocRowProps) {
-  const t = useTranslations("projectContext");
-  const router = useRouter();
-  const count = usedByAgents.length;
+/** One discovered doc row: filename (bold) with its directory below, and a
+ * colored root-folder badge on the right. Clicking anywhere on the row
+ * selects it, showing its content in the detail panel to the right — where
+ * the "Used by N agents" control now lives (moved out of the row). The file
+ * icon turns blue when the row is the active selection. */
+export function DocRow({ doc, active, onOpen }: DocRowProps) {
+  const rootLabel = docRootLabel(doc.path);
+  const badgeColor = docRootBadgeColor(rootLabel);
 
   return (
     <div
@@ -33,29 +28,17 @@ export function DocRow({ doc, usedByAgents, active, onOpen }: DocRowProps) {
       tabIndex={0}
     >
       <div style={s.rowPath}>
-        <Icon.FileText size={14} style={s.rowIcon} />
-        <span style={s.rowPathText} title={doc.path}>
-          {doc.path}
-        </span>
-      </div>
-      {count > 0 ? (
-        <div onClick={(e) => e.stopPropagation()}>
-          <Dropdown
-            align="right"
-            trigger={
-              <button type="button" style={s.usedByBtn}>
-                {t("row.usedBy", { count })}
-              </button>
-            }
-            items={usedByAgents.map((a) => ({
-              label: a.name,
-              onClick: () => router.push(agentContextDeepLink(a.id, doc.path)),
-            }))}
-          />
+        <Icon.FileText size={14} style={active ? s.rowIconActive : s.rowIcon} />
+        <div style={s.rowMain}>
+          <span style={s.rowFileName} title={doc.path}>
+            {docFileName(doc.path)}
+          </span>
+          <span style={s.rowDirText}>{docDirName(doc.path)}</span>
         </div>
-      ) : (
-        <span style={s.usedByNone}>{t("row.notAttached")}</span>
-      )}
+      </div>
+      <span style={{ ...s.rootBadge, background: badgeColor.bg, color: badgeColor.fg }}>
+        {rootLabel}
+      </span>
     </div>
   );
 }

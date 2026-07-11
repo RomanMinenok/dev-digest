@@ -24,3 +24,36 @@ export function agentContextDeepLink(agentId: string, docPath: string): string {
 export function formatTokenCount(n: number): string {
   return n.toLocaleString("en-US");
 }
+
+const ROOT_BADGE_COLORS: Record<string, { bg: string; fg: string }> = {
+  docs: { bg: "var(--green-tint, #16382a)", fg: "var(--green-text, #4ade80)" },
+};
+const DEFAULT_BADGE_COLOR = { bg: "var(--bg-elevated)", fg: "var(--text-secondary)" };
+
+/** Root-folder badge label for a repo-relative path: first path segment
+ * uppercased, or "ROOT" for a file with no directory. */
+export function docRootLabel(path: string): string {
+  const idx = path.indexOf("/");
+  return idx === -1 ? "ROOT" : path.slice(0, idx).toUpperCase();
+}
+
+/** Badge colors for a root-folder label (from docRootLabel); "docs" gets a
+ * distinct accent, every other folder (including ROOT) shares a neutral
+ * style so new top-level folders don't need a color added here. */
+export function docRootBadgeColor(rootLabel: string) {
+  return ROOT_BADGE_COLORS[rootLabel.toLowerCase()] ?? DEFAULT_BADGE_COLOR;
+}
+
+/** Bare filename (last path segment) for the row/detail heading. */
+export function docFileName(path: string): string {
+  const idx = path.lastIndexOf("/");
+  return idx === -1 ? path : path.slice(idx + 1);
+}
+
+/** Directory portion of a path, with trailing slash; "" for a root-level
+ * file (row still renders an empty second line to keep row heights
+ * consistent). */
+export function docDirName(path: string): string {
+  const idx = path.lastIndexOf("/");
+  return idx === -1 ? "" : `${path.slice(0, idx)}/`;
+}
