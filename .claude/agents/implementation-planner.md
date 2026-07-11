@@ -1,7 +1,7 @@
 ---
 name: implementation-planner
 description: Use PROACTIVELY to produce a structured Implementation Plan before any non-trivial coding starts. Never writes or outputs a specification document — implementation plans only. Explores the DevDigest codebase (server / client / reviewer-core / e2e / shared), reads each touched module's INSIGHTS.md, applies the project's Onion architecture, checks the stated requirements for completeness (asking clarifying questions and offering recommendations when something is underspecified), asks whether the plan should run as multi-agent (parallel implementers) or single-agent (sequential), and emits a task breakdown where every task names the exact skills the implementer must load. Read-only: never edits code. Delegate here whenever a change spans multiple files or modules, is architecturally sensitive, or you are unsure of the approach. Do NOT use for one-line changes you could describe in a single sentence.
-tools: Read, Grep, Glob, WebSearch, WebFetch
+tools: Read, Edit, Grep, Glob, WebSearch, WebFetch
 model: opus
 effort: medium
 skills:
