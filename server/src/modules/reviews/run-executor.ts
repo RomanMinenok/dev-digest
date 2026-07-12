@@ -6,7 +6,7 @@ import * as schema from '../../db/schema.js';
 import type { AgentRow } from '../../db/rows.js';
 import type { ReviewRepository, FindingRow, PullRow, ReviewRow } from './repository.js';
 import { REVIEW_STRATEGY } from './constants.js';
-import { taskLine } from './helpers.js';
+import { taskLine, resolveAttachedDocPaths } from './helpers.js';
 import { loadDiff } from './diff-loader.js';
 
 /** Thrown by a run when the user cancels it mid-flight (between map files). */
@@ -153,6 +153,18 @@ export class ReviewRunExecutor {
     runLog.info(`Starting review with agent "${agent.name}" (${agent.provider}/${agent.model})`);
 
     try {
+      // T12 — sync the clone to this PR's exact head BEFORE any attached-doc
+      // read below. GitClient.readFile reads whatever is CURRENTLY checked
+      // out, not a pinned sha (server/INSIGHTS.md) — reading first and
+      // syncing later would silently read the wrong commit's docs. Best
+      // effort: never fail the run over a sync hiccup, just fall back to
+      // whatever is on disk already.
+      try {
+        await this.container.git.checkoutPullHead({ owner: repo.owner, name: repo.name }, pull.number);
+      } catch (err) {
+        runLog.info(`context docs: checkout PR head failed — ${(err as Error).message}`);
+      }
+
       // Resolve the agent's LLM provider. (container.llm throws if the provider
       // key is missing — caught below and persisted as a failed run.)
       const llm = await runLog.step(
@@ -192,6 +204,31 @@ export class ReviewRunExecutor {
       const skillBodies = linked.filter((l) => l.skill.enabled).map((l) => l.skill.body);
       if (skillBodies.length > 0) {
         runLog.info(`Injected ${skillBodies.length} enabled skill(s) into the prompt`);
+      }
+
+      // T12 — attached project-context docs (SPEC-01, AC-16/AC-8). Ordered
+      // union of the agent's own context_docs + each linked-AND-enabled
+      // skill's context_docs — see resolveAttachedDocPaths for the
+      // dedup/order rule (agent's own docs first, first-occurrence wins).
+      const docPaths = resolveAttachedDocPaths(agent.contextDocs, linked);
+
+      const specs: string[] = [];
+      const specsRead: RunTrace['specs_read'] = [];
+      for (const path of docPaths) {
+        try {
+          const content = await this.container.git.readFile({ owner: repo.owner, name: repo.name }, path);
+          specs.push(content);
+          specsRead.push({ path, content });
+        } catch (err) {
+          // Missing/unreadable doc must not fail the run (AC-19) — omit it
+          // from the prompt but still record it as unresolved for the trace
+          // (AC-21).
+          runLog.info(`context docs: unreadable "${path}" — ${(err as Error).message}`);
+          specsRead.push({ path, content: null });
+        }
+      }
+      if (specs.length > 0) {
+        runLog.info(`Injected ${specs.length} attached context doc(s) into the prompt`);
       }
 
       // Declared intent (Phase 7): read the PR's STORED intent (never compute
@@ -235,6 +272,10 @@ export class ReviewRunExecutor {
         // PR author's description/body — untrusted; assemblePrompt wraps +
         // truncates it. Omitted when the PR has no body.
         ...(pull.body ? { prDescription: pull.body } : {}),
+        // T12 — attached project-context docs, in resolved order. Omit-when-
+        // empty: a run with no attached/resolvable docs produces a byte-
+        // identical prompt to the pre-feature baseline (AC-16/AC-19).
+        ...(specs.length ? { specs } : {}),
         task,
         sessionId: `${repo.owner}/${repo.name}#${pull.number}:${agent.name}`,
         onEvent: (e) => runLog.event(e.kind, e.msg, e.data),
@@ -313,7 +354,7 @@ export class ReviewRunExecutor {
         })),
         raw_output: outcome.raw,
         memory_pulled: [],
-        specs_read: [],
+        specs_read: specsRead,
         // Persisted log = the run's FULL event buffer (incl. shared pre-work:
         // diff load + intent), not just events recorded inside this method.
         log: runLog.logFor(runId),

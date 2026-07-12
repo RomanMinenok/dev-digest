@@ -26,6 +26,7 @@ export function toAgentDto(row: AgentRow & { skillCount?: number }): Agent {
     ci_fail_on: row.ciFailOn as CiFailOn,
     repo_intel: row.repoIntel,
     skill_count: row.skillCount ?? 0,
+    context_docs: row.contextDocs ?? [],
   };
 }
 

@@ -32,6 +32,7 @@ export interface CreateAgentInput {
   strategy?: ReviewStrategy;
   ci_fail_on?: CiFailOn;
   repo_intel?: boolean;
+  context_docs?: string[];
   enabled?: boolean;
 }
 
@@ -45,6 +46,7 @@ export interface UpdateAgentInput {
   strategy?: ReviewStrategy;
   ci_fail_on?: CiFailOn;
   repo_intel?: boolean;
+  context_docs?: string[];
   enabled?: boolean;
 }
 
@@ -82,6 +84,7 @@ export class AgentsService {
       ...(input.strategy !== undefined ? { strategy: input.strategy } : {}),
       ...(input.ci_fail_on !== undefined ? { ciFailOn: input.ci_fail_on } : {}),
       ...(input.repo_intel !== undefined ? { repoIntel: input.repo_intel } : {}),
+      ...(input.context_docs !== undefined ? { contextDocs: input.context_docs } : {}),
       enabled: input.enabled,
       createdBy: userId ?? null,
     });
@@ -103,6 +106,7 @@ export class AgentsService {
       ...(patch.strategy !== undefined ? { strategy: patch.strategy } : {}),
       ...(patch.ci_fail_on !== undefined ? { ciFailOn: patch.ci_fail_on } : {}),
       ...(patch.repo_intel !== undefined ? { repoIntel: patch.repo_intel } : {}),
+      ...(patch.context_docs !== undefined ? { contextDocs: patch.context_docs } : {}),
       ...(patch.enabled !== undefined ? { enabled: patch.enabled } : {}),
     });
     return row ? toAgentDto(row) : undefined;
@@ -169,6 +173,21 @@ export class AgentsService {
     const resolvedOrder = order ?? existing.length;
     await this.repo.linkSkill(agentId, skillId, resolvedOrder);
     return this.skillLinks(agentId);
+  }
+
+  /**
+   * Set / reorder the agent's attached context docs (repo-relative paths).
+   * Replaces the whole ordered array wholesale — mirrors `setSkills`'s
+   * immediate-persist behavior for the Context tab's toggle/reorder actions
+   * (AC-6/AC-8/AC-14: paths only, order preserved).
+   */
+  async setContextDocs(
+    workspaceId: string,
+    agentId: string,
+    contextDocs: string[],
+  ): Promise<Agent | undefined> {
+    const row = await this.repo.update(workspaceId, agentId, { contextDocs });
+    return row ? toAgentDto(row) : undefined;
   }
 
   /**
