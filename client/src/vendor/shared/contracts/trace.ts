@@ -84,10 +84,19 @@ export const RunTrace = z.object({
   tool_calls: z.array(ToolCall),
   raw_output: z.string(),
   memory_pulled: z.array(MemoryPulled),
-  specs_read: z.array(z.string()),
+  specs_read: z.array(z.object({ path: z.string(), content: z.string().nullable() })),
   log: z.array(RunLogLine),
 });
 export type RunTrace = z.infer<typeof RunTrace>;
+
+/** A context doc surfaced in the knowledge UI: repo-relative path, size on
+    disk, and how many agents/skills reference it. */
+export const ContextDoc = z.object({
+  path: z.string(),
+  size_bytes: z.number().int(),
+  used_by_count: z.number().int(),
+});
+export type ContextDoc = z.infer<typeof ContextDoc>;
 
 /**
  * One row of a PR's run history (every agent_runs row, any status). Surfaced on

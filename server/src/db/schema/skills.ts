@@ -1,4 +1,5 @@
 import { pgTable, uuid, text, integer, boolean, jsonb, primaryKey } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import { now } from './_shared';
 import { workspaces } from './core';
 
@@ -17,6 +18,7 @@ export const skills = pgTable('skills', {
   enabled: boolean('enabled').notNull().default(true),
   version: integer('version').notNull().default(1),
   evidenceFiles: jsonb('evidence_files').$type<string[]>(),
+  contextDocs: jsonb('context_docs').$type<string[]>().default(sql`'[]'::jsonb`),
   createdAt: now(),
 });
 
