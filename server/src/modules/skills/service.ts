@@ -26,6 +26,7 @@ export interface CreateSkillInput {
   source?: SkillSource;
   enabled?: boolean;
   summary?: string;
+  context_docs?: string[];
 }
 
 export interface UpdateSkillInput {
@@ -35,6 +36,7 @@ export interface UpdateSkillInput {
   body?: string;
   enabled?: boolean;
   summary?: string;
+  context_docs?: string[];
 }
 
 export class SkillsService {
@@ -69,6 +71,7 @@ export class SkillsService {
       source: input.source ?? 'manual',
       enabled: input.enabled ?? true,
       ...(input.summary !== undefined ? { summary: input.summary } : {}),
+      ...(input.context_docs !== undefined ? { contextDocs: input.context_docs } : {}),
     });
     return toSkillDto(row);
   }
@@ -85,6 +88,7 @@ export class SkillsService {
       ...(patch.body !== undefined ? { body: patch.body } : {}),
       ...(patch.enabled !== undefined ? { enabled: patch.enabled } : {}),
       ...(patch.summary !== undefined ? { summary: patch.summary } : {}),
+      ...(patch.context_docs !== undefined ? { contextDocs: patch.context_docs } : {}),
     });
     return row ? toSkillDto(row) : undefined;
   }
@@ -129,6 +133,22 @@ export class SkillsService {
       body: snapshot.body,
       summary: `Restored v${version}`,
     });
+  }
+
+  /**
+   * Set / reorder the skill's attached context docs (repo-relative paths).
+   * Replaces the whole ordered array wholesale — mirrors the agents module's
+   * `setContextDocs` immediate-persist behavior for the Context tab's
+   * toggle/reorder actions. Does NOT bump the skill's body version (only body
+   * changes bump, per `isBodyChange`).
+   */
+  async setContextDocs(
+    workspaceId: string,
+    id: string,
+    contextDocs: string[],
+  ): Promise<Skill | undefined> {
+    const row = await this.repo.update(workspaceId, id, { contextDocs });
+    return row ? toSkillDto(row) : undefined;
   }
 
   /**

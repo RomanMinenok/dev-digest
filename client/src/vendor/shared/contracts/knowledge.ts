@@ -128,6 +128,9 @@ export const Skill = z.object({
   enabled: z.boolean(),
   version: z.number().int(),
   evidence_files: z.array(z.string()).nullish(),
+  // Paths to context docs (repo-relative) attached to this skill; default
+  // empty when none are set.
+  context_docs: z.array(z.string()).default([]),
 });
 export type Skill = z.infer<typeof Skill>;
 
@@ -221,6 +224,9 @@ export const Agent = z.object({
   // Number of skills linked to this agent (agent_skills). Populated by the
   // repository's list() JOIN; defaults to 0 for call sites that don't join.
   skill_count: z.number().int().default(0),
+  // Paths to context docs (repo-relative) attached to this agent; default
+  // empty when none are set.
+  context_docs: z.array(z.string()).default([]),
 });
 export type Agent = z.infer<typeof Agent>;
 
@@ -230,3 +236,29 @@ export const AgentSkillLink = z.object({
   order: z.number().int(),
 });
 export type AgentSkillLink = z.infer<typeof AgentSkillLink>;
+
+// The immutable config snapshot captured in `agent_versions` whenever an agent's
+// config changes (everything but `enabled`). Mirrors the shape written by the
+// agents repository — provider/model/prompt/output_schema/strategy/gate/repo_intel
+// plus the ordered skill ids linked at snapshot time. Used for reproducibility
+// (eval replays a past version) and for surfacing an agent's edit history.
+export const AgentVersionConfig = z.object({
+  provider: Provider,
+  model: z.string(),
+  system_prompt: z.string(),
+  output_schema: z.unknown().nullish(),
+  strategy: ReviewStrategy,
+  ci_fail_on: CiFailOn,
+  repo_intel: z.boolean(),
+  skills: z.array(z.string()),
+  context_docs: z.array(z.string()).default([]),
+});
+export type AgentVersionConfig = z.infer<typeof AgentVersionConfig>;
+
+export const AgentVersion = z.object({
+  agent_id: z.string(),
+  version: z.number().int(),
+  config: AgentVersionConfig,
+  created_at: z.string(),
+});
+export type AgentVersion = z.infer<typeof AgentVersion>;

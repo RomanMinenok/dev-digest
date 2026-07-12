@@ -170,6 +170,19 @@
   "evals": {
     "stub": "Evals arrive in a later lesson."
   },
+  "context": {
+    "title": "Project context to use",
+    "inheritCopy": "Any agent using this skill inherits these documents.",
+    "attachedCount": "{linked} of {total} attached",
+    "tokenTotal": "{count} tokens",
+    "filterPlaceholder": "Filter docs…",
+    "orderHint": "Order matters — earlier docs appear earlier in the assembled prompt. Toggle to attach.",
+    "staleBadge": "Missing on disk",
+    "preview": "Preview",
+    "serializesAs": "Serializes as",
+    "serializesEmpty": "No docs attached — nothing is added to the prompt.",
+    "serializesLoading": "Loading attached doc content…"
+  },
   "create": {
     "title": "Create a skill",
     "subtitle": "Write a skill from scratch. It is enabled by default.",
