@@ -206,6 +206,14 @@ export interface GitClient {
   clone(repo: RepoRef, url: string, opts?: CloneOptions): Promise<{ path: string }>;
   fetchPullHead(repo: RepoRef, n: number): Promise<void>;
   /**
+   * Fetch PR `n`'s head ref and hard-reset the clone's local working tree to
+   * it (composes `fetchPullHead` + a checkout). Use this to pin the clone to
+   * an exact PR head before reading repo files — `readFile` always reads
+   * whatever is CURRENTLY checked out, there is no sha-scoped read. Returns
+   * the resulting HEAD sha.
+   */
+  checkoutPullHead(repo: RepoRef, n: number): Promise<{ head: string }>;
+  /**
    * Resync an already-cloned repo to the tip of `branch`: fetch from origin and
    * advance the local working tree to `origin/<branch>`. Unlike `clone`'s bare
    * `fetch` (which only moves remote-tracking refs), this moves local HEAD so a
@@ -225,6 +233,14 @@ export interface GitClient {
   log(repo: RepoRef, path?: string): Promise<GitCommit[]>;
   readFile(repo: RepoRef, path: string): Promise<string>;
   clonePathFor(repo: RepoRef): string;
+  /**
+   * Every `.md` file in `repo`'s clone (repo-relative, forward-slash paths),
+   * at any depth, excluding standard excluded dirs (`.git`, `node_modules`,
+   * etc). Backs project-context discovery (SPEC-01) — keeps the raw
+   * filesystem walk behind this port so Application-layer callers never
+   * import fs directly.
+   */
+  listMarkdownFiles(repo: RepoRef): Promise<{ path: string; size_bytes: number }[]>;
 }
 
 // ---------- CodeIndex (ripgrep + tree-sitter) ----------

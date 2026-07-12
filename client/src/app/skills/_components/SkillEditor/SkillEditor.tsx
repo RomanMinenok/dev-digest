@@ -9,6 +9,7 @@ import { Tabs, Badge, Button, Icon } from "@devdigest/ui";
 import type { Skill } from "@devdigest/shared";
 import { typeColor } from "../SkillCard/helpers";
 import { ConfigTab } from "./_components/ConfigTab";
+import { ContextSection } from "./_components/ContextSection";
 import { PreviewTab } from "./_components/PreviewTab";
 import { EvalsTab } from "./_components/EvalsTab";
 import { StatsTab } from "./_components/StatsTab";
@@ -52,7 +53,12 @@ export function SkillEditor({
         <Tabs tabs={tabs} value={tab} onChange={onTab} pad="0 24px" />
       </div>
       <div style={s.body}>
-        {tab === "config" && <ConfigTab skill={skill} />}
+        {tab === "config" && (
+          <>
+            <ConfigTab skill={skill} />
+            <ContextSection skill={skill} />
+          </>
+        )}
         {tab === "preview" && <PreviewTab skill={skill} />}
         {tab === "evals" && <EvalsTab />}
         {tab === "stats" && <StatsTab skill={skill} />}
