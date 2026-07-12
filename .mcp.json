@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "devdigest": {
+      "command": "npx",
+      "args": ["-y", "tsx", "mcp/src/index.ts"],
+      "env": {
+        "DEVDIGEST_API_URL": "http://localhost:3001"
+      },
+      "timeout": 130000
+    }
+  }
+}

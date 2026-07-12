@@ -126,7 +126,7 @@ d('Intent module (Testcontainers pg)', () => {
     await app.close();
   });
 
-  it('stale head_sha triggers auto-recompute on GET', async () => {
+  it('stale head_sha does NOT trigger auto-recompute on GET — cached row is returned as-is', async () => {
     const app = await makeApp();
     const pr = await setupPr('sha-old');
 
@@ -138,7 +138,12 @@ d('Intent module (Testcontainers pg)', () => {
 
     const second = await app.inject({ method: 'GET', url: `/pulls/${pr.id}/intent` });
     expect(second.statusCode).toBe(200);
-    expect(second.json().head_sha).toBe('sha-new');
+    expect(second.json().head_sha).toBe('sha-old');
+
+    // Only the manual recompute trigger refreshes a stale row.
+    const recompute = await app.inject({ method: 'POST', url: `/pulls/${pr.id}/intent/recompute` });
+    expect(recompute.statusCode).toBe(200);
+    expect(recompute.json().head_sha).toBe('sha-new');
 
     await app.close();
   });

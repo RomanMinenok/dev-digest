@@ -52,9 +52,13 @@ export const DownstreamImpact = z.object({
 });
 export type DownstreamImpact = z.infer<typeof DownstreamImpact>;
 
+export const BlastStatus = z.enum(['full', 'partial', 'degraded']);
+export type BlastStatus = z.infer<typeof BlastStatus>;
+
 export const BlastRadius = z.object({
   changed_symbols: z.array(ChangedSymbol),
   downstream: z.array(DownstreamImpact),
+  status: BlastStatus,
   summary: z.string(),
 });
 export type BlastRadius = z.infer<typeof BlastRadius>;

@@ -14,6 +14,7 @@ import { PrDetailHeader } from "./_components/PrDetailHeader";
 import { OverviewTab } from "./_components/OverviewTab";
 import { FindingsTab } from "./_components/FindingsTab";
 import { DiffTab } from "./_components/DiffTab";
+import { BlastTab } from "./_components/BlastTab";
 import { sessionWindowFindings } from "./_components/SmartDiffViewer/helpers";
 import RunTraceDrawer from "./_components/RunTraceDrawer";
 import { usePullDetail, usePulls } from "../../../../../lib/hooks";
@@ -91,7 +92,12 @@ export default function PRDetailPage() {
     if (tab !== "diff" && tab !== "findings") return;
     const main = document.querySelector("main");
     if (!main) return;
-    main.scrollTop = tabScrollTop.current[tab] ?? 0;
+    // A pending Smart Diff target finding means FindingsPanel owns the scroll
+    // (centers on the target card) — restoring the saved offset here would
+    // race it and land on a random position. See client/INSIGHTS.md.
+    if (!(tab === "findings" && findingId)) {
+      main.scrollTop = tabScrollTop.current[tab] ?? 0;
+    }
     const onScroll = () => {
       tabScrollTop.current[tab] = main.scrollTop;
     };
@@ -219,6 +225,10 @@ export default function PRDetailPage() {
             findings={smartDiffFindings}
             onFindingClick={onFindingClick}
           />
+        )}
+
+        {tab === "blast" && (
+          <BlastTab prId={prId} repoFullName={repoFullName} headSha={pr.head_sha} />
         )}
       </div>
 
