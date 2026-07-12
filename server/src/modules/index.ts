@@ -11,6 +11,9 @@ import repoIntel from './repo-intel/routes.js';
 import conventions from './conventions/routes.js';
 import intent from './intent/routes.js';
 import blast from './blast/routes.js';
+import projectContext from './project-context/routes.js';
+import brief from './brief/routes.js';
+import ciWebhook from './pulls/webhook.js';
 
 /**
  * Module registry. Each feature module is a Fastify plugin in
@@ -38,4 +41,10 @@ export const modules: Record<string, FastifyPluginAsync> = {
   conventions,
   intent,
   blast,
+<<<<<<< HEAD
+=======
+  projectContext,
+  brief,
+  ciWebhook,
+>>>>>>> 3394449 (feat(pulls): add CI webhook endpoint for external check-run notifications)
 };
