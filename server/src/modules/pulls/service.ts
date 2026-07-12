@@ -5,8 +5,8 @@ import { ReviewService } from '../reviews/service.js';
 import type { ReviewDto } from '../reviews/helpers.js';
 import { classifyFile } from './classifier.js';
 import { PullsRepository } from './repository.js';
+import { selectSessionWindow } from '../_shared/session-window.js';
 
-const SESSION_WINDOW_MS = 60_000;
 const SPLIT_LINE_THRESHOLD = 400;
 const ROLE_ORDER: SmartDiffRole[] = ['core', 'wiring', 'boilerplate'];
 const SPLIT_NAME_BY_ROLE: Record<SmartDiffRole, string> = {
@@ -27,14 +27,12 @@ export interface SmartDiffPrFile {
  * builder or ReviewService.
  */
 export function assembleSmartDiff(prFiles: SmartDiffPrFile[], reviews: ReviewDto[]): SmartDiff {
-  // "Findings from the last review" = all reviews within a 60 s window of
-  // the most recent created_at (matches the PR-list cost/severity rollup
-  // pattern) — multiple agents from one "Run Review" click, not just the
-  // single newest review.
-  const latestMs = reviews.reduce((max, r) => Math.max(max, new Date(r.created_at).getTime()), 0);
-  const sessionFindings = reviews
-    .filter((r) => latestMs - new Date(r.created_at).getTime() <= SESSION_WINDOW_MS)
-    .flatMap((r) => r.findings);
+  // "Findings from the last review" = all reviews in the same session as the
+  // most recent one (see `_shared/session-window.ts`) — multiple agents from
+  // one "Run Review" click, not just the single newest review.
+  const sessionFindings = selectSessionWindow(reviews, (r) => new Date(r.created_at).getTime()).flatMap(
+    (r) => r.findings,
+  );
 
   const findingLinesByPath = new Map<string, number[]>();
   for (const finding of sessionFindings) {

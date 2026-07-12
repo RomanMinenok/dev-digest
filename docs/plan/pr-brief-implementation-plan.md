@@ -1,6 +1,6 @@
 # Implementation Plan — PR Brief (SPEC-02)
 
-Status: **implemented** (T1-T17 merged on `lesson-05`). Spec: `specs/SPEC-02-pr-brief.md`.
+Spec: `specs/SPEC-02-pr-brief.md`.
 
 ## Context & module map
 
@@ -93,24 +93,7 @@ sequenceDiagram
 | T16 | client | `ReviewFocus` full-width section (GitHub line-range links, shared severity colors) | ✅ merged |
 | T17 | client | Wire `PrBriefCard`/Risk Areas/`ReviewFocus` into `OverviewTab`/`page.tsx` | ✅ merged |
 
-## Key decisions made during the run
-
-- Integration branch: `lesson-05` (worked directly on it, no separate feature branch).
-- `risk_brief` feature id reused (not a new id) for the Brief LLM call.
-- Brief-specific i18n copy stays in `brief.json` under namespace `"brief"`; verdict header reuses existing `prReview.verdict.*` keys.
-- `worktree.baseRef` set to `"head"` in `.claude/settings.local.json` mid-run (see `server/INSIGHTS.md`) after repeated implementer-worktree staleness against the unpushed local `lesson-05` branch — root-cause fixed, not worked around per-task after that point.
-- `history` field on `PrBrief` populated as `{history: []}` (no cheap existing source); `intent`/`blast` fields populated from the already-loaded Intent/Blast for the PR.
-- Anti-hallucination gate (T6): keeps a `Risk` if it retains ≥1 valid `file_refs` entry after filtering, only drops it if ALL refs are fabricated.
-
-## Verification performed
-
-- `pnpm --filter @devdigest/api typecheck` — clean.
-- `pnpm --filter @devdigest/web typecheck` — clean.
-- `pnpm --filter @devdigest/web build` — succeeds.
-- Live: `GET /pulls/:id/brief` against the running dev server returns `200 null` for a PR with no completed review session (confirms the zero-LLM-call no-session path).
-- Per-task `MockLLMProvider`-based sanity scripts (T8) confirmed: no-session → `null` + zero LLM calls; `recompute` with no session → throws; completed-session fixture → exactly one `completeStructured` call, fully-populated `PrBrief`.
-
-## Deferred / not done in this run
+## Deferred
 
 - **Tests**: test-writer was not invoked (out of scope for `/implement-plan`). No unit/integration/RTL tests exist yet for `modules/brief/*` or the new client components.
 - **plan-verifier / architecture-reviewer**: run as the next step after this plan's tasks completed — see the session's final report for their verdicts.
