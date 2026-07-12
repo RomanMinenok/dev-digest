@@ -34,7 +34,9 @@
       "memoryPulled": "Memory pulled",
       "specsRead": "Specs read",
       "items": "{count, plural, one {# item} other {# items}}",
-      "none": "none"
+      "none": "none",
+      "openSpec": "Open stored content",
+      "specUnavailable": "Could not be read at run time — this spec may have since changed or been deleted"
     },
     "stat": {
       "duration": "DURATION",
