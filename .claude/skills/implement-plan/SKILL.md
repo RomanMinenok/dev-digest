@@ -1,6 +1,6 @@
 ---
 name: implement-plan
-description: "Orchestrates the Implement -> Verify -> Review (-> fix loop) stage of Spec-Driven Development for an ALREADY-WRITTEN Implementation Plan. Takes the plan (path or pasted), plus optional extra requirements prompt, design references, and execution mode (parallel waves by default, or sequential one-task-at-a-time), dispatches `implementer` agents (each in its own git worktree), merges each wave into an integration branch, runs `plan-verifier` for completeness, runs `architecture-reviewer` for structure, and auto-fixes Critical/High findings for up to 2 review iterations before handing control back to the user. Never runs spec-creator or implementation-planner — those are separate, manual, upstream steps. Does not run test-writer (currently disabled by design; add tests manually). Invoke manually with /implement-plan."
+description: "Orchestrates the Implement -> Verify -> Review (-> fix loop) stage of Spec-Driven Development for an ALREADY-WRITTEN Implementation Plan. Takes the plan (path or pasted), plus optional extra requirements prompt, design references, execution mode (parallel waves by default, or sequential one-task-at-a-time), and worktree isolation (optional, off by default), dispatches `implementer` agents, merges each wave into an integration branch when worktree isolation is on, runs `plan-verifier` for completeness, runs `architecture-reviewer` for structure, and auto-fixes Critical/High findings for up to 2 review iterations before handing control back to the user. Never runs spec-creator or implementation-planner — those are separate, manual, upstream steps. Does not run test-writer (currently disabled by design; add tests manually). Invoke manually with /implement-plan."
 user-invocable: true
 allowed-tools: Read, Grep, Glob, Bash, Agent
 ---
@@ -44,15 +44,26 @@ Ask for whatever wasn't already given, before doing anything else:
 3. **Design references** (optional) — paths under `design/**`. Pass the
    relevant path(s) to any task whose module is `client` or whose scope
    plainly needs a visual reference; don't force it onto backend-only tasks.
-4. **Execution mode** (optional, default `parallel`) — if the user says
+4. **Worktree isolation** (optional, default **off**) — ask the user: "Should
+   each `implementer` run in its own git worktree (safer against file
+   clobbering when running in parallel, but starts with no `node_modules` and
+   needs merging afterward) or directly in the current working tree (default:
+   faster, no reinstall, no merge step)?" Only pass `isolation: "worktree"` to
+   the `Agent` tool call (Step 1.2) when the user opts in. If the user chooses
+   **parallel execution mode** (below) but leaves worktree isolation **off**,
+   warn them explicitly: concurrent implementers writing to the same working
+   tree can clobber each other's files even with disjoint `[P]` file scoping
+   (lockfiles, build artifacts, etc.) — recommend enabling worktree isolation
+   or switching to sequential mode, and proceed only after they confirm.
+5. **Execution mode** (optional, default `parallel`) — if the user says
    "sequential" / "one at a time" / "не паралельно" (however phrased), switch
    to **sequential mode**: every `[P]` marker in the plan is ignored and every
    task — regardless of how the planner tagged it — becomes its own
    single-task wave, dispatched and merged one at a time in plan order (still
-   respecting `depends on`). Everything else in Steps 1–4 (worktree per task,
-   merge-then-next, the fix loop) works identically; only the "dispatch
-   multiple `Agent` calls in one message" part of Step 1.2 is skipped. State
-   which mode is active at the top of the final report.
+   respecting `depends on`). Everything else in Steps 1–4 (worktree per task
+   when isolation is on, merge-then-next, the fix loop) works identically;
+   only the "dispatch multiple `Agent` calls in one message" part of Step 1.2
+   is skipped. State which mode is active at the top of the final report.
 
 ## Step 0 — Read the plan, build the graph
 
@@ -84,21 +95,30 @@ Repeat until every task is merged:
 2. **Dispatch.** For a multi-task wave (parallel mode only), call the `Agent`
    tool once per task, **all in the same message** (true parallelism); in
    sequential mode, call it once and wait for that task to finish (merge it,
-   per Step 1.4) before dispatching the next. Either way: `subagent_type:
-   "implementer"`, each prompt containing the task's full spec from the plan
-   (scope, files owned, skills to load, insights to apply, done-when), plus
-   any relevant extra-requirements text and design paths from the Inputs
-   step. One task per call — never bundle two plan tasks into one dispatch.
+   per Step 1.4, if worktree isolation is on) before dispatching the next.
+   Either way: `subagent_type: "implementer"`, each prompt containing the
+   task's full spec from the plan (scope, files owned, skills to load,
+   insights to apply, done-when), plus any relevant extra-requirements text
+   and design paths from the Inputs step. One task per call — never bundle
+   two plan tasks into one dispatch. If worktree isolation is on for this run
+   (per the Inputs step), pass `isolation: "worktree"` on the `Agent` call and
+   include the main worktree's absolute path (`pwd`) in the prompt, so the
+   implementer can symlink `node_modules` instead of reinstalling it. If
+   worktree isolation is off (the default), omit `isolation` — the
+   implementer works directly in the current working tree.
 3. **Check reports.** Each `implementer` returns `tsc`/`tests: PASS|FAIL` and
    a self-review note. A task reporting `FAIL` or "blocked" does **not** get
    merged — pause, surface it to the user with the agent's own evidence, and
    ask whether to retry, skip, or abort the whole run. Never merge on a
    fabricated or partial PASS.
-4. **Merge.** For each passing task in the wave, `git merge` its worktree
-   branch into the integration branch, one at a time. `[P]` tasks were scoped
-   to disjoint files by the planner, so this should be a clean merge — a real
-   conflict means the plan under-scoped `[P]` tasks; stop and report it rather
-   than resolving it silently.
+4. **Merge — only when worktree isolation is on.** For each passing task in
+   the wave, `git merge` its worktree branch into the integration branch, one
+   at a time. `[P]` tasks were scoped to disjoint files by the planner, so
+   this should be a clean merge — a real conflict means the plan
+   under-scoped `[P]` tasks; stop and report it rather than resolving it
+   silently. When worktree isolation is off, there is nothing to merge — the
+   implementer already made its changes directly in the integration branch's
+   working tree; skip this sub-step.
 5. Move to the next wave, computed from the now-updated integration branch.
 
 ## Step 2 — Completeness: plan-verifier
@@ -138,6 +158,9 @@ gaps, since a missing requirement usually needs a new plan task, not a patch.
 
 ## Execution mode
 <parallel | sequential>
+
+## Worktree isolation
+<on | off>
 
 ## Waves executed
 - Wave 1: T1, T2 [P] — merged

@@ -13,7 +13,7 @@
 | [spec-creator](spec-creator.md) | opus | Read, Grep, Glob, WebSearch, WebFetch, Write, Edit | Writes Spec-Driven Development specs. Interviews the requester with EARS-based clarifying questions (weaving in gaps, edge cases, cross-module concerns, and UX issues found by reading the code and `/design`) before writing anything, then writes exactly one file to `/specs/SPEC-NN-slug.md`. Restricted to `/specs/**` and `/design/**` — cannot touch application code. |
 | [researcher](researcher.md) | sonnet | Read, Grep, Glob, WebSearch, WebFetch | Read-only investigator — finds facts in the codebase or on the web and returns a strictly structured, honest report. Never modifies anything. |
 | [implementation-planner](implementation-planner.md) | opus | Read, Grep, Glob, WebSearch, WebFetch | Read-only architect — produces a structured **Implementation Plan** before non-trivial coding, never a specification. Checks requirements for completeness, asks multi-agent vs. single-agent execution mode, maps modules, applies Onion architecture, reads INSIGHTS.md, and breaks work into tasks that each name the skills the implementer must load. |
-| [implementer](implementer.md) | sonnet · `isolation: worktree` | Read, Edit, Write, Bash, Grep, Glob, Skill | Executes **one** plan task (backend or UI), runs safely in parallel (own git worktree), loads domain-specific skills, and iterates until the touched package's *existing* tests + type-check pass. Never writes tests. Self-review is limited to the code it wrote. |
+| [implementer](implementer.md) | sonnet · worktree isolation optional | Read, Edit, Write, Bash, Grep, Glob, Skill | Executes **one** plan task (backend or UI); runs in the current working tree by default, or in its own git worktree if the orchestrator opts into isolation for parallel runs. Loads domain-specific skills, iterates until the touched package's *existing* tests + type-check pass. Never writes tests. Self-review is limited to the code it wrote. |
 | [test-writer](test-writer.md) | sonnet · `isolation: worktree` | Read, Edit, Write, Bash, Grep, Glob, Skill | Writes/extends tests (backend or UI) for a scoped change. Reads `TESTING.md` + INSIGHTS first, follows repo test conventions and the typological philosophy, tests behaviour at the seams, then runs the suite and iterates until green — showing real output. Does not write production code. |
 | [architecture-reviewer](architecture-reviewer.md) | opus | Read, Grep, Glob, Bash *(read-only)* | Read-only **architectural** review — structure, not lines. Checks the Onion dependency rule, layer boundaries, coupling/cohesion, cycles, anemic domain, leaky ports. Findings by severity + confidence, each anchored to `path:line`. Never edits. |
 | [plan-verifier](plan-verifier.md) | opus | Read, Grep, Glob, Bash *(read-only)* | Read-only **completeness** audit — verifies every plan/requirement item is actually built. Builds a requirement→`path:line` traceability matrix (Implemented / Partial / Missing / Cannot-verify) and reports gaps honestly. Not a quality reviewer. |
@@ -38,9 +38,11 @@ flowchart LR
 
 - **Write agents** (touch files): `spec-creator` (writes only `/specs/**` and
   `/design/**`, never application code), `implementer` (code), `test-writer`
-  (tests), `doc-writer` (docs only). The two code/test agents use
-  `isolation: worktree` so they can run in parallel without clobbering each
-  other on disk.
+  (tests), `doc-writer` (docs only). `test-writer` always uses
+  `isolation: worktree`; `implementer` runs in the current working tree by
+  default and only gets its own worktree when the orchestrator opts into
+  isolation for a given run (needed for safe parallel dispatch, skippable in
+  sequential mode).
 - **Read-only agents** (no Edit/Write): `researcher`, `implementation-planner`,
   `plan-verifier`, `architecture-reviewer`. The two reviewers keep `Bash` but for
   **read-only evidence gathering only** (`tsc`, tests, `git log`) — never
@@ -69,10 +71,12 @@ flowchart LR
    mode) a `[P]` marker when it touches files disjoint from other tasks (i.e. safe
    to parallelize).
 2. **Implement** — one `implementer` per task. Tasks marked `[P]` can run in
-   parallel; each implementer gets its own git worktree so parallel runs can't
-   clobber each other's files on disk. Each implementer reads its module's local
-   `INSIGHTS.md`, loads the skills the plan assigned, writes the code, and loops on
-   tests + `tsc` until green.
+   parallel; each implementer *can* get its own git worktree, if the
+   orchestrator opts into worktree isolation for this run, so parallel runs
+   can't clobber each other's files on disk (off by default — the
+   orchestrator asks before dispatching). Each implementer reads its module's
+   local `INSIGHTS.md`, loads the skills the plan assigned, writes the code,
+   and loops on tests + `tsc` until green.
 
 The planner deliberately embeds the **full skills matrix**, so every practice the
 implementer will apply is decided up front, at planning time.
@@ -94,9 +98,12 @@ judgment call, not a read-only worker. That session:
    before proceeding — a reported `FAIL`/`blocked` stops that task's branch
    from being merged.
 4. **Merges each task's worktree branch** into the plan's integration branch
-   (one `git merge` per task, sequentially). `[P]` tasks were scoped to
-   disjoint files by the planner, so this should be a clean fast-forward/merge
-   — a real conflict means the plan under-scoped `[P]`, not a normal outcome.
+   (one `git merge` per task, sequentially) — only applies when worktree
+   isolation was used for the run; otherwise implementers already worked
+   directly in the integration branch's working tree and there's nothing to
+   merge. `[P]` tasks were scoped to disjoint files by the planner, so a merge
+   should be clean fast-forward — a real conflict means the plan
+   under-scoped `[P]`, not a normal outcome.
 5. Only starts the next wave from the updated integration branch.
 6. Once all waves are merged, runs `test-writer` for any test-owning tasks,
    then `plan-verifier`, then `architecture-reviewer`, then `doc-writer` — in
@@ -142,11 +149,12 @@ practices they encode:
   implementer's contract is "give it a way to verify its work" — write code, run
   tests/`tsc`, iterate until green, and *show real output as evidence* rather than
   asserting success.
-- **Orchestrator-workers + parallel isolation.** Work is decomposed into discrete,
-  independently verifiable tasks; `[P]` tasks touch disjoint files and each
-  implementer runs in its own worktree (`isolation: worktree`). Worktrees prevent
-  *file* conflicts; disjoint task scoping (the planner's job) prevents *logical*
-  conflicts.
+- **Orchestrator-workers + optional parallel isolation.** Work is decomposed
+  into discrete, independently verifiable tasks; `[P]` tasks touch disjoint
+  files, and the orchestrator can opt each implementer into its own worktree
+  (`isolation: worktree`) for a run. Worktrees prevent *file* conflicts when
+  enabled; disjoint task scoping (the planner's job) prevents *logical*
+  conflicts either way.
 - **Conditional Skills loading.** Skills are preloaded via the `skills:` frontmatter
   field *and* routed at runtime in the agent body by file type (backend vs UI), so
   the right domain skills load whether or not a given harness preloads frontmatter.
