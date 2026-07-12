@@ -22,6 +22,7 @@ const CreateSkillBody = z.object({
   source: SkillSource.optional(),
   enabled: z.boolean().optional(),
   summary: z.string().optional(),
+  context_docs: z.array(z.string()).optional(),
 });
 
 const UpdateSkillBody = z
@@ -32,10 +33,16 @@ const UpdateSkillBody = z
     body: z.string().min(1).optional(),
     enabled: z.boolean().optional(),
     summary: z.string().optional(),
+    context_docs: z.array(z.string()).optional(),
   })
   .refine((b) => Object.values(b).some((v) => v !== undefined), {
     message: 'Provide at least one field to update',
   });
+
+/** Wholesale replace of the ordered attached-doc paths (mirrors the agents module). */
+const SetContextDocsBody = z.object({
+  context_docs: z.array(z.string()),
+});
 
 /**
  * Skills module — CRUD + immutable body versions + usage stats + import preview.
@@ -48,6 +55,7 @@ const UpdateSkillBody = z
  *   GET    /skills/:id/versions/:version    → one snapshot
  *   POST   /skills/:id/restore/:version     → restore a version (writes a new one)
  *   GET    /skills/:id/stats                → usage stats (real used_by + placeholders)
+ *   POST   /skills/:id/context-docs         → set/reorder attached context docs (wholesale replace)
  *   POST   /skills/import/preview           → extract a skill from an upload (no persist)
  */
 export default async function skillsRoutes(appBase: FastifyInstance) {
@@ -77,6 +85,7 @@ export default async function skillsRoutes(appBase: FastifyInstance) {
       ...(body.source !== undefined ? { source: body.source } : {}),
       ...(body.enabled !== undefined ? { enabled: body.enabled } : {}),
       ...(body.summary !== undefined ? { summary: body.summary } : {}),
+      ...(body.context_docs !== undefined ? { context_docs: body.context_docs } : {}),
     });
     reply.status(201);
     return skill;
@@ -131,6 +140,17 @@ export default async function skillsRoutes(appBase: FastifyInstance) {
     if (!stats) throw new NotFoundError('Skill not found');
     return stats;
   });
+
+  app.post(
+    '/skills/:id/context-docs',
+    { schema: { params: IdParams, body: SetContextDocsBody } },
+    async (req) => {
+      const { workspaceId } = await getContext(app.container, req);
+      const skill = await service.setContextDocs(workspaceId, req.params.id, req.body.context_docs);
+      if (!skill) throw new NotFoundError('Skill not found');
+      return skill;
+    },
+  );
 
   // Multipart upload — no Zod body schema (the body is a file stream). The file
   // is read via req.file(); presence + extension are validated here as 400s.
