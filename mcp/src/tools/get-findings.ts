@@ -6,11 +6,11 @@ import { toErrorResult } from './tool-error.js';
 
 export function registerGetFindingsTool(server: McpServer, service: FindingsService): void {
   server.registerTool(
-    'devdigest_get_findings',
+    'get_findings',
     {
       title: 'Get PR review findings',
       description:
-        'Returns findings for an already-run review of a PR (call devdigest_run_agent_on_pr first). ' +
+        'Returns findings for an already-run review of a PR (call run_agent_on_pr first). ' +
         'Summary-first + paginated: leads with counts, then a page of ~10. ' +
         "Use response_format 'concise' (title+severity+file) or 'detailed' (adds line range, suggestion, finding_id).",
       inputSchema: GetFindingsInput.shape,

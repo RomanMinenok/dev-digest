@@ -15,10 +15,10 @@ attempt to start the API itself.
 | Var | Default | Purpose |
 | --- | --- | --- |
 | `DEVDIGEST_API_URL` | `http://localhost:3001` | Base URL of the running API |
-| `RUN_POLL_BUDGET_MS` | `120000` (~2 min) | How long `devdigest_run_agent_on_pr` polls before returning `status:"running"` |
+| `RUN_POLL_BUDGET_MS` | `120000` (~2 min) | How long `run_agent_on_pr` polls before returning `status:"running"` |
 | `MCP_REQUEST_TIMEOUT_MS` | `4000` | Per-HTTP-request timeout (not the poll budget) |
 
-**Important:** because `devdigest_run_agent_on_pr` can block for up to ~2 minutes, your
+**Important:** because `run_agent_on_pr` can block for up to ~2 minutes, your
 MCP client's own request timeout must be **≥120s** (matching `RUN_POLL_BUDGET_MS`),
 otherwise a long-running review will fail with a transport timeout instead of returning
 gracefully as `{status:"running"}`.
@@ -33,19 +33,23 @@ The repo root `.mcp.json` already registers this server (project scope):
   "env": { "DEVDIGEST_API_URL": "http://localhost:3001" } } } }
 ```
 
+Tool names are unprefixed — the host is expected to namespace by server name (as
+Claude Code does: `mcp__devdigest__list_agents`), matching the convention used by other
+MCP servers like GitHub's and chrome-devtools-mcp.
+
 ## The 5 tools
 
-1. **`devdigest_list_agents`** — `GET /agents`. Lists configured reviewer agents. Call
+1. **`list_agents`** — `GET /agents`. Lists configured reviewer agents. Call
    this first to get a valid `agent_id` — never invent one.
-2. **`devdigest_run_agent_on_pr`** — `POST /pulls/:id/review`. Starts a review run and
+2. **`run_agent_on_pr`** — `POST /pulls/:id/review`. Starts a review run and
    polls (`GET /pulls/:id/reviews`, correlated by `run_id`) up to `RUN_POLL_BUDGET_MS`.
    Returns `{status:"completed", findings, verdict, ...}` or `{status:"running", run_id,
    poll_after_seconds}`. Not read-only — it creates a review run.
-3. **`devdigest_get_findings`** — `GET /pulls/:id/reviews`. Summary-first + paginated
+3. **`get_findings`** — `GET /pulls/:id/reviews`. Summary-first + paginated
    findings for an already-run review. `response_format: "concise"|"detailed"`.
-4. **`devdigest_get_conventions`** — `GET /repos/:repoId/conventions`. Coding conventions
+4. **`get_conventions`** — `GET /repos/:repoId/conventions`. Coding conventions
    extracted for a repo. Empty result is valid (not yet scanned).
-5. **`devdigest_get_blast_radius`** — **STUB**. No such endpoint exists server-side yet;
+5. **`get_blast_radius`** — **STUB**. No such endpoint exists server-side yet;
    always returns `{status:"not_implemented"}` and never throws. Do not rely on it.
 
 All 5 accept `repo` as `owner/name` (matched against `full_name`, falling back to a

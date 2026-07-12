@@ -6,13 +6,13 @@ import { toErrorResult } from './tool-error.js';
 
 export function registerRunAgentOnPrTool(server: McpServer, service: RunAgentService): void {
   server.registerTool(
-    'devdigest_run_agent_on_pr',
+    'run_agent_on_pr',
     {
       title: 'Run reviewer agent on a PR',
       description:
-        "Starts a review of a PR by one agent (agent_id from devdigest_list_agents — don't invent it). " +
+        "Starts a review of a PR by one agent (agent_id from list_agents — don't invent it). " +
         "Runs in background; waits up to ~2 min then returns findings if done, else {status:'running', run_id}. " +
-        'Then call devdigest_get_findings. NOT read-only: creates a review run.',
+        'Then call get_findings. NOT read-only: creates a review run.',
       inputSchema: RunAgentOnPrInput.shape,
       outputSchema: RunResultOut,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
@@ -23,7 +23,7 @@ export function registerRunAgentOnPrTool(server: McpServer, service: RunAgentSer
         const text =
           result.status === 'completed'
             ? `Review completed. ${result.findings_summary}. Verdict: ${result.verdict ?? 'n/a'}.`
-            : `Still running (run_id=${result.run_id}). Poll again in ~${result.poll_after_seconds}s via devdigest_get_findings.`;
+            : `Still running (run_id=${result.run_id}). Poll again in ~${result.poll_after_seconds}s via get_findings.`;
         return { content: [{ type: 'text', text }], structuredContent: result };
       } catch (err) {
         return toErrorResult(err);

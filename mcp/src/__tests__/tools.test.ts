@@ -29,7 +29,7 @@ function fakeClient(overrides: Partial<DevDigestApiClient> = {}): DevDigestApiCl
   };
 }
 
-describe('devdigest_list_agents tool', () => {
+describe('list_agents tool', () => {
   it('returns content and structuredContent shaped as AgentOut[]', async () => {
     const client = fakeClient({
       getAgents: async () => [
@@ -40,7 +40,7 @@ describe('devdigest_list_agents tool', () => {
     registerListAgentsTool(server, client);
     const mcpClient = await connectedClient(server);
 
-    const result = await mcpClient.callTool({ name: 'devdigest_list_agents', arguments: {} });
+    const result = await mcpClient.callTool({ name: 'list_agents', arguments: {} });
     expect(result.isError).toBeFalsy();
     expect(result.structuredContent).toEqual({
       agents: [{ agent_id: 'a1', name: 'Security Reviewer', description: 'finds bugs', provider: 'anthropic', model: 'claude', enabled: true }],
@@ -49,14 +49,14 @@ describe('devdigest_list_agents tool', () => {
   });
 });
 
-describe('devdigest_get_conventions tool', () => {
+describe('get_conventions tool', () => {
   it('returns an empty-conventions message without error when repo has none scanned', async () => {
     const client = fakeClient({ getConventions: async () => [] });
     const server = new McpServer({ name: 'test', version: '0.0.0' });
     registerGetConventionsTool(server, client, new Resolver(client));
     const mcpClient = await connectedClient(server);
 
-    const result = await mcpClient.callTool({ name: 'devdigest_get_conventions', arguments: { repo: 'acme/widgets' } });
+    const result = await mcpClient.callTool({ name: 'get_conventions', arguments: { repo: 'acme/widgets' } });
     expect(result.isError).toBeFalsy();
     expect(result.structuredContent).toEqual({ conventions: [] });
     expect(result.content).toEqual([{ type: 'text', text: 'No conventions have been scanned yet for this repo.' }]);
@@ -68,12 +68,12 @@ describe('devdigest_get_conventions tool', () => {
     registerGetConventionsTool(server, client, new Resolver(client));
     const mcpClient = await connectedClient(server);
 
-    const result = await mcpClient.callTool({ name: 'devdigest_get_conventions', arguments: { repo: 'nope/nope' } });
+    const result = await mcpClient.callTool({ name: 'get_conventions', arguments: { repo: 'nope/nope' } });
     expect(result.isError).toBe(true);
   });
 });
 
-describe('devdigest_get_blast_radius tool', () => {
+describe('get_blast_radius tool', () => {
   it('returns structured blast data for a known repo/PR', async () => {
     const client = fakeClient({
       listPulls: async () => [{ id: 'pr-1', number: 1 }],
@@ -96,7 +96,7 @@ describe('devdigest_get_blast_radius tool', () => {
     const mcpClient = await connectedClient(server);
 
     const result = await mcpClient.callTool({
-      name: 'devdigest_get_blast_radius',
+      name: 'get_blast_radius',
       arguments: { repo: 'acme/widgets', pr_number: 1 },
     });
     expect(result.isError).toBeFalsy();
@@ -122,7 +122,7 @@ describe('devdigest_get_blast_radius tool', () => {
     const mcpClient = await connectedClient(server);
 
     const result = await mcpClient.callTool({
-      name: 'devdigest_get_blast_radius',
+      name: 'get_blast_radius',
       arguments: { repo: 'nope/nope', pr_number: 1 },
     });
     expect(result.isError).toBe(true);

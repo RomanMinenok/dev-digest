@@ -6,7 +6,7 @@ import { toErrorResult } from './tool-error.js';
 
 export function registerGetBlastRadiusTool(server: McpServer, service: BlastService): void {
   server.registerTool(
-    'devdigest_get_blast_radius',
+    'get_blast_radius',
     {
       title: 'Get PR blast radius',
       description:

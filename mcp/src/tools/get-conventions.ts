@@ -7,7 +7,7 @@ import { toErrorResult } from './tool-error.js';
 
 export function registerGetConventionsTool(server: McpServer, client: DevDigestApiClient, resolver: Resolver): void {
   server.registerTool(
-    'devdigest_get_conventions',
+    'get_conventions',
     {
       title: 'Get repo conventions',
       description:

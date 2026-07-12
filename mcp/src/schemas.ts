@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const RepoArg = z.string().min(1).describe("Repo as 'owner/name' (matched against full_name, falls back to name)");
 export const PrNumberArg = z.coerce.number().int().positive().describe('PR number (not the internal uuid)');
-export const AgentIdArg = z.string().min(1).describe('agent_id from devdigest_list_agents — never invent one');
+export const AgentIdArg = z.string().min(1).describe('agent_id from list_agents — never invent one');
 
 export const ListAgentsInput = z.object({});
 
