@@ -1,20 +1,34 @@
-/* IntentCard — the PR's declared intent (in/out-of-scope) at the top of the
-   Overview tab. Lazy-computes on mount via usePrIntent (GET is the trigger);
-   Recompute always forces a fresh classification.
+/* IntentCard — the PR's declared intent (in/out-of-scope) plus a Risk Areas
+   block, at the top of the Overview tab. Lazy-computes on mount via
+   usePrIntent (GET is the trigger); Recompute always forces a fresh
+   classification. `risks` is passed in from the parent's already-fetched
+   PrBrief (see PrBriefCard) — this component does not fetch it itself.
    Single render path: card chrome (title/border) is constant, only the inner
    content varies across loading/empty/error/loaded (see client/INSIGHTS.md
-   "Early-return branches that replace the full page layout … break chrome"). */
+   "Early-return branches that replace the full page layout … break chrome").
+   The Risk Areas block below is a new section within that same render tree,
+   not a new early-return branch. */
 "use client";
 
 import React from "react";
 import { useTranslations } from "next-intl";
 import { Button, Icon, Skeleton, SectionLabel } from "@devdigest/ui";
+import type { Risk } from "@devdigest/shared";
+import { githubBlobUrl } from "@/lib/github-urls";
 import { usePrIntent, useRecomputeIntent } from "../../../../../../../lib/hooks/intent";
-import { SOURCE_ICON } from "./constants";
+import { SOURCE_ICON, RISK_SEVERITY_COLOR, riskKindIcon } from "./constants";
 import { s } from "./styles";
 
-export function IntentCard({ prId }: { prId: string | null | undefined }) {
+interface IntentCardProps {
+  prId: string | null | undefined;
+  risks: Risk[];
+  repoFullName: string;
+  headSha: string;
+}
+
+export function IntentCard({ prId, risks, repoFullName, headSha }: IntentCardProps) {
   const t = useTranslations("prReview");
+  const tBrief = useTranslations("brief");
   const { data: intent, isLoading, isError, refetch } = usePrIntent(prId);
   const recompute = useRecomputeIntent(prId);
 
@@ -111,6 +125,45 @@ export function IntentCard({ prId }: { prId: string | null | undefined }) {
           )}
         </>
       )}
+
+      <div style={s.risksSection}>
+        <span style={s.risksTitle}>{tBrief("riskAreas")}</span>
+        {risks.length === 0 ? (
+          <p style={s.emptyBody}>{tBrief("noRiskAreas")}</p>
+        ) : (
+          risks.map((risk, i) => <RiskRow key={i} risk={risk} repoFullName={repoFullName} headSha={headSha} />)
+        )}
+      </div>
+    </div>
+  );
+}
+
+function RiskRow({ risk, repoFullName, headSha }: { risk: Risk; repoFullName: string; headSha: string }) {
+  const RiskIcon = Icon[riskKindIcon(risk.kind)];
+  return (
+    <div style={s.riskRow}>
+      <div style={s.riskIcon(RISK_SEVERITY_COLOR[risk.severity])}>
+        <RiskIcon size={14} />
+      </div>
+      <div style={s.riskBody}>
+        <span style={s.riskTitle}>{risk.title}</span>
+        {risk.file_refs.length > 0 && (
+          <div style={s.riskRefs}>
+            {risk.file_refs.map((file) => (
+              <a
+                key={file}
+                className="mono"
+                style={s.riskRefLink}
+                href={githubBlobUrl(repoFullName, headSha, file)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {file}
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
