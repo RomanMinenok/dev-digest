@@ -27,6 +27,9 @@ import { AgentsRepository } from '../modules/agents/repository.js';
 import { SkillsRepository } from '../modules/skills/repository.js';
 import { ReviewRepository } from '../modules/reviews/repository.js';
 import { IntentRepository } from '../modules/intent/repository.js';
+import { RepoRepository } from '../modules/repos/repository.js';
+import { ProjectContextRepository } from '../modules/project-context/repository.js';
+import { ProjectContextService } from '../modules/project-context/service.js';
 import type { RepoIntel } from '../modules/repo-intel/types.js';
 import { RepoIntelService } from '../modules/repo-intel/service.js';
 import { type DepGraph, DepCruiseGraph } from '../adapters/depgraph/index.js';
@@ -76,6 +79,9 @@ export class Container {
   private _skillsRepo?: SkillsRepository;
   private _reviewRepo?: ReviewRepository;
   private _intentRepo?: IntentRepository;
+  private _reposRepo?: RepoRepository;
+  private _projectContextRepo?: ProjectContextRepository;
+  private _projectContextService?: ProjectContextService;
   private _repoIntel?: RepoIntel;
   private _depgraph?: DepGraph;
   private _tokenizer?: Tokenizer;
@@ -115,6 +121,31 @@ export class Container {
    */
   get intentRepo(): IntentRepository {
     return (this._intentRepo ??= new IntentRepository(this.db));
+  }
+
+  /**
+   * Read-only `repos` table access, shared across modules that need to
+   * resolve a `repoId` to its `owner`/`name` (e.g. building a `RepoRef` for
+   * `GitClient`) without importing `modules/repos/service.ts`. Mirrors
+   * `agentsRepo`/`reviewRepo` — same cross-cutting-repository pattern.
+   */
+  get reposRepo(): RepoRepository {
+    return (this._reposRepo ??= new RepoRepository(this.db));
+  }
+
+  /** project-context (SPEC-01, T8) read-only repository — agents'/skills'
+   *  `context_docs` columns. See `modules/project-context/repository.ts`. */
+  get projectContextRepo(): ProjectContextRepository {
+    return (this._projectContextRepo ??= new ProjectContextRepository(this.db));
+  }
+
+  /** project-context (SPEC-01, T8) application service — `.md` discovery,
+   *  used-by counting, and single-doc preview. Depends on `git` + `projectContextRepo`. */
+  get projectContextService(): ProjectContextService {
+    return (this._projectContextService ??= new ProjectContextService(
+      this.git,
+      this.projectContextRepo,
+    ));
   }
 
   get codeIndex(): CodeIndex {

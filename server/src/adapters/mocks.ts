@@ -249,6 +249,13 @@ export interface MockGitOptions {
   head?: string;
   /** Head `currentHead()` returns AFTER `sync()` runs — simulates fetch+reset advancing HEAD. */
   syncedHead?: string;
+  /**
+   * Fixture returned by `listMarkdownFiles()` (project-context discovery,
+   * SPEC-01). Defaults to deriving `{path, size_bytes}` entries from `files`
+   * for any key ending in `.md`, so a test that only sets `files` still gets
+   * plausible discovery results without duplicating the fixture.
+   */
+  markdownFiles?: { path: string; size_bytes: number }[];
 }
 
 export class MockGitClient implements GitClient {
@@ -266,6 +273,9 @@ export class MockGitClient implements GitClient {
     return { path: this.clonePathFor(repo) };
   }
   async fetchPullHead(): Promise<void> {}
+  async checkoutPullHead(): Promise<{ head: string }> {
+    return { head: this.opts.head ?? 'a1b2c3d4' };
+  }
   async sync(repo: RepoRef, branch: string): Promise<{ head: string }> {
     this.syncs.push({ repo, branch });
     // After a sync, HEAD advances to syncedHead (or stays at head if unset).
@@ -292,6 +302,13 @@ export class MockGitClient implements GitClient {
   }
   async readFile(_repo: RepoRef, path: string): Promise<string> {
     return this.opts.files?.[path] ?? '';
+  }
+  async listMarkdownFiles(_repo: RepoRef): Promise<{ path: string; size_bytes: number }[]> {
+    if (this.opts.markdownFiles) return this.opts.markdownFiles;
+    const files = this.opts.files ?? {};
+    return Object.entries(files)
+      .filter(([path]) => path.toLowerCase().endsWith('.md'))
+      .map(([path, content]) => ({ path, size_bytes: Buffer.byteLength(content, 'utf8') }));
   }
 }
 
