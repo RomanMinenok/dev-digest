@@ -27,6 +27,7 @@ import { AgentsRepository } from '../modules/agents/repository.js';
 import { SkillsRepository } from '../modules/skills/repository.js';
 import { ReviewRepository } from '../modules/reviews/repository.js';
 import { IntentRepository } from '../modules/intent/repository.js';
+import { BriefRepository } from '../modules/brief/repository.js';
 import { RepoRepository } from '../modules/repos/repository.js';
 import { ProjectContextRepository } from '../modules/project-context/repository.js';
 import { ProjectContextService } from '../modules/project-context/service.js';
@@ -79,6 +80,7 @@ export class Container {
   private _skillsRepo?: SkillsRepository;
   private _reviewRepo?: ReviewRepository;
   private _intentRepo?: IntentRepository;
+  private _briefRepo?: BriefRepository;
   private _reposRepo?: RepoRepository;
   private _projectContextRepo?: ProjectContextRepository;
   private _projectContextService?: ProjectContextService;
@@ -121,6 +123,15 @@ export class Container {
    */
   get intentRepo(): IntentRepository {
     return (this._intentRepo ??= new IntentRepository(this.db));
+  }
+
+  /**
+   * Read-only access to the stored `pr_brief` row (SPEC-02). Mirrors
+   * `intentRepo`/`reviewRepo` — same lazy-singleton cross-cutting-repository
+   * pattern.
+   */
+  get briefRepo(): BriefRepository {
+    return (this._briefRepo ??= new BriefRepository(this.db));
   }
 
   /**
