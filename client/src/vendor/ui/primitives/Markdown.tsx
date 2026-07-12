@@ -33,6 +33,40 @@ export function Markdown({ children }: { children?: string | null }) {
               {children}
             </a>
           ),
+          table: ({ children }) => (
+            <table
+              style={{
+                borderCollapse: "collapse",
+                margin: "0 0 10px",
+                width: "100%",
+              }}
+            >
+              {children}
+            </table>
+          ),
+          th: ({ children }) => (
+            <th
+              style={{
+                border: "1px solid var(--border)",
+                padding: "4px 10px",
+                textAlign: "left",
+                color: "var(--text-primary)",
+              }}
+            >
+              {children}
+            </th>
+          ),
+          td: ({ children }) => (
+            <td
+              style={{
+                border: "1px solid var(--border)",
+                padding: "4px 10px",
+                textAlign: "left",
+              }}
+            >
+              {children}
+            </td>
+          ),
         }}
       >
         {children}
