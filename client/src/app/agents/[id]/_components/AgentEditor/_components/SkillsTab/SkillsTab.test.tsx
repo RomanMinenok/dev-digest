@@ -29,6 +29,7 @@ function skill(id: string, name: string): Skill {
     body: "x",
     enabled: true,
     version: 1,
+    context_docs: [],
   };
 }
 
