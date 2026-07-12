@@ -83,4 +83,53 @@ export const s = {
     fontSize: 13,
     color: "var(--text-muted)",
   } satisfies CSSProperties,
+  risksSection: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+  } satisfies CSSProperties,
+  risksTitle: {
+    fontSize: 12,
+    fontWeight: 700,
+    letterSpacing: "0.05em",
+    textTransform: "uppercase",
+    color: "var(--text-muted)",
+  } satisfies CSSProperties,
+  riskRow: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: 8,
+    padding: "8px 0",
+    borderTop: "1px solid var(--border)",
+  } satisfies CSSProperties,
+  riskIcon: (color: string): CSSProperties => ({
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+    marginTop: 1,
+    color,
+  }),
+  riskBody: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 3,
+    minWidth: 0,
+  } satisfies CSSProperties,
+  riskTitle: {
+    fontSize: 13,
+    fontWeight: 600,
+    color: "var(--text-primary)",
+  } satisfies CSSProperties,
+  riskRefs: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 8,
+  } satisfies CSSProperties,
+  riskRefLink: {
+    fontSize: 12,
+    color: "var(--text-muted)",
+    borderBottom: "1px dashed var(--text-muted)",
+    paddingBottom: 1,
+  } satisfies CSSProperties,
 } as const;
