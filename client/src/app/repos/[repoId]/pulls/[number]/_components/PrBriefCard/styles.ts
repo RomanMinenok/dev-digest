@@ -3,7 +3,8 @@ import type { CSSProperties } from "react";
 /** Co-located styles for PrBriefCard. Card chrome (border/padding) stays
     constant across unavailable/loading/loaded/error states — only the inner
     content varies (see client/INSIGHTS.md "Early-return branches … break
-    chrome"). */
+    chrome"). Verdict header mirrors VerdictBanner; score + brief cost sit in
+    a right column (circle above, cost/tokens below a divider). */
 export const s = {
   wrap: {
     display: "flex",
@@ -20,36 +21,72 @@ export const s = {
     justifyContent: "space-between",
     gap: 12,
   } satisfies CSSProperties,
-  verdictRow: {
+  /** Verdict + summary (left) and score/cost (right), like VerdictBanner. */
+  bodyRow: {
     display: "flex",
-    alignItems: "center",
-    gap: 12,
-    flexWrap: "wrap",
+    gap: 18,
+    alignItems: "flex-start",
   } satisfies CSSProperties,
   iconBox: (bg: string, color: string): CSSProperties => ({
-    width: 32,
-    height: 32,
-    borderRadius: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 9,
     display: "grid",
     placeItems: "center",
     background: bg,
     color,
     flexShrink: 0,
   }),
-  verdictLabel: (color: string): CSSProperties => ({ fontSize: 15, fontWeight: 700, color }),
-  /* Brief's own tokens_in→tokens_out / cost_usd badge — visually distinct from
-     the review-run's cost badge shown elsewhere on the page (RunHistory /
-     ReviewRunAccordion), so it never reads as "the review cost" by mistake:
-     dashed border + explicit "Brief cost" label instead of a plain pill. */
-  briefCostBadge: {
-    display: "inline-flex",
+  main: { flex: 1, minWidth: 0 } satisfies CSSProperties,
+  titleRow: {
+    display: "flex",
     alignItems: "center",
-    gap: 6,
-    padding: "3px 9px",
-    borderRadius: 6,
-    border: "1px dashed var(--border)",
+    gap: 12,
+    flexWrap: "wrap",
+  } satisfies CSSProperties,
+  verdictLabel: (color: string): CSSProperties => ({
+    fontSize: 18,
+    fontWeight: 700,
+    color,
+  }),
+  summary: {
+    fontSize: 14,
+    lineHeight: 1.55,
+    color: "var(--text-secondary)",
+    marginTop: 8,
+  } satisfies CSSProperties,
+  scoreCol: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 5,
+    flexShrink: 0,
+    minWidth: 88,
+  } satisfies CSSProperties,
+  scoreLabel: {
+    fontSize: 11,
+    color: "var(--text-muted)",
+    letterSpacing: "0.04em",
+    textTransform: "uppercase",
+  } satisfies CSSProperties,
+  scoreDivider: {
+    width: "100%",
+    height: 1,
+    background: "var(--border)",
+    marginTop: 4,
+    marginBottom: 2,
+  } satisfies CSSProperties,
+  /** Brief tokens/cost under the score circle — mono, right-column aligned. */
+  costRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
     fontSize: 11.5,
     color: "var(--text-muted)",
+    whiteSpace: "nowrap",
+  } satisfies CSSProperties,
+  costValue: {
+    color: "var(--text-secondary)",
   } satisfies CSSProperties,
   sectionTitle: {
     fontSize: 12,

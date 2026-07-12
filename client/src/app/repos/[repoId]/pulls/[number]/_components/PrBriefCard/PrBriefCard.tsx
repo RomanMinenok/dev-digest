@@ -8,12 +8,14 @@
    The verdict+score header and findings count are a *display* of the
    already-fetched latest review session (usePrReviews, the same
    `["reviews", prId]` query ReviewRunAccordion/VerdictBanner use) — derived
-   client-side, never recomputed or re-fetched here. */
+   client-side, never recomputed or re-fetched here.
+   Layout mirrors VerdictBanner: left = verdict + findings + summary; right =
+   CircularScore + PR SCORE, then brief cost/tokens under a divider. */
 "use client";
 
 import React from "react";
 import { useTranslations } from "next-intl";
-import { Button, Icon, Skeleton, SectionLabel } from "@devdigest/ui";
+import { Button, Icon, Skeleton, SectionLabel, Badge, CircularScore } from "@devdigest/ui";
 import type { Verdict } from "@devdigest/shared";
 import { usePrBrief, useRecomputeBrief } from "../../../../../../../lib/hooks/brief";
 import { usePrReviews } from "../../../../../../../lib/hooks/reviews";
@@ -45,6 +47,7 @@ export function PrBriefCard({ prId }: PrBriefCardProps) {
 
   const hasCostInfo =
     brief != null && (brief.tokens_in != null || brief.tokens_out != null || brief.cost_usd != null);
+  const score = latestReview?.score ?? null;
 
   return (
     <div style={s.wrap}>
@@ -83,35 +86,56 @@ export function PrBriefCard({ prId }: PrBriefCardProps) {
 
       {!isLoading && brief != null && (
         <>
-          {meta && VIcon && (
-            <div style={s.verdictRow}>
+          <div style={s.bodyRow}>
+            {meta && VIcon && (
               <div style={s.iconBox(meta.bg, meta.c)}>
-                <VIcon size={16} />
+                <VIcon size={22} />
               </div>
-              <span style={s.verdictLabel(meta.c)}>{tVerdict(`verdict.${meta.labelKey}`)}</span>
-              <span style={s.emptyBody}>
-                {tVerdict("verdict.findingsCount", { count: latestReview!.findings.length })}
-                {blockers > 0 ? tVerdict("verdict.blockers", { count: blockers }) : ""}
-              </span>
-              {latestReview!.score != null && (
-                <span className="mono" style={s.emptyBody}>
-                  {tVerdict("verdict.prScore")} {latestReview!.score}
-                </span>
+            )}
+
+            <div style={s.main}>
+              {meta && (
+                <div style={s.titleRow}>
+                  <span style={s.verdictLabel(meta.c)}>
+                    {tVerdict(`verdict.${meta.labelKey}`)}
+                  </span>
+                  <Badge color="var(--text-secondary)">
+                    {tVerdict("verdict.findingsCount", {
+                      count: latestReview!.findings.length,
+                    })}
+                    {blockers > 0
+                      ? tVerdict("verdict.blockers", { count: blockers })
+                      : ""}
+                  </Badge>
+                </div>
+              )}
+              {latestReview?.summary && (
+                <p style={s.summary}>{latestReview.summary}</p>
               )}
             </div>
-          )}
 
-          {hasCostInfo && (
-            <div style={s.briefCostBadge}>
-              <Icon.Cpu size={11} />
-              {t("cost")}:{" "}
-              {brief.tokens_in != null && brief.tokens_out != null
-                ? formatTokens(brief.tokens_in, brief.tokens_out)
-                : "—"}
-              {" · "}
-              {formatCost(brief.cost_usd)}
-            </div>
-          )}
+            {(score != null || hasCostInfo) && (
+              <div style={s.scoreCol}>
+                {score != null && (
+                  <>
+                    <CircularScore score={score} size={52} stroke={5} />
+                    <span style={s.scoreLabel}>{tVerdict("verdict.prScore")}</span>
+                  </>
+                )}
+                {hasCostInfo && (
+                  <>
+                    {score != null && <div style={s.scoreDivider} />}
+                    <div className="mono" style={s.costRow}>
+                      <span style={s.costValue}>{formatCost(brief.cost_usd)}</span>
+                      {brief.tokens_in != null && brief.tokens_out != null && (
+                        <span>{formatTokens(brief.tokens_in, brief.tokens_out)}</span>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
 
           <div>
             <div style={s.sectionTitle}>{t("block.what")}</div>
