@@ -128,6 +128,9 @@ export const Skill = z.object({
   enabled: z.boolean(),
   version: z.number().int(),
   evidence_files: z.array(z.string()).nullish(),
+  // Paths to context docs (repo-relative) attached to this skill; default
+  // empty when none are set.
+  context_docs: z.array(z.string()).default([]),
 });
 export type Skill = z.infer<typeof Skill>;
 
@@ -227,6 +230,9 @@ export const Agent = z.object({
   // Number of skills linked to this agent (agent_skills). Populated by the
   // repository's list() JOIN; defaults to 0 for call sites that don't join.
   skill_count: z.number().int().default(0),
+  // Paths to context docs (repo-relative) attached to this agent; default
+  // empty when none are set.
+  context_docs: z.array(z.string()).default([]),
 });
 export type Agent = z.infer<typeof Agent>;
 
@@ -251,6 +257,7 @@ export const AgentVersionConfig = z.object({
   ci_fail_on: CiFailOn,
   repo_intel: z.boolean(),
   skills: z.array(z.string()),
+  context_docs: z.array(z.string()).default([]),
 });
 export type AgentVersionConfig = z.infer<typeof AgentVersionConfig>;
 
