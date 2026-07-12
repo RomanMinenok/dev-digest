@@ -86,7 +86,15 @@ describe('AI contracts parse fixtures', () => {
     ).not.toThrow();
     expect(() =>
       Risks.parse({
-        risks: [{ kind: 'security', title: 't', explanation: 'e', severity: 'high', file_refs: [] }],
+        risks: [
+          {
+            kind: 'security',
+            title: 't',
+            explanation: 'e',
+            severity: 'high',
+            file_refs: [{ path: 'src/a.ts', start_line: 10, end_line: 12 }],
+          },
+        ],
       }),
     ).not.toThrow();
     expect(() =>

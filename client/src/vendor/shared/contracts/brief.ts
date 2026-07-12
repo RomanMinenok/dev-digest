@@ -67,12 +67,20 @@ export type BlastRadius = z.infer<typeof BlastRadius>;
 export const RiskSeverity = z.enum(['high', 'medium', 'low']);
 export type RiskSeverity = z.infer<typeof RiskSeverity>;
 
+/** File+line deep-link target for a Risk Area (mirrors ReviewFocusItem's path/lines). */
+export const RiskFileRef = z.object({
+  path: z.string(),
+  start_line: z.number().int(),
+  end_line: z.number().int().optional(),
+});
+export type RiskFileRef = z.infer<typeof RiskFileRef>;
+
 export const Risk = z.object({
   kind: z.string(),
   title: z.string(),
   explanation: z.string(),
   severity: RiskSeverity,
-  file_refs: z.array(z.string()),
+  file_refs: z.array(RiskFileRef),
 });
 export type Risk = z.infer<typeof Risk>;
 

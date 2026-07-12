@@ -22,8 +22,10 @@ Produce:
 - why: 1-3 sentences describing why it does it, grounded in the declared intent and linked issue.
 - risk_level: an overall risk assessment (critical/high/medium/low) for the PR as a whole.
 - risks: specific risk areas. Each risk needs a kind, a short title, a plain-language explanation,
-  a severity, and file_refs pointing at REAL files that appear in the provided Smart Diff or blast
-  radius data — never invent a file path that isn't present in the input.
+  a severity, and file_refs — each ref is { path, start_line, optional end_line } pointing at REAL
+  files/lines grounded in the provided Smart Diff finding_lines, blast radius, or review findings.
+  Never invent a file path that isn't present in the input; never invent a line number that isn't
+  grounded in that input.
 - review_focus: a prioritized list of exact file + line locations the reviewer should read first,
   most important first. Each item needs path, start_line, an optional end_line, a short description
   of why that location matters, and a severity. Only reference files/lines that are grounded in the

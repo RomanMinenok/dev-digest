@@ -4,8 +4,8 @@
    section, which also renders a bare `SectionLabel` + body rather than a
    card `wrap`) — not a card inside a two-column row. Each item links to its
    file+line-range on GitHub via `githubBlobUrl`'s 4-arg (line-range) form,
-   since `ReviewFocusItem` carries `start_line`/`end_line` (unlike T15's
-   `Risk.file_refs`, which had no line numbers and used the 2-arg form).
+   since `ReviewFocusItem` carries `start_line`/`end_line` (Risk Areas use the
+   same shape via `RiskFileRef`).
    Reuses `RISK_SEVERITY_COLOR` from `IntentCard/constants.ts` — both
    features key off the same `RiskSeverity` type, so the color map lives in
    one place. */

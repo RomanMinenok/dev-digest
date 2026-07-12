@@ -138,6 +138,23 @@ export function IntentCard({ prId, risks, repoFullName, headSha }: IntentCardPro
   );
 }
 
+/** Normalize a risk file ref for display. Cached briefs from before line-bearing
+ *  `RiskFileRef` may still store plain path strings — treat those as path-only. */
+function normalizeRiskFileRef(
+  ref: Risk["file_refs"][number] | string,
+): { path: string; start_line?: number; end_line?: number } {
+  if (typeof ref === "string") return { path: ref };
+  return ref;
+}
+
+function riskFileRefLabel(ref: { path: string; start_line?: number; end_line?: number }): string {
+  if (ref.start_line == null) return ref.path;
+  if (ref.end_line != null && ref.end_line !== ref.start_line) {
+    return `${ref.path}:${ref.start_line}-${ref.end_line}`;
+  }
+  return `${ref.path}:${ref.start_line}`;
+}
+
 function RiskRow({ risk, repoFullName, headSha }: { risk: Risk; repoFullName: string; headSha: string }) {
   const RiskIcon = Icon[riskKindIcon(risk.kind)];
   return (
@@ -149,18 +166,21 @@ function RiskRow({ risk, repoFullName, headSha }: { risk: Risk; repoFullName: st
         <span style={s.riskTitle}>{risk.title}</span>
         {risk.file_refs.length > 0 && (
           <div style={s.riskRefs}>
-            {risk.file_refs.map((file) => (
-              <a
-                key={file}
-                className="mono"
-                style={s.riskRefLink}
-                href={githubBlobUrl(repoFullName, headSha, file)}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {file}
-              </a>
-            ))}
+            {risk.file_refs.map((raw, i) => {
+              const ref = normalizeRiskFileRef(raw as Risk["file_refs"][number] | string);
+              return (
+                <a
+                  key={`${ref.path}:${ref.start_line ?? ""}:${i}`}
+                  className="mono"
+                  style={s.riskRefLink}
+                  href={githubBlobUrl(repoFullName, headSha, ref.path, ref.start_line, ref.end_line)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {riskFileRefLabel(ref)}
+                </a>
+              );
+            })}
           </div>
         )}
       </div>
