@@ -22,6 +22,7 @@ const AGENT: Agent = {
   enabled: true,
   version: 1,
   skill_count: 0,
+  context_docs: [],
 };
 
 function renderWithIntl(ui: React.ReactElement) {
