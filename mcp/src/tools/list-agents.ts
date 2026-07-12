@@ -6,13 +6,13 @@ import { toErrorResult } from './tool-error.js';
 
 export function registerListAgentsTool(server: McpServer, client: DevDigestApiClient): void {
   server.registerTool(
-    'devdigest_list_agents',
+    'list_agents',
     {
       title: 'List reviewer agents',
       description:
         'Lists configured reviewer agents (agent_id, name, provider, model, enabled). ' +
         'Call this FIRST to obtain a valid agent_id — never invent one. ' +
-        'Feed agent_id to devdigest_run_agent_on_pr.',
+        'Feed agent_id to run_agent_on_pr.',
       inputSchema: ListAgentsInput.shape,
       outputSchema: { agents: AgentOut.array() },
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
