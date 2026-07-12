@@ -27,7 +27,7 @@ export class BriefService {
   private repo: BriefRepository;
 
   constructor(private container: Container) {
-    this.repo = new BriefRepository(container.db);
+    this.repo = container.briefRepo;
   }
 
   /**

@@ -23,11 +23,6 @@ import { s } from "./styles";
 
 interface PrBriefCardProps {
   prId: string | null | undefined;
-  /** Accepted for T15/T16 (Risk Areas / Review Focus GitHub deep-links) — not
-      used by this card yet; kept in the prop shape so callers don't need to
-      change when those tasks land. */
-  repoFullName?: string | null;
-  headSha?: string | null;
 }
 
 export function PrBriefCard({ prId }: PrBriefCardProps) {

@@ -20,7 +20,7 @@ export function OverviewTab({ prId, prBody, repoFullName, headSha }: OverviewTab
 
   return (
     <>
-      <PrBriefCard prId={prId} repoFullName={repoFullName} headSha={headSha} />
+      <PrBriefCard prId={prId} />
 
       <IntentCard
         prId={prId}

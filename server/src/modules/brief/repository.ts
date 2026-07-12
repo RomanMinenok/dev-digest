@@ -1,7 +1,8 @@
-import { and, desc, eq, gte, inArray } from 'drizzle-orm';
+import { and, desc, eq, inArray } from 'drizzle-orm';
 import type { PrBrief } from '@devdigest/shared';
 import type { Db } from '../../db/client.js';
 import * as t from '../../db/schema.js';
+import { selectSessionWindow } from '../_shared/session-window.js';
 
 export type PrBriefRow = typeof t.prBrief.$inferSelect;
 export type PullRow = typeof t.pullRequests.$inferSelect;
@@ -25,11 +26,6 @@ export interface SessionAgent {
   skills: SkillRow[];
 }
 
-// "One review run" = every completed agent_runs row within SESSION_WINDOW_MS
-// of the newest completed run for a PR (multiple agents fired from the same
-// "Run Review" click land within milliseconds of each other). See
-// modules/pulls/routes.ts's session-window cost logic for the precedent.
-const SESSION_WINDOW_MS = 60_000;
 const COMPLETED_STATUS = 'done';
 
 export class BriefRepository {
@@ -89,37 +85,21 @@ export class BriefRepository {
   }
 
   /**
-   * Newest `ran_at` among COMPLETED (`status = 'done'`) agent_runs for this
-   * PR, or undefined if there's no completed run at all — the signal callers
-   * use to know "no session yet, don't call the LLM".
+   * agent_runs within the shared session window (`_shared/session-window.ts`)
+   * of the newest completed run for this PR — the "one review session".
+   * Empty if no completed run exists. The windowing RULE itself lives in the
+   * pure, framework-free `selectSessionWindow` helper (shared with
+   * `pulls/service.ts`/`pulls/routes.ts`), not hand-rolled here — this method
+   * is just the fetch-all-completed-runs-then-filter composition.
    */
-  private async latestCompletedRanAt(prId: string): Promise<Date | undefined> {
-    const [row] = await this.db
-      .select({ ranAt: t.agentRuns.ranAt })
-      .from(t.agentRuns)
-      .where(and(eq(t.agentRuns.prId, prId), eq(t.agentRuns.status, COMPLETED_STATUS)))
-      .orderBy(desc(t.agentRuns.ranAt))
-      .limit(1);
-    return row?.ranAt;
-  }
-
-  /** agent_runs within SESSION_WINDOW_MS of the newest completed run for this
-   *  PR — the "one review session" window. Empty if no completed run exists. */
   private async sessionRuns(prId: string): Promise<(typeof t.agentRuns.$inferSelect)[]> {
-    const latestRanAt = await this.latestCompletedRanAt(prId);
-    if (!latestRanAt) return [];
-
-    const windowStart = new Date(latestRanAt.getTime() - SESSION_WINDOW_MS);
-    return this.db
+    const completedRuns = await this.db
       .select()
       .from(t.agentRuns)
-      .where(
-        and(
-          eq(t.agentRuns.prId, prId),
-          eq(t.agentRuns.status, COMPLETED_STATUS),
-          gte(t.agentRuns.ranAt, windowStart),
-        ),
-      );
+      .where(and(eq(t.agentRuns.prId, prId), eq(t.agentRuns.status, COMPLETED_STATUS)))
+      .orderBy(desc(t.agentRuns.ranAt));
+
+    return selectSessionWindow(completedRuns, (r) => r.ranAt.getTime());
   }
 
   /**
