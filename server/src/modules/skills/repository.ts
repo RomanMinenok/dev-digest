@@ -23,6 +23,7 @@ export interface InsertSkill {
   source?: SkillSource;
   enabled?: boolean;
   summary?: string;
+  contextDocs?: string[];
 }
 
 export interface UpdateSkill {
@@ -32,6 +33,7 @@ export interface UpdateSkill {
   body?: string;
   enabled?: boolean;
   summary?: string;
+  contextDocs?: string[];
 }
 
 export class SkillsRepository {
@@ -61,6 +63,7 @@ export class SkillsRepository {
         source: values.source ?? 'manual',
         body: values.body,
         enabled: values.enabled ?? true,
+        ...(values.contextDocs !== undefined ? { contextDocs: values.contextDocs } : {}),
         version: INITIAL_SKILL_VERSION,
       })
       .returning();
@@ -92,6 +95,7 @@ export class SkillsRepository {
         ...(patch.type !== undefined ? { type: patch.type } : {}),
         ...(patch.body !== undefined ? { body: patch.body } : {}),
         ...(patch.enabled !== undefined ? { enabled: patch.enabled } : {}),
+        ...(patch.contextDocs !== undefined ? { contextDocs: patch.contextDocs } : {}),
         ...(bodyChanged ? { version: nextVersion } : {}),
       })
       .where(and(eq(t.skills.workspaceId, workspaceId), eq(t.skills.id, id)))

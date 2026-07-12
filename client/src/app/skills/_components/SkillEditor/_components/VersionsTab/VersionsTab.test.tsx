@@ -31,6 +31,7 @@ const SKILL: Skill = {
   enabled: true,
   version: 2,
   evidence_files: null,
+  context_docs: [],
 };
 
 afterEach(() => {

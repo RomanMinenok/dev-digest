@@ -1,5 +1,5 @@
 {
-  "id": "32f6e7da-fadb-4486-bc1a-d1f5527e8e18",
+  "id": "9d32ad4e-9d7f-44a9-a1d5-3a5ceff2376a",
   "prevId": "085881a5-3ec4-40bd-9290-2a20b70b6c69",
   "version": "7",
   "dialect": "postgresql",
@@ -830,25 +830,6 @@
           "type": "jsonb",
           "primaryKey": false,
           "notNull": true
-        },
-        "head_sha": {
-          "name": "head_sha",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "model": {
-          "name": "model",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
         }
       },
       "indexes": {},
@@ -1192,6 +1173,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "context_docs": {
+          "name": "context_docs",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -1423,6 +1410,12 @@
           "primaryKey": false,
           "notNull": true,
           "default": true
+        },
+        "context_docs": {
+          "name": "context_docs",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
         },
         "enabled": {
           "name": "enabled",

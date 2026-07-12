@@ -26,6 +26,7 @@ const VersionParams = z.object({
  *   GET    /agents/:id/versions/:version → one config snapshot
  *   GET    /agents/:id/skills       → linked skills (ordered)
  *   POST   /agents/:id/skills       → set/reorder linked skills OR link one
+ *   POST   /agents/:id/context-docs → set/reorder attached context docs (wholesale replace)
  *   GET    /agents/:id/models       → dynamic model list for the agent's provider
  *   GET    /providers/:id/models    → dynamic model list for a provider (editor)
  */
@@ -40,6 +41,7 @@ const CreateAgentBody = z.object({
   strategy: ReviewStrategy.optional(),
   ci_fail_on: CiFailOn.optional(),
   repo_intel: z.boolean().optional(),
+  context_docs: z.array(z.string()).optional(),
   enabled: z.boolean().optional(),
 });
 
@@ -53,7 +55,13 @@ const UpdateAgentBody = z.object({
   strategy: ReviewStrategy.optional(),
   ci_fail_on: CiFailOn.optional(),
   repo_intel: z.boolean().optional(),
+  context_docs: z.array(z.string()).optional(),
   enabled: z.boolean().optional(),
+});
+
+/** Wholesale replace of the ordered attached-doc paths (AC-6/AC-8/AC-14). */
+const SetContextDocsBody = z.object({
+  context_docs: z.array(z.string()),
 });
 
 /** Either set the whole ordered set (`skill_ids`) or link one (`skill_id`). */
@@ -98,6 +106,7 @@ export default async function agentsRoutes(appBase: FastifyInstance) {
         ...(body.strategy !== undefined ? { strategy: body.strategy } : {}),
         ...(body.ci_fail_on !== undefined ? { ci_fail_on: body.ci_fail_on } : {}),
         ...(body.repo_intel !== undefined ? { repo_intel: body.repo_intel } : {}),
+        ...(body.context_docs !== undefined ? { context_docs: body.context_docs } : {}),
         ...(body.enabled !== undefined ? { enabled: body.enabled } : {}),
       },
       userId,
@@ -161,6 +170,21 @@ export default async function agentsRoutes(appBase: FastifyInstance) {
           : await service.linkSkill(workspaceId, req.params.id, body.skill_id!, body.order);
       if (!links) throw new NotFoundError('Agent not found');
       return links;
+    },
+  );
+
+  app.post(
+    '/agents/:id/context-docs',
+    { schema: { params: IdParams, body: SetContextDocsBody } },
+    async (req) => {
+      const { workspaceId } = await getContext(app.container, req);
+      const agent = await service.setContextDocs(
+        workspaceId,
+        req.params.id,
+        req.body.context_docs,
+      );
+      if (!agent) throw new NotFoundError('Agent not found');
+      return agent;
     },
   );
 
