@@ -1,9 +1,12 @@
 {
+  "title": "PR Brief",
   "block": {
     "intent": "Intent",
     "blast": "Blast radius",
     "risks": "Risks",
-    "history": "PR history"
+    "history": "PR history",
+    "what": "What changed",
+    "why": "Why it matters"
   },
   "noRisks": "No notable risks flagged.",
   "noHistory": "No prior PRs overlap these files.",
@@ -18,6 +21,7 @@
   "regenerating": "Regenerating…",
   "error": "Failed to regenerate brief.",
   "retry": "Retry",
+  "cost": "Brief cost",
   "why": {
     "title": "git-why",
     "blame": "blame",
