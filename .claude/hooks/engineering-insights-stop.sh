@@ -2,7 +2,8 @@
 # Stop hook: trigger the engineering-insights wrap-up when relevant.
 #
 # Logic:
-#   1. If stop_hook_active=true → already continuing from a block, allow stop.
+#   1. If stop_hook_active=true (Claude Code) or loop_count>0 (Cursor) →
+#      already continuing from a block/follow-up, allow stop.
 #   2. If source files were changed (uncommitted changes or recent commits) →
 #      full wrap-up prompt.
 #   3. If no source changes but session may have had a dead end (faulty code
@@ -17,17 +18,21 @@ input="$(cat)"
 PROJ_DIR="${CLAUDE_PROJECT_DIR:-.}"
 
 # ── Loop guard ────────────────────────────────────────────────────────────────
+# Claude Code: stop_hook_active. Cursor: loop_count (maps decision:block → followup).
 if command -v jq >/dev/null 2>&1; then
   active="$(printf '%s' "$input" | jq -r '.stop_hook_active // false')"
+  loop_count="$(printf '%s' "$input" | jq -r '.loop_count // 0')"
 else
   if printf '%s' "$input" | grep -q '"stop_hook_active"[[:space:]]*:[[:space:]]*true'; then
     active="true"
   else
     active="false"
   fi
+  loop_count="$(printf '%s' "$input" | sed -n 's/.*"loop_count"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p')"
+  loop_count="${loop_count:-0}"
 fi
 
-if [ "$active" = "true" ]; then
+if [ "$active" = "true" ] || [ "$loop_count" -gt 0 ]; then
   exit 0
 fi
 
