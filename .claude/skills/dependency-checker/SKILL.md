@@ -150,3 +150,5 @@ flowchart LR
   explicitly instead of guessing.
 - **All 5 sections, every time**, even when a section is short or a tier is
   empty — that's what keeps reports comparable across runs.
+
+<!-- smoke test: no-op edit to trigger the skills eval job on CI. Revert before merge. -->
