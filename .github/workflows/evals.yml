@@ -52,6 +52,9 @@ jobs:
   changes:
     name: detect
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # sticky routing comment on the PR
     outputs:
       skills: ${{ steps.detect.outputs.skills }}
       agents: ${{ steps.detect.outputs.agents }}
@@ -89,29 +92,63 @@ jobs:
         id: key
         run: echo "has_key=${{ secrets.OPENROUTER_API_KEY != '' }}" >> "$GITHUB_OUTPUT"
 
-      - name: Summary
+      # One markdown blob, rendered twice: into the run's Summary page and into a sticky PR comment.
+      - name: Build routing report
+        env:
+          SKILLS: ${{ steps.detect.outputs.skills }}
+          AGENTS: ${{ steps.detect.outputs.agents }}
+          RUN_WORKFLOW: ${{ steps.detect.outputs.run_workflow }}
+          SKIPPED_SKILLS: ${{ steps.detect.outputs.skipped_skills }}
+          SKIPPED_AGENTS: ${{ steps.detect.outputs.skipped_agents }}
+          HAS_KEY: ${{ steps.key.outputs.has_key }}
         run: |
+          # Turn a JSON array of names into `a`, `b` — or an em dash when empty.
+          fmt() { echo "$1" | tr -d '[]"' | sed 's/,/`, `/g; s/^/`/; s/$/`/; s/^``$/—/'; }
           {
+            echo '<!-- evals-routing -->'
             echo '### Eval routing'
             echo ''
-            echo '| tier | verdict |'
-            echo '|---|---|'
-            echo '| skills | `${{ steps.detect.outputs.skills }}` |'
-            echo '| agents | `${{ steps.detect.outputs.agents }}` |'
-            echo '| workflow | ${{ steps.detect.outputs.run_workflow }} |'
+            echo '| tier | runs | on |'
+            echo '|---|---|---|'
+            echo "| skills | $(fmt "$SKILLS") | \`${{ inputs.skills_model || 'deepseek/deepseek-v4-flash' }}\` |"
+            echo "| agents | $(fmt "$AGENTS") | \`${{ inputs.tool_model || 'google/gemini-2.5-flash' }}\` |"
+            if [ "$RUN_WORKFLOW" = "true" ]; then
+              echo "| workflow | yes (non-blocking) | \`${{ inputs.tool_model || 'google/gemini-2.5-flash' }}\` |"
+            else
+              echo '| workflow | — | |'
+            fi
             echo ''
-            if [ -n "${{ steps.detect.outputs.skipped_skills }}" ]; then
-              echo '**SKIP (no evals written) — skills:** `${{ steps.detect.outputs.skipped_skills }}`'
+            if [ -n "$SKIPPED_SKILLS" ] || [ -n "$SKIPPED_AGENTS" ]; then
+              echo '**Skipped — no evals written for these yet:**'
+              echo ''
+              [ -n "$SKIPPED_SKILLS" ] && echo "- skills: \`${SKIPPED_SKILLS// /\`, \`}\`"
+              [ -n "$SKIPPED_AGENTS" ] && echo "- agents: \`${SKIPPED_AGENTS// /\`, \`}\`"
               echo ''
             fi
-            if [ -n "${{ steps.detect.outputs.skipped_agents }}" ]; then
-              echo '**SKIP (no evals written) — agents:** `${{ steps.detect.outputs.skipped_agents }}`'
-              echo ''
+            if [ "$HAS_KEY" != "true" ]; then
+              echo '> :warning: `OPENROUTER_API_KEY` unavailable (fork PR?) — eval jobs skipped.'
             fi
-            if [ "${{ steps.key.outputs.has_key }}" != "true" ]; then
-              echo '> :warning: `OPENROUTER_API_KEY` is not available (fork PR?) — eval jobs skipped.'
-            fi
-          } >> "$GITHUB_STEP_SUMMARY"
+          } > routing.md
+          cat routing.md >> "$GITHUB_STEP_SUMMARY"
+
+      # Same-repo PRs only: a fork's token is read-only, so posting would fail.
+      - name: Comment routing on the PR
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          # Sticky: update the existing routing comment instead of stacking a new one each push.
+          id=$(gh api "repos/$REPO/issues/$PR/comments" --paginate \
+                 --jq 'map(select(.body | startswith("<!-- evals-routing -->"))) | .[0].id // empty')
+          if [ -n "$id" ]; then
+            gh api -X PATCH "repos/$REPO/issues/comments/$id" -F body=@routing.md >/dev/null
+            echo "updated comment $id"
+          else
+            gh api -X POST "repos/$REPO/issues/$PR/comments" -F body=@routing.md >/dev/null
+            echo "created routing comment"
+          fi
 
   # ---------------------------------------------------------------------------
   # Content tier. Cheap, deterministic (temperature 0), no tools → no proxy.
