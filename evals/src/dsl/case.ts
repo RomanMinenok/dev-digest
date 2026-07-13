@@ -37,7 +37,15 @@ export type AgentCase = QualityCase;
 
 /** A trace-asserted workflow case — a discriminated union routed by `kind`. */
 export type WorkflowCase =
-  | { kind: "dispatch"; name: string; prompt: string; expectSubagent: string; maxTurns?: number }
+  | {
+      kind: "dispatch";
+      name: string;
+      prompt: string;
+      expectSubagent: string;
+      /** Default true (subagent must be launched). Set false for a near-miss: it must NOT launch. */
+      shouldDispatch?: boolean;
+      maxTurns?: number;
+    }
   | {
       kind: "activation";
       name: string;
@@ -119,15 +127,19 @@ export function runWorkflowCases(cases: WorkflowCase[]): void {
   for (const c of cases) {
     test(c.name, async () => {
       if (c.kind === "dispatch") {
-        // Stop the moment the subagent is launched — no need to wait out its nested session.
         const expect1 = c.expectSubagent;
+        const shouldDispatch = c.shouldDispatch ?? true;
+        // Positive: stop the moment the subagent is launched — no need to wait out its nested
+        // session. Negative (near-miss): no early stop signal exists, so run to completion/maxTurns.
         const result = await workflowTask(c.prompt, {
           maxTurns: c.maxTurns,
-          stopWhen: (p) => p.subagents.includes(expect1),
+          ...(shouldDispatch ? { stopWhen: (p) => p.subagents.includes(expect1) } : {}),
         });
         logTrace(c.name, result);
         try {
-          expect(result.subagents, `subagents: ${result.subagents.join(", ")}`).toContain(c.expectSubagent);
+          const matcher = expect(result.subagents, `subagents: ${result.subagents.join(", ")}`);
+          if (shouldDispatch) matcher.toContain(c.expectSubagent);
+          else matcher.not.toContain(c.expectSubagent);
         } finally {
           record(c.name, { result });
         }
