@@ -27,6 +27,27 @@ export const SPAWN_TOOLS = new Set(["Task", "Agent"]);
 // workflowTask runs against the LIVE repo with bypassPermissions — keep this read-only.
 export const WORKFLOW_ALLOWED_TOOLS = ["Read", "Grep", "Glob", "Task", "Agent", "Skill"];
 
+/**
+ * allowedTools does NOT narrow the tool surface — the harness's built-in tools stay reachable
+ * whatever we pass. That breaks the evals in two ways, so we name the offenders explicitly:
+ *
+ *   ReportFindings — a review agent hands its findings to this tool instead of writing prose.
+ *     The trace records the call, but the payload never lands in Result.text, so the judge scores
+ *     a stub and every agent case fails. Production dispatch gives the agent only its frontmatter
+ *     tools (Read/Grep/Glob/Bash), where prose is its ONLY output channel — so blocking this here
+ *     restores the contract we actually ship, rather than papering over a bad score.
+ *
+ *   Write / Edit / NotebookEdit — workflowTask loads the real repo with bypassPermissions, so a
+ *     model that decides to "record the insight" edits the developer's actual INSIGHTS.md. Skill
+ *     ACTIVATION is what these cases assert; the write itself is never part of the assertion.
+ */
+export const DISALLOWED_TOOLS = [
+  "ReportFindings",
+  "Write",
+  "Edit",
+  "NotebookEdit",
+];
+
 // --- Output verbosity -------------------------------------------------------
 // Set EVAL_QUIET to suppress per-run trace/verdict spam during multi-run aggregation.
 export const QUIET = Boolean(process.env.EVAL_QUIET);
