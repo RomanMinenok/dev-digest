@@ -46,9 +46,14 @@ export const cases: WorkflowCase[] = [
   {
     kind: "activation",
     name: "engineering-insights activates on a genuine discovery",
+    // Self-contained on purpose: an underspecified prompt makes the model spend its turn asking
+    // for the missing numbers (CLAUDE.md tells it to ask before acting), and the case then measures
+    // prompt completeness rather than skill activation. Every fact the skill needs is given here.
     prompt:
-      "Щойно з'ясував, чому pgvector-запит повертав нуль рядків — розмірність колонки не збіглася " +
-      "після зміни моделі ембедингів. Хочу це зафіксувати, щоб більше не наступати.",
+      "Щойно з'ясував, чому pgvector-запит повертав нуль рядків: ми перейшли з ембедингів " +
+      "text-embedding-3-small (1536 вимірів) на bge-base (768), але колонка лишилась vector(1536), " +
+      "і пошук мовчки повертав порожньо замість помилки. Полагодив міграцією колонки на vector(768) " +
+      "з переіндексацією. Хочу це зафіксувати, щоб більше не наступати.",
     skill: "engineering-insights",
     shouldActivate: true,
     maxTurns: 4,
