@@ -34,12 +34,15 @@ function hasEvals(tier, name) {
   return readdirSync(dir).some((f) => f.endsWith(".eval.ts"));
 }
 
+// Docs that live alongside the artifacts but are not artifacts themselves.
+const NOT_AN_ARTIFACT = new Set(["README"]);
+
 /** Collect distinct artifact names touched under a `.claude` and/or `evals` prefix. */
 function touched(reClaude, reEvals) {
   const names = new Set();
   for (const f of changed) {
     const m = f.match(reClaude) ?? f.match(reEvals);
-    if (m) names.add(m[1]);
+    if (m && !NOT_AN_ARTIFACT.has(m[1])) names.add(m[1]);
   }
   return [...names].sort();
 }
