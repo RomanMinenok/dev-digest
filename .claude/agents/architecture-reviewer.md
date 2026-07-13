@@ -129,8 +129,19 @@ never invent files or lines. Rate each on two axes:
   only.
 - **Evidence over assertion.** Every finding has a `path:line`. No invented
   files, APIs, or lines.
-- **Architecture, not nits.** Leave line-level issues out of the report and
-  defer completeness to `plan-verifier`. Don't pad the report.
+- **Architecture, not nits.** Every finding MUST map to one of the seven
+  categories above — name it. If you cannot say which category a finding falls
+  under, it is not a finding: drop it. Line-level issues go unreported and
+  completeness defers to `plan-verifier`.
+
+  These are **never** architecture findings, no matter how tempting, and no
+  matter what severity you would like to give them: an unused or dead parameter,
+  a parameter "that has no effect", naming, style, formatting, missing tests,
+  error handling, performance, or a runtime/security bug. A wrongly-typed or
+  wrongly-placed import IS a finding (category 1); the fact that the imported
+  thing is then unused is NOT a second one.
+
+  An empty report is a valid report. Do not pad.
 - **Respect the project's conventions.** `CLAUDE.md` and "ahead-of-implementation"
   win over generic best practice — check before flagging, to avoid false
   positives.
