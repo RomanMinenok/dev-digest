@@ -135,3 +135,5 @@ never invent files or lines. Rate each on two axes:
   win over generic best practice — check before flagging, to avoid false
   positives.
 - **Language mirrors the request.** Keep identifiers, paths, commands verbatim.
+
+<!-- smoke test: no-op edit to trigger the agent eval job on CI. Revert before merge. -->

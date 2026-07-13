@@ -101,22 +101,26 @@ jobs:
           SKIPPED_SKILLS: ${{ steps.detect.outputs.skipped_skills }}
           SKIPPED_AGENTS: ${{ steps.detect.outputs.skipped_agents }}
           HAS_KEY: ${{ steps.key.outputs.has_key }}
+          SKILLS_MODEL: ${{ inputs.skills_model || 'deepseek/deepseek-v4-flash' }}
+          TOOL_MODEL: ${{ inputs.tool_model || 'google/gemini-2.5-flash' }}
         run: |
           # Turn a JSON array of names into `a`, `b` — or an em dash when empty.
           fmt() { echo "$1" | tr -d '[]"' | sed 's/,/`, `/g; s/^/`/; s/$/`/; s/^``$/—/'; }
+          # A tier that isn't running has no model to name — leave that cell blank.
+          model_if() { [ "$1" = "—" ] && echo '' || echo "\`$2\`"; }
+
+          sk=$(fmt "$SKILLS")
+          ag=$(fmt "$AGENTS")
+          [ "$RUN_WORKFLOW" = "true" ] && wf='yes (non-blocking)' || wf='—'
           {
             echo '<!-- evals-routing -->'
             echo '### Eval routing'
             echo ''
             echo '| tier | runs | on |'
             echo '|---|---|---|'
-            echo "| skills | $(fmt "$SKILLS") | \`${{ inputs.skills_model || 'deepseek/deepseek-v4-flash' }}\` |"
-            echo "| agents | $(fmt "$AGENTS") | \`${{ inputs.tool_model || 'google/gemini-2.5-flash' }}\` |"
-            if [ "$RUN_WORKFLOW" = "true" ]; then
-              echo "| workflow | yes (non-blocking) | \`${{ inputs.tool_model || 'google/gemini-2.5-flash' }}\` |"
-            else
-              echo '| workflow | — | |'
-            fi
+            echo "| skills | $sk | $(model_if "$sk" "$SKILLS_MODEL") |"
+            echo "| agents | $ag | $(model_if "$ag" "$TOOL_MODEL") |"
+            echo "| workflow | $wf | $(model_if "$wf" "$TOOL_MODEL") |"
             echo ''
             if [ -n "$SKIPPED_SKILLS" ] || [ -n "$SKIPPED_AGENTS" ]; then
               echo '**Skipped — no evals written for these yet:**'
