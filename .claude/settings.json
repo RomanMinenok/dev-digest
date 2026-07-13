@@ -26,5 +26,8 @@
   },
   "env": {
     "ENABLE_TOOL_SEARCH": "false"
+  },
+  "permissions": {
+    "deny": ["Read(**/.env)", "Read(**/.env.*)"]
   }
 }
