@@ -1,16 +1,22 @@
-diff --git a/server/src/modules/blast/score.ts b/server/src/modules/blast/score.ts
+diff --git a/server/src/modules/blast/helpers.ts b/server/src/modules/blast/helpers.ts
 index eeeeeee..fffffff 100644
---- a/server/src/modules/blast/score.ts
-+++ b/server/src/modules/blast/score.ts
-@@ -1,10 +1,12 @@
- export interface BlastRow {
-   id: string;
-   score: number;
- }
-
--export function summarize(rows: BlastRow[]) {
--  return rows.map((r) => ({ id: r.id, score: r.score }));
-+// Renamed locals for readability; behaviour unchanged.
-+export function summarize(rows: BlastRow[]) {
-+  return rows.map((row) => ({ id: row.id, score: row.score }));
- }
+--- a/server/src/modules/blast/helpers.ts
++++ b/server/src/modules/blast/helpers.ts
+@@ -49,14 +49,15 @@ function factsForSymbol(
+   result: BlastResult,
+   callers: BlastCaller[],
+ ): { endpoints: string[]; crons: string[] } {
+   if (result.factsByFile) {
+     const endpoints = new Set<string>();
+     const crons = new Set<string>();
+     for (const caller of callers) {
+       const facts = result.factsByFile[caller.file];
+       if (!facts) continue;
+-      for (const e of facts.endpoints) endpoints.add(e);
+-      for (const c of facts.crons) crons.add(c);
++      // Renamed locals for readability; behaviour unchanged.
++      for (const endpoint of facts.endpoints) endpoints.add(endpoint);
++      for (const cron of facts.crons) crons.add(cron);
+     }
+     return { endpoints: [...endpoints], crons: [...crons] };
+   }

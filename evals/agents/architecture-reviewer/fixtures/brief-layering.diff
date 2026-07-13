@@ -1,0 +1,29 @@
+diff --git a/server/src/modules/brief/validate.ts b/server/src/modules/brief/validate.ts
+index 1111111..2222222 100644
+--- a/server/src/modules/brief/validate.ts
++++ b/server/src/modules/brief/validate.ts
+@@ -1,5 +1,6 @@
+ import type { Risk, ReviewFocusItem } from '@devdigest/shared';
++import type { FastifyReply } from 'fastify';
+ import type { BriefResult } from './brief-prompt.js';
+
+@@ -21,6 +22,7 @@ export function validateBriefOutput(
+ export function validateBriefOutput(
+   result: BriefResult,
+   changedPaths: string[],
++  reply?: FastifyReply,
+ ): { risks: Risk[]; review_focus: ReviewFocusItem[] } {
+   const review_focus = result.review_focus.filter((item) => changedPaths.includes(item.path));
+
+diff --git a/server/src/modules/brief/service.ts b/server/src/modules/brief/service.ts
+index 3333333..4444444 100644
+--- a/server/src/modules/brief/service.ts
++++ b/server/src/modules/brief/service.ts
+@@ -26,8 +26,8 @@ export class BriefService {
+ export class BriefService {
+   private repo: BriefRepository;
+
+   constructor(private container: Container) {
+-    this.repo = container.briefRepo;
++    this.repo = new BriefRepository(container.db);
+   }
