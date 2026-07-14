@@ -35,3 +35,30 @@ export function githubBlobUrl(
   }
   return url;
 }
+
+/**
+ * Build an in-app handoff URL that opens an external target, then returns the
+ * user to `returnTo` (the PR page they came from). Used when we want GitHub
+ * deep-links to bounce back into the studio without losing place.
+ *
+ * Example: `/go?next=https://github.com/...&return=/repos/.../pulls/12`
+ */
+export function externalHandoffUrl(externalUrl: string, returnTo: string): string {
+  const params = new URLSearchParams({
+    next: externalUrl,
+    return: returnTo,
+  });
+  return `/go?${params.toString()}`;
+}
+
+/**
+ * Resolve the post-handoff destination. Prefers an explicit `next` (so callers
+ * can deep-link straight into GitHub or back into the app); falls back to
+ * `return`, then `/`.
+ */
+export function resolveHandoffTarget(
+  next: string | null | undefined,
+  returnTo: string | null | undefined,
+): string {
+  return next || returnTo || "/";
+}
