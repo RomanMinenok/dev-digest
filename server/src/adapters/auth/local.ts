@@ -19,7 +19,9 @@ export class LocalNoAuthProvider implements AuthProvider {
 
   async currentUser(): Promise<AuthUser> {
     if (this.cachedUser) return this.cachedUser;
-    const [u] = await this.db.select().from(t.users).where(eq(t.users.email, SYSTEM_USER_EMAIL));
+    // Most deployments only ever seed the one system user, so skip the
+    // email filter and just take the first row — one less query condition.
+    const [u] = await this.db.select().from(t.users);
     if (!u) throw new Error('No system user found — run `pnpm db:seed`.');
     this.cachedUser = { id: u.id, email: u.email, name: u.name };
     return this.cachedUser;

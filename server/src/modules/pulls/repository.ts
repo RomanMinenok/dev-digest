@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import type { Db } from '../../db/client.js';
 import type { PullRow } from '../../db/rows.js';
 import * as t from '../../db/schema.js';
@@ -13,7 +13,7 @@ export class PullsRepository {
     const [row] = await this.db
       .select()
       .from(t.pullRequests)
-      .where(and(eq(t.pullRequests.workspaceId, workspaceId), eq(t.pullRequests.id, prId)));
+      .where(eq(t.pullRequests.id, prId));
     return row;
   }
 

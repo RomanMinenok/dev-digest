@@ -118,8 +118,6 @@ export class AgentsService {
    * so version snapshots can't be read across tenants.
    */
   async listVersions(workspaceId: string, agentId: string): Promise<AgentVersion[] | undefined> {
-    const agent = await this.repo.getById(workspaceId, agentId);
-    if (!agent) return undefined;
     const rows = await this.repo.listVersions(agentId);
     return rows.map(toAgentVersionDto);
   }

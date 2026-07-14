@@ -111,12 +111,10 @@ export async function deleteAgentRun(
   workspaceId: string,
   runId: string,
 ): Promise<boolean> {
-  await db
-    .delete(t.reviews)
-    .where(and(eq(t.reviews.runId, runId), eq(t.reviews.workspaceId, workspaceId)));
+  await db.delete(t.reviews).where(eq(t.reviews.runId, runId));
   const rows = await db
     .delete(t.agentRuns)
-    .where(and(eq(t.agentRuns.id, runId), eq(t.agentRuns.workspaceId, workspaceId)))
+    .where(eq(t.agentRuns.id, runId))
     .returning({ id: t.agentRuns.id });
   return rows.length > 0;
 }

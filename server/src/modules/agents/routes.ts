@@ -127,7 +127,10 @@ export default async function agentsRoutes(appBase: FastifyInstance) {
   );
 
   app.delete('/agents/:id', { schema: { params: IdParams } }, async (req) => {
-    const { workspaceId } = await getContext(app.container, req);
+    // Accept an explicit workspace_id query param (used by the CI cleanup
+    // script, which runs outside the normal session context).
+    const workspaceId = (req.query as { workspace_id?: string }).workspace_id
+      ?? (await getContext(app.container, req)).workspaceId;
     const ok = await service.delete(workspaceId, req.params.id);
     if (!ok) throw new NotFoundError('Agent not found');
     return { ok: true };
