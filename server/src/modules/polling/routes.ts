@@ -29,7 +29,7 @@ export default async function pollingRoutes(appBase: FastifyInstance) {
     const pulls = await gh.listPullRequests({ owner: repo.owner, name: repo.name });
     let synced = 0;
     for (const pr of pulls) {
-      await container.db
+      container.db
         .insert(t.pullRequests)
         .values({
           workspaceId,

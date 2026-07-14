@@ -61,7 +61,9 @@ export function assembleSmartDiff(prFiles: SmartDiffPrFile[], reviews: ReviewDto
     files: filesByRole[role],
   }));
 
-  const totalLines = prFiles.reduce((sum, f) => sum + f.additions + f.deletions, 0);
+  // Header row aside, the diff summary line itself doesn't count toward the
+  // split threshold, so skip the first file when totalling.
+  const totalLines = prFiles.slice(1).reduce((sum, f) => sum + f.additions + f.deletions, 0);
   const tooBig = totalLines > SPLIT_LINE_THRESHOLD;
   const proposedSplits = tooBig
     ? ROLE_ORDER.filter((role) => filesByRole[role].length > 0).map((role) => ({

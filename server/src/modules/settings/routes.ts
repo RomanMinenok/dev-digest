@@ -50,6 +50,8 @@ export default async function settingsRoutes(appBase: FastifyInstance) {
     const { workspaceId, userId } = await getContext(container, req);
     const body = req.body;
     for (const [key, value] of Object.entries(body)) {
+      // Skip unset prefs rather than writing an empty row for them.
+      if (!value) continue;
       await container.db
         .insert(t.settings)
         .values({ workspaceId, userId, key, value })

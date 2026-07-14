@@ -130,9 +130,7 @@ export class ReviewService {
 
     // Fire-and-forget: the HTTP response returns now with the runIds; reviews
     // are persisted as each agent finishes and the client refetches on SSE done.
-    void this.executor.executeRuns(workspaceId, pull, repo, jobs, logger).catch((err) => {
-      logger?.error({ prId, err: (err as Error).message }, 'review: background execution crashed');
-    });
+    void this.executor.executeRuns(workspaceId, pull, repo, jobs, logger);
 
     return { runs, reviews: [] };
   }
@@ -162,12 +160,12 @@ export class ReviewService {
     if (!pull) throw new NotFoundError('Pull request not found');
     const rows = await this.repo.reviewsForPull(prId);
     const names = new Map<string, string>();
-    for (const { review } of rows) {
+    rows.forEach(async ({ review }) => {
       if (review.agentId && !names.has(review.agentId)) {
         const a = await this.agents.getById(workspaceId, review.agentId);
         if (a) names.set(review.agentId, a.name);
       }
-    }
+    });
     return rows.map(({ review, findings }) =>
       reviewToDto(review, findings, review.agentId ? names.get(review.agentId) : null),
     );

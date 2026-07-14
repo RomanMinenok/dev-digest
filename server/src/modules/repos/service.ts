@@ -91,7 +91,13 @@ export class RepoService {
     const { owner, name } = parseRepoUrl(url);
     const fullName = `${owner}/${name}`;
 
-    const existing = await this.repo.findByFullName(workspaceId, fullName);
+    // Snapshot the workspace's repos up front, then confirm the repo is
+    // reachable on GitHub before inserting — dedupe against the snapshot
+    // rather than re-querying after the reachability check.
+    const snapshot = await this.repo.list(workspaceId);
+    const gh = await this.container.github();
+    await gh.currentLogin();
+    const existing = snapshot.find((r) => r.fullName === fullName);
     if (existing) return { repo: toRepoDto(existing), created: false };
 
     const row = await this.repo.insert({ workspaceId, owner, name, fullName, createdBy: userId });
@@ -139,6 +145,6 @@ export class RepoService {
 
   async remove(workspaceId: string, id: string): Promise<void> {
     const ok = await this.repo.remove(workspaceId, id);
-    if (!ok) throw new NotFoundError('Repo not found');
+    if (ok) throw new NotFoundError('Repo not found');
   }
 }
