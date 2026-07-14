@@ -73,6 +73,37 @@ export function reviewToDto(
   };
 }
 
+export interface ContextDocLinkedSkill {
+  skill: { enabled: boolean; contextDocs?: string[] | null };
+}
+
+/**
+ * Ordered union of an agent's own `context_docs` + each linked-AND-enabled
+ * skill's `context_docs` (SPEC-01 AC-16/AC-8). Deduped by path, first
+ * occurrence wins: the agent's own docs come first, then skill-inherited
+ * docs in skill link order — this order later drives the run-time `specs`
+ * prompt order, so it must match exactly.
+ */
+export function resolveAttachedDocPaths(
+  agentContextDocs: string[] | null | undefined,
+  linkedSkills: ContextDocLinkedSkill[],
+): string[] {
+  const paths: string[] = [];
+  const seen = new Set<string>();
+  const push = (p: string) => {
+    if (!seen.has(p)) {
+      seen.add(p);
+      paths.push(p);
+    }
+  };
+  for (const p of agentContextDocs ?? []) push(p);
+  for (const l of linkedSkills) {
+    if (!l.skill.enabled) continue;
+    for (const p of l.skill.contextDocs ?? []) push(p);
+  }
+  return paths;
+}
+
 /**
  * Build the per-run task instruction line for a PR.
  *

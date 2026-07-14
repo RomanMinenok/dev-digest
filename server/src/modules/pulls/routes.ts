@@ -6,6 +6,7 @@ import { PrCommentInput } from '@devdigest/shared';
 import * as t from '../../db/schema.js';
 import { getContext } from '../_shared/context.js';
 import { IdParams } from '../_shared/schemas.js';
+import { SESSION_WINDOW_MS } from '../_shared/session-window.js';
 import { AppError, NotFoundError } from '../../platform/errors.js';
 import { deriveReviewStatus } from './status.js';
 import { PullsService } from './service.js';
@@ -179,8 +180,8 @@ export default async function pullsRoutes(appBase: FastifyInstance) {
         if (!rr.prId || !rr.ranAt) continue;
         if (!latestRanAtByPr.has(rr.prId)) latestRanAtByPr.set(rr.prId, rr.ranAt.getTime());
       }
-      // Second pass: sum cost of all runs within 60 s of the latest ran_at per PR.
-      const SESSION_WINDOW_MS = 60_000;
+      // Second pass: sum cost of all runs within the session window of the
+      // latest ran_at per PR (see `_shared/session-window.ts`).
       for (const rr of runRows) {
         if (!rr.prId || !rr.ranAt) continue;
         const latestMs = latestRanAtByPr.get(rr.prId);

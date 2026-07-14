@@ -86,7 +86,15 @@ describe('AI contracts parse fixtures', () => {
     ).not.toThrow();
     expect(() =>
       Risks.parse({
-        risks: [{ kind: 'security', title: 't', explanation: 'e', severity: 'high', file_refs: [] }],
+        risks: [
+          {
+            kind: 'security',
+            title: 't',
+            explanation: 'e',
+            severity: 'high',
+            file_refs: [{ path: 'src/a.ts', start_line: 10, end_line: 12 }],
+          },
+        ],
       }),
     ).not.toThrow();
     expect(() =>
@@ -163,7 +171,7 @@ describe('AI contracts parse fixtures', () => {
       tool_calls: [{ tool: 'read_file', args: "'src/config.ts'", meta: '1,240 bytes', ms: 120 }],
       raw_output: '{}',
       memory_pulled: [{ pr: 288, text: 'verified via stripe-signature' }],
-      specs_read: ['specs/security-baseline.md'],
+      specs_read: [{ path: 'specs/security-baseline.md', content: 'Baseline security rules.' }],
       log: [{ t: '00.00', kind: 'info', msg: 'started' }],
     });
     expect(trace.tool_calls).toHaveLength(1);

@@ -67,12 +67,20 @@ export type BlastRadius = z.infer<typeof BlastRadius>;
 export const RiskSeverity = z.enum(['high', 'medium', 'low']);
 export type RiskSeverity = z.infer<typeof RiskSeverity>;
 
+/** File+line deep-link target for a Risk Area (mirrors ReviewFocusItem's path/lines). */
+export const RiskFileRef = z.object({
+  path: z.string(),
+  start_line: z.number().int(),
+  end_line: z.number().int().optional(),
+});
+export type RiskFileRef = z.infer<typeof RiskFileRef>;
+
 export const Risk = z.object({
   kind: z.string(),
   title: z.string(),
   explanation: z.string(),
   severity: RiskSeverity,
-  file_refs: z.array(z.string()),
+  file_refs: z.array(RiskFileRef),
 });
 export type Risk = z.infer<typeof Risk>;
 
@@ -132,11 +140,31 @@ export const SmartDiff = z.object({
 });
 export type SmartDiff = z.infer<typeof SmartDiff>;
 
+// ---- Review focus ----
+export const RiskLevel = z.enum(['critical', 'high', 'medium', 'low']);
+export type RiskLevel = z.infer<typeof RiskLevel>;
+
+export const ReviewFocusItem = z.object({
+  path: z.string(),
+  start_line: z.number().int(),
+  end_line: z.number().int().optional(),
+  description: z.string(),
+  severity: RiskSeverity,
+});
+export type ReviewFocusItem = z.infer<typeof ReviewFocusItem>;
+
 // ---- Composed PR Brief (pr_brief.json) ----
 export const PrBrief = z.object({
   intent: Intent,
   blast: BlastRadius,
   risks: Risks,
   history: PrHistory,
+  what: z.string(),
+  why: z.string(),
+  risk_level: RiskLevel,
+  review_focus: z.array(ReviewFocusItem).default([]),
+  tokens_in: z.number().nullable(),
+  tokens_out: z.number().nullable(),
+  cost_usd: z.number().nullable(),
 });
 export type PrBrief = z.infer<typeof PrBrief>;
