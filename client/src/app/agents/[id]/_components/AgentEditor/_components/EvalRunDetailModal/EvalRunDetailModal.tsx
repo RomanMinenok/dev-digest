@@ -17,6 +17,7 @@ import type { ReactElement } from "react";
 import { useTranslations } from "next-intl";
 import { Modal, Icon } from "@devdigest/ui";
 import type { EvalCase, EvalRunRecord, Finding } from "@devdigest/shared";
+import { EVAL_METRIC_COLORS } from "@/lib/eval-metric-colors";
 import {
   matchesExpectation,
   parseActualFindings,
@@ -118,7 +119,9 @@ export function EvalRunDetailModal({
         <div style={s.scoreGrid}>
           <div style={s.scoreCard}>
             <div style={s.scoreLabel}>{t("dashboard.metrics.recall")}</div>
-            <div style={s.scoreValue}>{pct(run.recall)}</div>
+            <div style={{ ...s.scoreValue, color: EVAL_METRIC_COLORS.recall }}>
+              {pct(run.recall)}
+            </div>
             <div style={s.scoreSub}>
               {t("runDetail.matchedOf", {
                 matched: count(run.matched),
@@ -128,14 +131,18 @@ export function EvalRunDetailModal({
           </div>
           <div style={s.scoreCard}>
             <div style={s.scoreLabel}>{t("dashboard.metrics.precision")}</div>
-            <div style={s.scoreValue}>{pct(run.precision)}</div>
+            <div style={{ ...s.scoreValue, color: EVAL_METRIC_COLORS.precision }}>
+              {pct(run.precision)}
+            </div>
             <div style={s.scoreSub}>
               {t("runDetail.falsePositives", { count: count(run.false_positives) })}
             </div>
           </div>
           <div style={s.scoreCard}>
             <div style={s.scoreLabel}>{t("dashboard.metrics.citationAccuracy")}</div>
-            <div style={s.scoreValue}>{pct(run.citation_accuracy)}</div>
+            <div style={{ ...s.scoreValue, color: EVAL_METRIC_COLORS.citation_accuracy }}>
+              {pct(run.citation_accuracy)}
+            </div>
             <div style={s.scoreSub}>
               {t("runDetail.keptDropped", {
                 kept: count(run.kept),

@@ -7,6 +7,7 @@ import React from "react";
 import { useTranslations } from "next-intl";
 import { Button, Icon, SectionLabel } from "@devdigest/ui";
 import type { Agent, EvalCase, EvalDashboard, EvalRunRecord } from "@devdigest/shared";
+import { EVAL_METRIC_COLORS } from "@/lib/eval-metric-colors";
 import { METRIC_CARDS } from "./constants";
 import {
   countActualFindings,
@@ -63,9 +64,10 @@ interface MetricCardProps {
   value: number;
   unavailable: boolean;
   delta: number | null;
+  valueColor: string;
 }
 
-function MetricCard({ label, value, unavailable, delta }: MetricCardProps) {
+function MetricCard({ label, value, unavailable, delta, valueColor }: MetricCardProps) {
   const pp = delta !== null ? deltaPp(delta) : 0;
   const deltaStyle =
     delta === null
@@ -89,7 +91,7 @@ function MetricCard({ label, value, unavailable, delta }: MetricCardProps) {
       {unavailable ? (
         <div style={s.metricUnavailable}>—</div>
       ) : (
-        <div style={s.metricValue}>{pct(value)}</div>
+        <div style={{ ...s.metricValue, color: valueColor }}>{pct(value)}</div>
       )}
       {delta !== null && !unavailable && deltaStyle && (
         <div style={deltaStyle}>
@@ -223,6 +225,7 @@ export function EvalsTabView({
                 value={current ?? 0}
                 unavailable={unavailable}
                 delta={hasPreviousVersion && !unavailable && delta !== undefined ? delta : null}
+                valueColor={EVAL_METRIC_COLORS[field]}
               />
             );
           })}
