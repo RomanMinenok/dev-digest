@@ -315,15 +315,14 @@ export function EvalsTabView({
                       onClick={() => onRunCase(c.id)}
                       title={t("evalsTab.run")}
                     />
-                    {latestRun && (
-                      <Button
-                        kind="ghost"
-                        size="sm"
-                        icon="Eye"
-                        onClick={() => onViewRun(c.id)}
-                        title={t("evalsTab.viewRun")}
-                      />
-                    )}
+                    <Button
+                      kind="ghost"
+                      size="sm"
+                      icon="FileText"
+                      disabled={!latestRun}
+                      onClick={() => onViewRun(c.id)}
+                      title={t("evalsTab.viewRun")}
+                    />
                     <Button
                       kind="ghost"
                       size="sm"

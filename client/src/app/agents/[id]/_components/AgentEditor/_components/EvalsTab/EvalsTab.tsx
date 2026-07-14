@@ -141,7 +141,7 @@ export function EvalsTab({ agent }: { agent: Agent }) {
         dashboard={dashboard ?? null}
         cases={cases ?? []}
         loading={dashLoading || casesLoading}
-        runningAll={runEvals.isPending && runEvals.variables === undefined}
+        runningAll={runEvals.isPending && runEvals.variables?.case_ids === undefined}
         runningCaseId={
           runEvals.isPending && runEvals.variables?.case_ids?.length === 1
             ? (runEvals.variables.case_ids[0] ?? null)
@@ -152,7 +152,7 @@ export function EvalsTab({ agent }: { agent: Agent }) {
         passingCount={passingCount}
         fullyStale={fullyStale}
         lastMeasuredVersion={lastMeasuredVersion}
-        onRunAll={() => runEvals.mutate(undefined)}
+        onRunAll={() => runEvals.mutate({})}
         onRunCase={(caseId) => runEvals.mutate({ case_ids: [caseId] })}
         onEditCase={openEdit}
         onDeleteCase={(caseId) => deleteCase.mutate(caseId)}
