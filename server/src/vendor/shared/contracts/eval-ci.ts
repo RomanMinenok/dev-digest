@@ -92,6 +92,15 @@ export const EvalRunRecord = z.object({
   duration_ms: z.number().int().nullable(),
   cost_usd: z.number().nullable(),
   agent_version: z.number().int(),
+  // Raw scoring counts (see scorer.ts poolMetrics) — exposed so the client can
+  // show WHY a case passed/failed (matched vs expected, grounding kept/dropped)
+  // without re-deriving anything from actual_output.
+  matched: z.number().int().nullable(),
+  expected_total: z.number().int().nullable(),
+  produced: z.number().int().nullable(),
+  false_positives: z.number().int().nullable(),
+  kept: z.number().int().nullable(),
+  dropped: z.number().int().nullable(),
 });
 export type EvalRunRecord = z.infer<typeof EvalRunRecord>;
 

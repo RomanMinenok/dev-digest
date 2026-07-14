@@ -146,7 +146,9 @@ sections it has no input for.
 - **AC-3** — WHERE the finding is accepted, or has neither an accept nor a
   dismiss decision, the system shall prefill the expected output with one
   expected-finding object carrying that finding's `severity`, `category`,
-  `title`, `file` and `start_line`. *(Verify: unit test on the prefill helper)*
+  `title`, `file`, `start_line` and `end_line` (the finding's full line range,
+  not just its start — a missing `end_line` would collapse the AC-21 match to a
+  single point). *(Verify: unit test on the prefill helper)*
 - **AC-4** — WHEN prefilling a case from a finding, the system shall set the
   case's input diff to the hunks of that PR's diff belonging to the finding's
   file **only**, and shall leave that field editable before save. *(Verify: unit

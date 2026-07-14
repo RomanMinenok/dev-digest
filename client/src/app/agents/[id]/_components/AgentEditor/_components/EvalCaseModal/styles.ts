@@ -10,7 +10,8 @@ export const s = {
 
   /** Left column — Name + Input tabs */
   leftCol: {
-    flex: "0 0 460px",
+    flex: 1,
+    minWidth: 0,
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",
@@ -20,15 +21,15 @@ export const s = {
   /** Right column — Expected output */
   rightCol: {
     flex: 1,
+    minWidth: 0,
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",
-    minWidth: 0,
   } satisfies CSSProperties,
 
   /** Padding applied inside each column's scrollable area. */
   colPad: {
-    padding: "20px 24px",
+    padding: "20px 24px 0",
   } satisfies CSSProperties,
 
   /** Section heading inside column (e.g. "Input", "Expected output"). */

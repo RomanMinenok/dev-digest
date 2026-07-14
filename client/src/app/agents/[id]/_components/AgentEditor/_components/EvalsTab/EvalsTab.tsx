@@ -18,6 +18,7 @@ import {
 } from "../../../../../../../lib/eval-prefill";
 import { EvalsTabView } from "./EvalsTabView";
 import { EvalCaseModal } from "../EvalCaseModal";
+import { EvalRunDetailModal } from "../EvalRunDetailModal";
 import {
   isRunStaleForAgent,
   lastMeasuredAgentVersion,
@@ -33,6 +34,7 @@ export function EvalsTab({ agent }: { agent: Agent }) {
   const [modalOpen, setModalOpen] = React.useState(false);
   const [editCaseId, setEditCaseId] = React.useState<string | null>(null);
   const [prefill, setPrefill] = React.useState<EvalPrefillPayload | null>(null);
+  const [viewRunCaseId, setViewRunCaseId] = React.useState<string | null>(null);
 
   // AC-1: on mount, if ?prefill=1 is set, read-and-clear sessionStorage and open the modal
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -63,6 +65,8 @@ export function EvalsTab({ agent }: { agent: Agent }) {
     setEditCaseId(null);
     setPrefill(null);
   }, []);
+
+  const closeRunDetail = React.useCallback(() => setViewRunCaseId(null), []);
 
   // ── Derived state ─────────────────────────────────────────────────────────
 
@@ -127,6 +131,9 @@ export function EvalsTab({ agent }: { agent: Agent }) {
     lastMeasuredVersion != null &&
     lastMeasuredVersion !== agent.version;
 
+  const viewCase = viewRunCaseId != null ? (cases ?? []).find((c) => c.id === viewRunCaseId) : null;
+  const viewRun = viewCase ? latestRunByCase.get(viewCase.id) : undefined;
+
   return (
     <>
       <EvalsTabView
@@ -150,6 +157,7 @@ export function EvalsTab({ agent }: { agent: Agent }) {
         onEditCase={openEdit}
         onDeleteCase={(caseId) => deleteCase.mutate(caseId)}
         onNewCase={openNew}
+        onViewRun={setViewRunCaseId}
       />
       {modalOpen && (
         <EvalCaseModal
@@ -158,6 +166,9 @@ export function EvalsTab({ agent }: { agent: Agent }) {
           prefill={prefill}
           onClose={closeModal}
         />
+      )}
+      {viewCase && viewRun && (
+        <EvalRunDetailModal evalCase={viewCase} run={viewRun} onClose={closeRunDetail} />
       )}
     </>
   );

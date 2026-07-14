@@ -33,6 +33,7 @@
   "caseEditor": {
     "newCase": "New eval case",
     "caseTitle": "Eval case · {name}",
+    "subtitle": "{agentName} · simulate a PR and assert the expected output",
     "runCase": "Run case",
     "running": "Running…",
     "save": "Save",
@@ -86,12 +87,26 @@
     "recallSuffix": " · recall {recall}%",
     "run": "Run",
     "running": "Running…",
+    "viewRun": "View result",
     "edit": "Edit",
     "delete": "Delete",
     "runAll": "Run all evals",
     "passingCount": "{passing} / {total} passing",
     "notScoredOnVersion": "not scored on v{version}",
     "viewDashboard": "View full dashboard →"
+  },
+  "runDetail": {
+    "title": "Run result · {name}",
+    "passed": "Passed",
+    "failed": "Failed",
+    "noVerdict": "No verdict (run failed to complete)",
+    "matchedOf": "{matched} / {total} matched",
+    "falsePositives": "{count} false positive(s)",
+    "keptDropped": "{kept} kept · {dropped} dropped",
+    "expectedColumn": "Expected ({count})",
+    "actualColumn": "Actual ({count})",
+    "expectedEmpty": "No findings expected",
+    "actualEmpty": "No findings produced"
   },
   "page": {
     "crumbSkillsLab": "Skills Lab",

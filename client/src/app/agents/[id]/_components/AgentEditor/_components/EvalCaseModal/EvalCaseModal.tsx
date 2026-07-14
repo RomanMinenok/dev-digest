@@ -233,6 +233,7 @@ export function EvalCaseModal({
     <Modal
       width={840}
       title={title}
+      subtitle={t("caseEditor.subtitle", { agentName: agent.name })}
       onClose={onClose}
       footer={
         <div style={s.footer}>

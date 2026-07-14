@@ -102,6 +102,12 @@ function toEvalRunRecord(row: EvalRunRow, fallbackVersion: number): EvalRunRecor
     duration_ms: row.durationMs,
     cost_usd: row.costUsd,
     agent_version: row.agentVersion ?? fallbackVersion,
+    matched: row.matched,
+    expected_total: row.expectedTotal,
+    produced: row.produced,
+    false_positives: row.falsePositives,
+    kept: row.kept,
+    dropped: row.dropped,
   };
 }
 

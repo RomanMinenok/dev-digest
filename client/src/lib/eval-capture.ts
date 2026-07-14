@@ -70,12 +70,14 @@ export function sliceDiffToFile(files: PrFile[], path: string): string {
  * - Dismissed finding (AC-2) → `[]` (the eval expects the agent to produce
  *   *nothing* for that file/line — a true-negative test).
  * - Accepted **or** undecided finding (AC-3) → one-element array with the
- *   five matching coordinates: severity, category, title, file, start_line.
+ *   six matching coordinates: severity, category, title, file, start_line,
+ *   end_line — the full line range, not just its start (a missing end_line
+ *   would collapse the match to a single point, AC-21).
  */
 export function expectedFromFinding(
   finding: Pick<
     FindingRecord,
-    "dismissed_at" | "severity" | "category" | "title" | "file" | "start_line"
+    "dismissed_at" | "severity" | "category" | "title" | "file" | "start_line" | "end_line"
   >,
 ): Array<{
   severity: string;
@@ -83,6 +85,7 @@ export function expectedFromFinding(
   title: string;
   file: string;
   start_line: number;
+  end_line: number;
 }> {
   if (finding.dismissed_at) return [];
   return [
@@ -92,6 +95,7 @@ export function expectedFromFinding(
       title: finding.title,
       file: finding.file,
       start_line: finding.start_line,
+      end_line: finding.end_line,
     },
   ];
 }

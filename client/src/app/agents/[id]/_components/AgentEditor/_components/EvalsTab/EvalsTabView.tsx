@@ -39,6 +39,7 @@ export interface EvalsTabViewProps {
   onEditCase: (caseId: string) => void;
   onDeleteCase: (caseId: string) => void;
   onNewCase: () => void;
+  onViewRun: (caseId: string) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -164,6 +165,7 @@ export function EvalsTabView({
   onEditCase,
   onDeleteCase,
   onNewCase,
+  onViewRun,
 }: EvalsTabViewProps) {
   const t = useTranslations("eval");
 
@@ -313,6 +315,15 @@ export function EvalsTabView({
                       onClick={() => onRunCase(c.id)}
                       title={t("evalsTab.run")}
                     />
+                    {latestRun && (
+                      <Button
+                        kind="ghost"
+                        size="sm"
+                        icon="Eye"
+                        onClick={() => onViewRun(c.id)}
+                        title={t("evalsTab.viewRun")}
+                      />
+                    )}
                     <Button
                       kind="ghost"
                       size="sm"

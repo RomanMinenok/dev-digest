@@ -1,4 +1,4 @@
-import { ExpectedFinding, type EvalRunRecord } from "@devdigest/shared";
+import { ExpectedFinding, Finding, type EvalRunRecord } from "@devdigest/shared";
 
 /**
  * Soft-parse `expected_output` for display. Invalid/missing → `[]` so the
@@ -18,6 +18,35 @@ export function parseExpectedFindings(raw: unknown): ExpectedFinding[] {
 /** Count findings in a run's `actual_output` (kept post-grounding set). */
 export function countActualFindings(raw: unknown): number {
   return Array.isArray(raw) ? raw.length : 0;
+}
+
+/**
+ * Soft-parse a run's `actual_output` for display. Mirrors `parseExpectedFindings`
+ * — invalid/missing → `[]` rather than throwing, since a failed run's
+ * `actual_output` can hold an error string (see `EvalService.runCases`).
+ */
+export function parseActualFindings(raw: unknown): Finding[] {
+  if (!Array.isArray(raw)) return [];
+  const out: Finding[] = [];
+  for (const item of raw) {
+    const parsed = Finding.safeParse(item);
+    if (parsed.success) out.push(parsed.data);
+  }
+  return out;
+}
+
+/**
+ * True when `produced` satisfies `expected` — identical `file` AND intersecting
+ * line ranges (touching boundaries count). Mirrors the server's authoritative
+ * `matchesExpectation` (`server/src/modules/eval/scorer.ts`, AC-21/22): severity,
+ * category, and title are deliberately ignored. Duplicated here (not imported)
+ * because `scorer.ts` is a server-only pure module with zero client callers.
+ */
+export function matchesExpectation(expected: ExpectedFinding, produced: Finding): boolean {
+  if (expected.file !== produced.file) return false;
+  const eStart = expected.start_line;
+  const eEnd = expected.end_line ?? expected.start_line;
+  return eStart <= produced.end_line && produced.start_line <= eEnd;
 }
 
 /**
