@@ -6,7 +6,7 @@ import * as schema from '../../db/schema.js';
 import type { AgentRow } from '../../db/rows.js';
 import type { ReviewRepository, FindingRow, PullRow, ReviewRow } from './repository.js';
 import { REVIEW_STRATEGY } from './constants.js';
-import { taskLine, resolveAttachedDocPaths } from './helpers.js';
+import { taskLine, resolveAttachedDocPaths, rankNoteSentence } from './helpers.js';
 import { loadDiff } from './diff-loader.js';
 
 /** Thrown by a run when the user cancels it mid-flight (between map files). */
@@ -471,7 +471,7 @@ export class ReviewRunExecutor {
       const hot = ranks.filter((r) => r.percentile >= 95);
       if (hot.length === 0) return '';
       runLog.info(`file rank: ${hot.length}/${changedFiles.length} changed file(s) in top 5%`);
-      return `\n\n${hot.length} of ${changedFiles.length} changed file(s) are in the top 5% most-depended-on (high blast risk) — prioritise their correctness.`;
+      return rankNoteSentence(hot.length, changedFiles.length);
     } catch {
       return '';
     }

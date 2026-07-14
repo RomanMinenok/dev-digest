@@ -1,6 +1,6 @@
 {
-  "id": "32f6e7da-fadb-4486-bc1a-d1f5527e8e18",
-  "prevId": "78bbf5d7-4db7-493c-bec1-0cc071a61b78",
+  "id": "dab69b91-5a23-4843-ae19-4ecd41dc4f2c",
+  "prevId": "fbe4d7a6-983b-4d0d-879c-593253eafca0",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1192,19 +1192,19 @@
           "primaryKey": false,
           "notNull": false
         },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
         "context_docs": {
           "name": "context_docs",
           "type": "jsonb",
           "primaryKey": false,
           "notNull": false,
           "default": "'[]'::jsonb"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {},
@@ -1431,6 +1431,13 @@
           "notNull": true,
           "default": true
         },
+        "context_docs": {
+          "name": "context_docs",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'[]'::jsonb"
+        },
         "enabled": {
           "name": "enabled",
           "type": "boolean",
@@ -1457,13 +1464,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
-        },
-        "context_docs": {
-          "name": "context_docs",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'[]'::jsonb"
         }
       },
       "indexes": {},
@@ -2433,9 +2433,67 @@
           "type": "double precision",
           "primaryKey": false,
           "notNull": false
+        },
+        "agent_version": {
+          "name": "agent_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "matched": {
+          "name": "matched",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expected_total": {
+          "name": "expected_total",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "produced": {
+          "name": "produced",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "false_positives": {
+          "name": "false_positives",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "kept": {
+          "name": "kept",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dropped": {
+          "name": "dropped",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "eval_runs_case_id_idx": {
+          "name": "eval_runs_case_id_idx",
+          "columns": [
+            {
+              "expression": "case_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "eval_runs_case_id_eval_cases_id_fk": {
           "name": "eval_runs_case_id_eval_cases_id_fk",

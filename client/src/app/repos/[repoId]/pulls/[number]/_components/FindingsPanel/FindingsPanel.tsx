@@ -4,10 +4,19 @@
 
 import React from "react";
 import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 import { Toggle, EmptyState } from "@devdigest/ui";
 import type { FindingRecord } from "@devdigest/shared";
 import { FindingCard } from "../FindingCard";
 import { useFindingAction } from "../../../../../../../lib/hooks/reviews";
+import { useAgents } from "../../../../../../../lib/hooks/agents";
+import { usePullDetail } from "../../../../../../../lib/hooks/core";
+import { writeEvalPrefill } from "../../../../../../../lib/eval-prefill";
+import {
+  slugifyTitle,
+  sliceDiffToFile,
+  expectedFromFinding,
+} from "../../../../../../../lib/eval-capture";
 import { KEY_TO_ACTION } from "./constants";
 import { visibleFindings } from "./helpers";
 import { s } from "./styles";
@@ -17,6 +26,8 @@ export function FindingsPanel({
   prId,
   repoFullName,
   headSha,
+  agentId,
+  runId,
   activeSeverity = null,
   targetFindingId = null,
   onScrolledToTarget,
@@ -25,6 +36,12 @@ export function FindingsPanel({
   prId: string;
   repoFullName?: string | null;
   headSha?: string | null;
+  /** The agent that produced this run's findings. Null when the review has no
+   *  agent (e.g. a summary-only review). Used for fail-closed eval-case creation. */
+  agentId?: string | null;
+  /** The run id from the parent ReviewRecord — needed for the eval-case source
+   *  provenance block. Null when the review has no run (e.g. legacy rows). */
+  runId?: string | null;
   activeSeverity?: string | null;
   /** Finding to focus/expand/scroll to on mount (e.g. from a Smart Diff badge click). */
   targetFindingId?: string | null;
@@ -34,9 +51,21 @@ export function FindingsPanel({
   onScrolledToTarget?: () => void;
 }) {
   const t = useTranslations("prReview");
+  const router = useRouter();
   const action = useFindingAction();
   const [hideLow, setHideLow] = React.useState(false);
   const [focusIdx, setFocusIdx] = React.useState(0);
+
+  // Fail-closed: verify the agent still exists in the workspace before enabling
+  // the "Turn into eval case" button. useAgents() is already cached globally.
+  const { data: agents } = useAgents();
+  const agentExists =
+    agentId != null &&
+    agents != null &&
+    agents.some((a) => a.id === agentId);
+
+  // Cached PR detail — already fetched by the page; no new network request.
+  const { data: prDetail } = usePullDetail(prId);
 
   const shown = React.useMemo(
     () => visibleFindings(findings, hideLow, activeSeverity),
@@ -79,6 +108,41 @@ export function FindingsPanel({
     return () => window.removeEventListener("keydown", handler);
   }, [shown, focusIdx, action, prId]);
 
+  /** Build the "Turn into eval case" handler for one finding. Returns undefined
+   *  when the agent no longer exists in the workspace (fail-closed). */
+  function buildEvalCaseHandler(f: FindingRecord): (() => void) | undefined {
+    if (!agentExists || !agentId || !runId) return undefined;
+    return () => {
+      const files = prDetail?.files ?? [];
+      const pr = prDetail
+        ? {
+            number: prDetail.number,
+            title: prDetail.title,
+            body: prDetail.body ?? "",
+            author: prDetail.author,
+          }
+        : { number: 0, title: "", body: "", author: "" };
+
+      writeEvalPrefill({
+        agentId,
+        name: slugifyTitle(f.title),
+        input_diff: sliceDiffToFile(files, f.file),
+        input_files: null,
+        input_meta: {
+          pr,
+          source: {
+            finding_id: f.id,
+            review_id: f.review_id,
+            run_id: runId,
+            pr_id: prId,
+          },
+        },
+        expected_output: expectedFromFinding(f),
+      });
+      router.push(`/agents/${agentId}?tab=evals&prefill=1`);
+    };
+  }
+
   return (
     <div>
       <div style={s.toolbar}>
@@ -101,6 +165,8 @@ export function FindingsPanel({
               pending={action.isPending}
               repoFullName={repoFullName}
               headSha={headSha}
+              agentId={agentId}
+              onTurnIntoEvalCase={buildEvalCaseHandler(f)}
               onAction={(act) => action.mutate({ findingId: f.id, action: act, prId })}
             />
           ))

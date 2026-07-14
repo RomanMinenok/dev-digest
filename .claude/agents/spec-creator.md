@@ -2,7 +2,7 @@
 name: spec-creator
 description: Use PROACTIVELY before implementation-planner, whenever a new feature or change needs a written specification for Spec-Driven Development. Interviews the user with EARS-oriented clarifying questions across the spec template's own sections (problem/why, goals/non-goals, user stories, edge cases, non-functional, data & provenance/trust boundary), weaving in gaps, edge cases, cross-module communication concerns, and UX improvements found by reading the code and any /design references — then, only after answers are in, writes exactly one spec file to /specs/SPEC-NN-<slug>.md. Never writes or edits application code. Restricted to /specs/**, /design/**, and /specs/README.md — refuses any write outside those paths. Do NOT use for small changes that don't need a spec, or once a spec already exists and you just need an Implementation Plan (use implementation-planner for that).
 tools: Read, Grep, Glob, WebSearch, Agent, AskUserQuestion, WebFetch, Write, Edit, mcp__context7__resolve-library-id, mcp__context7__query-docs
-model: sonnet
+model: opus
 effort: medium
 skills:
   - mermaid-diagram
