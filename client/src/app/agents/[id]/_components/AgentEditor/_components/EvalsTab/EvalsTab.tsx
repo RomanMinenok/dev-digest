@@ -35,6 +35,8 @@ export function EvalsTab({ agent }: { agent: Agent }) {
   const [editCaseId, setEditCaseId] = React.useState<string | null>(null);
   const [prefill, setPrefill] = React.useState<EvalPrefillPayload | null>(null);
   const [viewRunCaseId, setViewRunCaseId] = React.useState<string | null>(null);
+  /** True for the whole sequential "Run all" pass (not just one case's HTTP call). */
+  const [runAllActive, setRunAllActive] = React.useState(false);
 
   // AC-1: on mount, if ?prefill=1 is set, read-and-clear sessionStorage and open the modal
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -134,6 +136,34 @@ export function EvalsTab({ agent }: { agent: Agent }) {
   const viewCase = viewRunCaseId != null ? (cases ?? []).find((c) => c.id === viewRunCaseId) : null;
   const viewRun = viewCase ? latestRunByCase.get(viewCase.id) : undefined;
 
+  /**
+   * Run every case one POST at a time so each card's spinner / metrics refresh
+   * tracks the in-flight case. A single batch POST (`{}`) would leave the UI
+   * stuck on a global "Running…" with no per-cell signal until the whole
+   * response returns. Continues past per-case failures (mirrors server AC-18).
+   */
+  const handleRunAll = React.useCallback(async () => {
+    const ids = (cases ?? []).map((c) => c.id);
+    if (ids.length === 0 || runAllActive || runEvals.isPending) return;
+    setRunAllActive(true);
+    try {
+      for (const caseId of ids) {
+        try {
+          await runEvals.mutateAsync({ case_ids: [caseId] });
+        } catch {
+          // Keep going — one failed case must not abort the rest of the pass.
+        }
+      }
+    } finally {
+      setRunAllActive(false);
+    }
+  }, [cases, runAllActive, runEvals.isPending, runEvals.mutateAsync]);
+
+  const runningCaseId =
+    runEvals.isPending && runEvals.variables?.case_ids?.length === 1
+      ? (runEvals.variables.case_ids[0] ?? null)
+      : null;
+
   return (
     <>
       <EvalsTabView
@@ -141,18 +171,16 @@ export function EvalsTab({ agent }: { agent: Agent }) {
         dashboard={dashboard ?? null}
         cases={cases ?? []}
         loading={dashLoading || casesLoading}
-        runningAll={runEvals.isPending && runEvals.variables?.case_ids === undefined}
-        runningCaseId={
-          runEvals.isPending && runEvals.variables?.case_ids?.length === 1
-            ? (runEvals.variables.case_ids[0] ?? null)
-            : null
-        }
+        runningAll={runAllActive}
+        runningCaseId={runningCaseId}
         hasPreviousVersion={hasPreviousVersion}
         latestRunByCase={latestRunByCase}
         passingCount={passingCount}
         fullyStale={fullyStale}
         lastMeasuredVersion={lastMeasuredVersion}
-        onRunAll={() => runEvals.mutate({})}
+        onRunAll={() => {
+          void handleRunAll();
+        }}
         onRunCase={(caseId) => runEvals.mutate({ case_ids: [caseId] })}
         onEditCase={openEdit}
         onDeleteCase={(caseId) => deleteCase.mutate(caseId)}
