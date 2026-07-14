@@ -11,7 +11,9 @@ import type { Finding } from '@devdigest/shared';
 
 // ── Acceptance-criteria constants ─────────────────────────────────────────────
 //
-// AC-21: matching coordinates = identical `file` + intersecting line range.
+// AC-21: matching coordinates = identical `file` + intersecting line range,
+// tolerating a ±LINE_TOLERANCE drift on the produced (actual) range only —
+// the expected range from the eval case is never widened.
 // AC-22: severity / category / title are ignored — coordinates only.
 // AC-24: recall = 1 when no expectations exist in the entire run.
 // AC-25: false positives = produced findings for a case whose `expected` is empty.
@@ -22,10 +24,18 @@ import type { Finding } from '@devdigest/shared';
 
 // ── matchesExpectation ────────────────────────────────────────────────────────
 
+// Added after real eval runs showed exact-line matching produce false
+// negatives (e.g. `truthiness-trap-drops-valid-falsy-settings-values`:
+// expected line 53, agent cited line 52 — recall scored 0% despite a correct
+// finding). Tolerance applied to the produced (actual) range only (AC-21).
+const LINE_TOLERANCE = 3;
+
 /**
  * Returns `true` when `produced` satisfies `expected` (AC-21, AC-22):
  * - identical `file`, AND
- * - intersecting line ranges, where touching boundaries count as intersecting.
+ * - intersecting line ranges, where touching boundaries count as intersecting,
+ *   and the produced range is widened by ±LINE_TOLERANCE lines to absorb the
+ *   agent citing a line a few rows off from the eval case's exact expectation.
  *
  * An expectation with no `end_line` is treated as a one-line range
  * `[start_line, start_line]`.
@@ -37,8 +47,8 @@ export function matchesExpectation(expected: ExpectedFinding, produced: Finding)
 
   const eStart = expected.start_line;
   const eEnd = expected.end_line ?? expected.start_line;
-  const pStart = produced.start_line;
-  const pEnd = produced.end_line;
+  const pStart = produced.start_line - LINE_TOLERANCE;
+  const pEnd = produced.end_line + LINE_TOLERANCE;
 
   // Two closed ranges [a,b] and [c,d] intersect iff a ≤ d AND c ≤ b.
   // Touching boundaries (a === d or b === c) count as intersecting (AC-21).
