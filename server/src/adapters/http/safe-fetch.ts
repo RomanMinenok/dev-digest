@@ -9,8 +9,24 @@ import { lookup as dnsLookup } from 'node:dns/promises';
  * gracefully instead of failing the whole intent-resolution flow.
  */
 
-/** Hosts allowed to be fetched. Anything else is reference-only upstream. */
-const ALLOWED_HOSTS = new Set(['github.com', 'gist.github.com', 'raw.githubusercontent.com', 'docs.google.com']);
+/**
+ * Host suffixes allowed to be fetched. Anything else is reference-only
+ * upstream. Suffix matching (rather than an exact-host Set) lets us cover
+ * Notion workspaces (`foo.notion.so`) and GitHub pages/CDNs without listing
+ * every subdomain.
+ */
+const ALLOWED_HOST_SUFFIXES = [
+  'github.com',
+  'githubusercontent.com',
+  'docs.google.com',
+  'notion.so',
+  'notion.site',
+];
+
+function isAllowedHost(hostname: string): boolean {
+  const host = hostname.toLowerCase();
+  return ALLOWED_HOST_SUFFIXES.some((suffix) => host === suffix || host.endsWith(`.${suffix}`) || host.endsWith(suffix));
+}
 
 const TIMEOUT_MS = 5_000;
 const MAX_BYTES = 256 * 1024;
@@ -98,7 +114,7 @@ export async function safeFetch(rawUrl: string, resolver: DnsResolver = defaultR
   if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
 
   const hostname = url.hostname.toLowerCase();
-  if (!ALLOWED_HOSTS.has(hostname)) return null;
+  if (!isAllowedHost(hostname)) return null;
 
   if (hostname === 'docs.google.com') {
     url = rewriteGoogleDocsUrl(url);
@@ -116,7 +132,10 @@ export async function safeFetch(rawUrl: string, resolver: DnsResolver = defaultR
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
-    const res = await fetch(url, { signal: controller.signal, redirect: 'error' });
+    // Follow a single HTTPS redirect so raw.githubusercontent / Notion CDN
+    // hops still resolve. The initial host already passed the allowlist + DNS
+    // private-IP check above.
+    const res = await fetch(url, { signal: controller.signal, redirect: 'follow' });
     if (!res.ok) return null;
     if (!isTextContentType(res.headers.get('content-type'))) return null;
 
