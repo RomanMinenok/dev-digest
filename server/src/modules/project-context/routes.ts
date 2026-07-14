@@ -20,21 +20,17 @@ import { estimateTokens } from './helpers.js';
 const RepoIdParams = z.object({ repoId: z.string().uuid() });
 
 /**
- * Preview query validation (AC-9). Defense in depth ON TOP OF (not instead
- * of) the path-safety guard already inside `GitClient.readFile` (T5,
- * `adapters/git/simple-git.ts`): reject non-`.md` paths and any obvious
- * path-escaping input right at the route boundary, before it ever reaches
- * the filesystem layer.
+ * Preview query validation (AC-9). Looser than the original `.md`-only gate so
+ * agent/skill context docs can include README.txt, AGENTS.yaml, etc. Path
+ * escape refusal lives in `GitClient.readFile` (T5) — keep this check cheap
+ * (reject absolute paths only).
  */
 const ContextDocsPreviewQuery = z.object({
   path: z
     .string()
     .min(1)
-    .refine((p) => p.toLowerCase().endsWith('.md'), {
-      message: 'path must reference a .md file',
-    })
-    .refine((p) => !p.includes('..') && !p.startsWith('/') && !p.includes('\\'), {
-      message: 'path must be a repo-relative path (no traversal, no absolute paths)',
+    .refine((p) => !p.startsWith('/') && !p.includes('\\'), {
+      message: 'path must be a repo-relative path (no absolute paths)',
     }),
 });
 
