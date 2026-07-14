@@ -9,6 +9,8 @@
  * only the model inference is redirected. Select with EVAL_BACKEND=openrouter.
  */
 
+import { EVAL_ENV_FLAG } from "../config.js";
+
 const BACKEND = process.env.EVAL_BACKEND ?? "subscription";
 
 /**
@@ -25,6 +27,9 @@ const BACKEND = process.env.EVAL_BACKEND ?? "subscription";
  */
 export function subscriptionEnv(): Record<string, string> {
   const env = { ...process.env } as Record<string, string>;
+  // The repo's hooks are part of the harness, but they PRE-ANSWER what the workflow tier asks
+  // (see EVAL_ENV_FLAG in config.ts). Both hook scripts exit early when they see this.
+  env[EVAL_ENV_FLAG] = "1";
 
   if (BACKEND === "openrouter") {
     const key = process.env.OPENROUTER_API_KEY;

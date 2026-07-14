@@ -48,6 +48,41 @@ export const DISALLOWED_TOOLS = [
   "NotebookEdit",
 ];
 
+/**
+ * The workflow tier's box, tighter than DISALLOWED_TOOLS. Its cases assert on WHICH doc the
+ * harness sent the model to and WHETHER it dispatched — so every other way of getting information
+ * is noise that burns a small model's turn budget and, worse, changes the answer:
+ *
+ *   Bash — `cat server/README.md` is a read the trace could not see (fixed in run-claude, but a
+ *     shell in a bypassPermissions session against the live repo is not worth keeping anyway).
+ *   WebSearch / WebFetch — observed: a near-miss case answered a pgvector question off the web
+ *     and never touched the harness at all, so the case passed for the wrong reason.
+ *   TaskCreate / TaskUpdate — todo bookkeeping, pure turn tax on a 4-turn budget.
+ *
+ * MCP servers are cut off separately, by strictMcpConfig in run-claude.
+ */
+export const WORKFLOW_DISALLOWED_TOOLS = [
+  ...DISALLOWED_TOOLS,
+  "Bash",
+  "WebSearch",
+  "WebFetch",
+  "TaskCreate",
+  "TaskUpdate",
+];
+
+/**
+ * Set in every eval session's env (see runtime/env.ts). The repo's hooks read it and no-op.
+ *
+ * Why: settingSources:["project"] loads .claude/settings.json — hooks included. The
+ * UserPromptSubmit hook injects "read the INSIGHTS.md of the module(s) you touch", naming
+ * reviewer-core/INSIGHTS.md explicitly, which is the exact file the CLAUDE.md-routing case
+ * asserts on: the case was grading the hook, not CLAUDE.md. The Stop hook is worse — it blocks
+ * the session and orders "invoke the engineering-insights skill" whenever the working tree is
+ * dirty, so the near-miss negative ("must NOT record an insight") passed or failed depending on
+ * the developer's git status. Evals must see the artifacts under test, not a hook reciting them.
+ */
+export const EVAL_ENV_FLAG = "DEVDIGEST_EVAL";
+
 // --- Output verbosity -------------------------------------------------------
 // Set EVAL_QUIET to suppress per-run trace/verdict spam during multi-run aggregation.
 export const QUIET = Boolean(process.env.EVAL_QUIET);

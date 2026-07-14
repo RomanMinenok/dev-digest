@@ -31,6 +31,15 @@ export interface RecordData {
   verdict?: Verdict;
   grounded?: number;
   threshold?: number;
+  /**
+   * The case's OWN verdict, when it has one that no scorer can reconstruct — every workflow case.
+   * Without it `outcome` fell back to `!result.isError`, i.e. "did the session end cleanly", which
+   * is a different question from the one the case asks: recorded runs showed a case whose skill
+   * never activated stored as outcome:true, and near-miss negatives that correctly held back
+   * stored as outcome:false because they hit the turn cap. Every pass-rate, flakiness bound and
+   * trend over the workflow tier was computed off that noise.
+   */
+  passed?: boolean;
   extra?: Record<string, unknown>;
 }
 
@@ -40,18 +49,20 @@ export interface RecordData {
  * from being silently empty.
  */
 export function record(label: string, data: RecordData): void {
-  const { result, verdict, grounded, threshold, extra } = data;
+  const { result, verdict, grounded, threshold, passed, extra } = data;
   const state = expect.getState();
   const nodeid = `${state.testPath ?? "?"} > ${state.currentTestName ?? label}`;
 
-  // outcome: grounding gate failure short-circuits to false; else the judge threshold; else
-  // "did the run itself succeed" (workflow tests have neither grounding nor a judge verdict).
+  // outcome, in priority order: the case's own verdict (workflow) → the grounding gate → the
+  // judge threshold → "did the run itself succeed" (a case with no scorer at all).
   const outcome =
-    grounded !== undefined && grounded < 1
-      ? false
-      : verdict && threshold !== undefined
-        ? verdict.score >= threshold
-        : !result.isError;
+    passed !== undefined
+      ? passed
+      : grounded !== undefined && grounded < 1
+        ? false
+        : verdict && threshold !== undefined
+          ? verdict.score >= threshold
+          : !result.isError;
 
   const outDir = join(OUTPUTS, RUN_ID);
   mkdirSync(outDir, { recursive: true });

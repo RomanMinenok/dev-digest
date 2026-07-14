@@ -5,11 +5,8 @@
  * marked spot below, in this one file).
  */
 
-import { mkdtempSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { test, expect } from "vitest";
-import { DEFAULT_THRESHOLD } from "../config.js";
+import { DEFAULT_THRESHOLD, WORKFLOW_DISALLOWED_TOOLS } from "../config.js";
 import { skillTask, agentTask, workflowTask } from "../tasks.js";
 import { runClaude, type Result, type RunOptions } from "../runtime/run-claude.js";
 import { patternMatch } from "../scoring/pattern-match.js";
@@ -59,6 +56,14 @@ export type WorkflowCase =
       name: string;
       prompt: string;
       expectFileRead: string;
+      /**
+       * The map's edge, in tool calls. With CLAUDE.md the target doc is reached almost
+       * immediately (root map → package CLAUDE.md → the doc); without it the model must search
+       * the tree first. So treatment must hit the file WITHIN this many tool calls, and control
+       * must not — which is a claim about routing, unlike the old control (an empty tmpdir where
+       * the file did not exist, so "control never read it" was true by construction).
+       */
+      withinToolCalls?: number;
       tools?: string[];
       maxTurns?: number;
     }
@@ -73,8 +78,23 @@ export type WorkflowCase =
       expectSubagents?: string[];
       expectSkills?: string[];
       expectFilesRead?: string[];
+      /** Files the session must NOT read — wrong-module routing, free on the same session. */
+      expectFilesNotRead?: string[];
+      /** Subagents that must NOT be launched, e.g. "it answered inline instead of delegating". */
+      expectNoSubagents?: string[];
+      /**
+       * Substrings the ANSWER must contain (all of them). Trace asserts prove the model opened the
+       * doc; this proves it used what was inside. Deterministic, no judge, no extra session.
+       */
+      expectText?: string[];
+      /** Tools the session must NOT call — e.g. Write/Edit for the "ask before implementing" rule. */
+      expectNoTools?: string[];
       maxTurns?: number;
     };
+
+/** Index of the first tool call that read `file`; -1 if never. Ordering is what contrast grades. */
+const firstReadAt = (result: Result, file: string): number =>
+  result.toolLog.findIndex((t) => t.file?.includes(file));
 
 /** Did a skill engage? Either an explicit Skill tool-call, or reading its SKILL.md. */
 export function activated(result: Result, skill: string): boolean {
@@ -123,98 +143,180 @@ function runQualityCases(artifact: string, cases: QualityCase[], task: Task): vo
 export const runSkillCases = (skill: string, cases: SkillCase[]) => runQualityCases(skill, cases, skillTask);
 export const runAgentCases = (agent: string, cases: AgentCase[]) => runQualityCases(agent, cases, agentTask);
 
+/**
+ * Collects every failed expectation of one case instead of throwing at the first, so the case can
+ * (a) record its OWN pass/fail — `!isError` was never the question a workflow case asks — and
+ * (b) report all the ways a run missed, not just the earliest.
+ */
+class Checks {
+  private failures: string[] = [];
+  ok(condition: boolean, whyItFailed: string): void {
+    if (!condition) this.failures.push(whyItFailed);
+  }
+  get passed(): boolean {
+    return this.failures.length === 0;
+  }
+  assert(): void {
+    expect(this.failures.join("\n"), "expectations not met").toBe("");
+  }
+}
+
+/**
+ * An absence ("did NOT dispatch", "did NOT activate") only means restraint if the session ended on
+ * its own. A run cut off at the turn cap proves nothing — it might have dispatched on the next
+ * turn — yet it used to be scored as a pass. Negative cases therefore also require a clean end.
+ */
+const completed = (c: Checks, result: Result): void =>
+  c.ok(
+    !result.isError,
+    `session did not finish (turn cap or error) — an absence in a truncated run is not evidence; ` +
+      `turns: ${result.numTurns}, tools: ${result.toolsUsed.join(", ")}`,
+  );
+
 export function runWorkflowCases(cases: WorkflowCase[]): void {
   for (const c of cases) {
     test(c.name, async () => {
+      const checks = new Checks();
+
       if (c.kind === "dispatch") {
         const expect1 = c.expectSubagent;
         const shouldDispatch = c.shouldDispatch ?? true;
         // Positive: stop the moment the subagent is launched — no need to wait out its nested
-        // session. Negative (near-miss): no early stop signal exists, so run to completion/maxTurns.
+        // session. Negative (near-miss): no early stop signal exists, so it runs to completion.
         const result = await workflowTask(c.prompt, {
           maxTurns: c.maxTurns,
           ...(shouldDispatch ? { stopWhen: (p) => p.subagents.includes(expect1) } : {}),
         });
         logTrace(c.name, result);
         try {
-          const matcher = expect(result.subagents, `subagents: ${result.subagents.join(", ")}`);
-          if (shouldDispatch) matcher.toContain(c.expectSubagent);
-          else matcher.not.toContain(c.expectSubagent);
+          const dispatched = result.subagents.includes(expect1);
+          checks.ok(
+            dispatched === shouldDispatch,
+            `expected ${expect1} ${shouldDispatch ? "" : "NOT "}to be dispatched | subagents: ${result.subagents.join(", ") || "none"}`,
+          );
+          if (!shouldDispatch) completed(checks, result);
         } finally {
-          record(c.name, { result });
+          record(c.name, { result, passed: checks.passed });
         }
       } else if (c.kind === "activation") {
         const result = await workflowTask(c.prompt, { maxTurns: c.maxTurns });
         logTrace(c.name, result);
         try {
-          expect(
-            activated(result, c.skill),
-            `skills: ${result.skillsInvoked.join(", ")} | reads: ${result.filesRead.join(", ")}`,
-          ).toBe(c.shouldActivate);
+          checks.ok(
+            activated(result, c.skill) === c.shouldActivate,
+            `expected ${c.skill} ${c.shouldActivate ? "" : "NOT "}to engage | skills: ${result.skillsInvoked.join(", ") || "none"} | reads: ${result.filesRead.join(", ")}`,
+          );
+          if (!c.shouldActivate) completed(checks, result);
         } finally {
-          record(c.name, { result });
+          record(c.name, { result, passed: checks.passed });
         }
       } else if (c.kind === "trace") {
         // One session, many asserts — every provided expectation is checked against the same trace.
-        // Stop as soon as ALL expectations are satisfied (e.g. doc read + subagent launched), so a
-        // dispatch-bearing trace doesn't pay for the nested subagent's full run.
+        // Stop as soon as ALL POSITIVE expectations are satisfied (doc read + subagent launched), so
+        // a dispatch-bearing trace doesn't pay for the nested subagent's full run. Negative
+        // expectations (must-not-read / must-not-call) are graded on whatever the session did up to
+        // that point — which is sound: they can only be violated by something that already happened.
         const subs = c.expectSubagents ?? [];
         const skls = c.expectSkills ?? [];
         const files = c.expectFilesRead ?? [];
+        const needsText = (c.expectText?.length ?? 0) > 0;
         const skillEngaged = (p: { skillsInvoked: string[]; filesRead: string[] }, skill: string) =>
           p.skillsInvoked.some((s) => s === skill || s.endsWith(`:${skill}`)) ||
           p.filesRead.some((f) => f.includes(`skills/${skill}/SKILL.md`));
         const result = await workflowTask(c.prompt, {
           maxTurns: c.maxTurns,
-          stopWhen: (p) =>
-            subs.every((s) => p.subagents.includes(s)) &&
-            skls.every((s) => skillEngaged(p, s)) &&
-            files.every((f) => p.filesRead.some((r) => r.includes(f))),
+          // An expectText case must run to its final answer — stopping at the last tool call would
+          // cut off the very prose it grades.
+          ...(needsText
+            ? {}
+            : {
+                stopWhen: (p) =>
+                  subs.every((s) => p.subagents.includes(s)) &&
+                  skls.every((s) => skillEngaged(p, s)) &&
+                  files.every((f) => p.filesRead.some((r) => r.includes(f))),
+              }),
         });
         logTrace(c.name, result);
+
+        let grounded: number | undefined;
         try {
-          for (const sub of c.expectSubagents ?? []) {
-            expect(result.subagents, `subagents: ${result.subagents.join(", ")}`).toContain(sub);
+          for (const sub of subs) {
+            checks.ok(
+              result.subagents.includes(sub),
+              `${sub} not dispatched | subagents: ${result.subagents.join(", ") || "none"}`,
+            );
           }
-          for (const skill of c.expectSkills ?? []) {
-            expect(
+          for (const sub of c.expectNoSubagents ?? []) {
+            checks.ok(!result.subagents.includes(sub), `${sub} was dispatched but must not be`);
+          }
+          for (const skill of skls) {
+            checks.ok(
               activated(result, skill),
-              `skill ${skill} not engaged | skills: ${result.skillsInvoked.join(", ")} | reads: ${result.filesRead.join(", ")}`,
-            ).toBe(true);
+              `skill ${skill} not engaged | skills: ${result.skillsInvoked.join(", ") || "none"} | reads: ${result.filesRead.join(", ")}`,
+            );
           }
-          for (const file of c.expectFilesRead ?? []) {
-            expect(
+          for (const file of files) {
+            checks.ok(
               result.filesRead.some((f) => f.includes(file)),
-              `${file} not read | reads: ${result.filesRead.join(", ")}`,
-            ).toBe(true);
+              `${file} not read | reads: ${result.filesRead.join(", ") || "none"}`,
+            );
           }
-          expect(result.isError).toBe(false);
+          for (const file of c.expectFilesNotRead ?? []) {
+            checks.ok(
+              !result.filesRead.some((f) => f.includes(file)),
+              `${file} was read but must not be (wrong-module routing) | reads: ${result.filesRead.join(", ")}`,
+            );
+          }
+          for (const tool of c.expectNoTools ?? []) {
+            checks.ok(!result.toolsUsed.includes(tool), `${tool} was called but must not be`);
+          }
+          if (c.expectText?.length) {
+            grounded = patternMatch(result.text, c.expectText);
+            checks.ok(
+              grounded === 1,
+              `answer is missing required content (${c.expectText.join(", ")}) — the doc was opened but not used;\noutput:\n${result.text}`,
+            );
+          }
         } finally {
-          record(c.name, { result });
+          record(c.name, { result, grounded, passed: checks.passed });
         }
       } else {
-        // contrast: treatment (real harness) vs control (empty tmpdir, no on-disk config).
+        // contrast: SAME repo, SAME tools, SAME turn budget — the only difference is whether the
+        // on-disk harness (CLAUDE.md) is loaded. The old control ran in an empty tmpdir, where the
+        // expected file did not exist, so "control never read it" was true by construction and the
+        // case proved nothing. Here the control can reach the file — it just has no map, so it must
+        // search for it, and the assertion is about HOW FAST each side gets there.
         const tools = c.tools ?? ["Read", "Grep", "Glob"];
+        const budget = c.withinToolCalls ?? 3;
         const treatment = await workflowTask(c.prompt, { allowedTools: tools, maxTurns: c.maxTurns });
-        const emptyCwd = mkdtempSync(join(tmpdir(), "eval-control-"));
         const control = await runClaude(c.prompt, {
           allowedTools: tools,
+          disallowedTools: WORKFLOW_DISALLOWED_TOOLS,
           maxTurns: c.maxTurns,
-          cwd: emptyCwd,
-          settingSources: [],
+          settingSources: [], // no CLAUDE.md, no skills, no hooks — the repo tree, unlabelled
         });
         logTrace(`${c.name} [treatment]`, treatment);
         logTrace(`${c.name} [control]`, control);
         try {
-          const treatmentRead = treatment.filesRead.some((f) => f.includes(c.expectFileRead));
-          const controlRead = control.filesRead.some((f) => f.includes(c.expectFileRead));
-          expect(treatmentRead, `treatment reads: ${treatment.filesRead.join(", ")}`).toBe(true);
-          expect(controlRead, `control reads: ${control.filesRead.join(", ")}`).toBe(false);
+          const tAt = firstReadAt(treatment, c.expectFileRead);
+          const cAt = firstReadAt(control, c.expectFileRead);
+          checks.ok(
+            tAt >= 0 && tAt < budget,
+            `treatment should reach ${c.expectFileRead} within ${budget} tool calls, ` +
+              `got ${tAt < 0 ? "never" : `call #${tAt + 1}`} | reads: ${treatment.filesRead.join(", ") || "none"}`,
+          );
+          checks.ok(
+            cAt < 0 || cAt >= budget,
+            `control reached ${c.expectFileRead} at call #${cAt + 1} without the harness — ` +
+              `CLAUDE.md is not what routed the treatment there`,
+          );
         } finally {
-          record(`${c.name} [treatment]`, { result: treatment });
-          record(`${c.name} [control]`, { result: control });
+          record(`${c.name} [treatment]`, { result: treatment, passed: checks.passed });
+          record(`${c.name} [control]`, { result: control, passed: checks.passed });
         }
       }
+
+      checks.assert();
     });
   }
 }

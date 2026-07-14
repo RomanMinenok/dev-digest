@@ -181,10 +181,9 @@ workflow cases:
    model invokes the Skill tool, so it passes.)
 
 > **Isolation note.** `workflowTask` runs with `settingSources:["project"]` + `bypassPermissions`
-> against the live repo. A model that decides to `Write` can touch real files (e.g. your local
-> memory dir) even though `WORKFLOW_ALLOWED_TOOLS` is a read-only list. In CI this is harmless (the
-> checkout is disposable); locally, prefer the Anthropic path or a throwaway clone for the workflow
-> tier.
+> against the live repo. `allowedTools` does **not** hide the built-ins, so what actually keeps the
+> session read-only is `WORKFLOW_DISALLOWED_TOOLS` (Write/Edit/Bash/… blocked) plus
+> `strictMcpConfig`. See [What a workflow session is isolated from](#what-a-workflow-session-is-isolated-from).
 
 ### GitHub Actions (per-PR) — `.github/workflows/evals.yml`
 
@@ -354,21 +353,29 @@ Trace-asserted, not judged — a discriminated union routed by `kind`. The folde
 
 ```ts
 export const cases: WorkflowCase[] = [
-  { kind: "dispatch",   name: "dispatches the architecture-reviewer subagent",
-    prompt: `Use the architecture-reviewer subagent to audit ${AUTH_DIFF}...`,
-    expectSubagent: "architecture-reviewer", maxTurns: 6 },
+  // The routing test: the subagent is NOT named — the prompt only describes the situation its
+  // description claims to own. Name it and you are grading obedience, not the harness.
+  { kind: "dispatch",   name: "dispatches the architecture-reviewer for a layering question",
+    prompt: "I moved payload assembly out of reviewer-core into a server module. Review the architecture...",
+    expectSubagent: "architecture-reviewer", maxTurns: 10 },
 
   { kind: "activation", name: "engineering-insights activates on a discovery prompt",
     prompt: "I just figured out why the pgvector query returned nothing...",
-    skill: "engineering-insights", shouldActivate: true, maxTurns: 4 },
+    skill: "engineering-insights", shouldActivate: true, maxTurns: 6 },
 
   { kind: "activation", name: "near-miss negative — same topic as a question must NOT activate",
     prompt: "Explain how pgvector column dimensions work and why a mismatch returns zero rows...",
-    skill: "engineering-insights", shouldActivate: false, maxTurns: 4 },
+    skill: "engineering-insights", shouldActivate: false, maxTurns: 10 },
 
-  { kind: "contrast",   name: "CLAUDE.md routes an API-route task to api-contracts doc",
-    prompt: "I'm about to add POST /reviews/:id/rerun. Follow this repo's conventions...",
-    expectFileRead: "server/docs/api-contracts.md", tools: ["Read", "Grep", "Glob"], maxTurns: 6 },
+  // Trace: one session, many facets — including what the ANSWER says, not just what was opened.
+  { kind: "trace",      name: "lesson lookup lands in reviewer-core/INSIGHTS.md and is used",
+    prompt: "I want to add a new prompt section in reviewer-core. Where is this already documented?...",
+    expectFilesRead: ["reviewer-core/INSIGHTS.md"], expectText: ["promptParts", "PromptAssembly"],
+    expectFilesNotRead: ["server/INSIGHTS.md", "e2e/INSIGHTS.md"], maxTurns: 6 },
+
+  { kind: "contrast",   name: "CLAUDE.md routes an e2e-flow question to e2e/README.md faster",
+    prompt: "I want to add a new e2e flow. Per this repo's conventions, where is the runner documented?...",
+    expectFileRead: "e2e/README.md", withinToolCalls: 3, maxTurns: 6 },
 ];
 ```
 
@@ -376,12 +383,44 @@ How each `kind` asserts:
 
 | `kind` | Runs | Passes when |
 |--------|------|-------------|
-| `dispatch` | `workflowTask` | `result.subagents` contains `expectSubagent` |
-| `activation` | `workflowTask` | `activated(result, skill) === shouldActivate` (positive **and** near-miss negative) |
-| `contrast` | treatment (real repo) **and** control (empty tmpdir, `settingSources:[]`) | `expectFileRead` read in treatment, NOT in control |
+| `dispatch` | `workflowTask` | `result.subagents` contains `expectSubagent` (or, with `shouldDispatch:false`, does not — **and the session ended on its own**) |
+| `activation` | `workflowTask` | `activated(result, skill) === shouldActivate` (negatives also require a session that ended on its own) |
+| `trace` | one `workflowTask`, many facets | every `expectSubagents` / `expectSkills` / `expectFilesRead` holds, no `expectFilesNotRead` / `expectNoSubagents` / `expectNoTools` is violated, and `expectText` (deterministic substring match on the final answer) is fully present |
+| `contrast` | treatment (harness loaded) **and** control (**same repo**, `settingSources:[]`) | treatment reaches `expectFileRead` within `withinToolCalls` tool calls; control does not |
+
+Three invariants the runner enforces, each of which was a real bug in this tier:
+
+- **A workflow case records its own verdict.** `outcome` in `records.jsonl` used to fall back to
+  `!result.isError` — "did the session end cleanly", which is not the question any of these cases
+  ask. Runs where the skill never activated were stored as `outcome:true`; near-miss negatives that
+  correctly held back were stored as `outcome:false` because they hit the turn cap. Pass rates,
+  flakiness bounds and trends over this tier were computed off that noise. Cases now pass `passed`
+  to `record()`.
+- **An absence only counts in a completed session.** "Did not dispatch" at the turn cap is not
+  restraint — it might have dispatched on the next turn. Negatives assert `isError === false`, so
+  give them a generous `maxTurns` (10 is normal; they stop by themselves long before that).
+- **The control shares the repo with the treatment.** It used to run in an empty tmpdir where the
+  expected file did not exist, so "control never read it" was true by construction. The control now
+  sees the same tree with no `CLAUDE.md` — it *can* find the file, it just has to search first, and
+  the assertion is about how fast each side gets there.
+
+### What a workflow session is isolated from
+
+`settingSources:["project"]` loads the whole on-disk harness — which includes things that would
+*answer the question for the model*. So `workflowTask` cuts them off (`src/config.ts`):
+
+- **Hooks are muted.** Both hook scripts exit early when they see `DEVDIGEST_EVAL=1` (set for every
+  eval session in `runtime/env.ts`). The `UserPromptSubmit` nudge names the `INSIGHTS.md` files
+  outright — the exact routing the CLAUDE.md cases assert — and the `Stop` hook blocks the session
+  and orders "invoke the engineering-insights skill" whenever the working tree is dirty, which made
+  the activation cases a function of the developer's `git status`.
+- **MCP is off** (`strictMcpConfig`), and **Bash / WebSearch / WebFetch / TaskCreate / TaskUpdate
+  are blocked** (`WORKFLOW_DISALLOWED_TOOLS`). Traces showed sessions answering off the web instead
+  of the harness (a near-miss negative passing for entirely the wrong reason), `cat`-ing files the
+  trace could not see, and spending a small model's turn budget on todo bookkeeping.
 
 Workflow records carry an empty `practices[]` (no judge) but a full trace; `contrast` writes two
-records — `<label>:treatment` and `<label>:control`.
+records — `<label> [treatment]` and `<label> [control]`.
 
 ## Commands & parameters
 

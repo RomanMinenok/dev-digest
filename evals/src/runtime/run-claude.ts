@@ -16,6 +16,12 @@ export interface Metrics {
   toolCallCount: number;
 }
 
+/** One tool call, in the order it happened. `file` is set when the call read a file. */
+export interface ToolCall {
+  tool: string;
+  file?: string;
+}
+
 export interface Result {
   text: string;
   toolsUsed: string[];
@@ -23,14 +29,48 @@ export interface Result {
   /** Skills activated via the Skill tool (workflow mode); name may be "plugin:skill". */
   skillsInvoked: string[];
   filesRead: string[];
+  /**
+   * Every tool call in order (with duplicates). `filesRead` says WHETHER a file was read;
+   * this says HOW FAR IN — which is what separates "the map sent it straight there" from
+   * "it searched the tree and stumbled on it". The contrast tier asserts on that distance.
+   */
+  toolLog: ToolCall[];
   numTurns: number;
   isError: boolean;
   metrics: Metrics;
 }
 
+/** How the subscription says "no": session/usage limit, or the API's rate-limit error. */
+const LIMIT_SIGNATURE = /hit your (session|usage) limit|usage limit reached|rate_limit_error/i;
+
+/**
+ * Files a shell command reads. `filesRead` used to come only from the Read tool, so a model that
+ * ran `cat e2e/README.md` looked like it had read nothing and the case failed for a reason that
+ * had nothing to do with the harness. Workflow sessions now block Bash outright, but agent-tier
+ * sessions legitimately have it, so keep the trace honest wherever it runs.
+ */
+function bashReads(command: string): string[] {
+  const out: string[] = [];
+  const re = /\b(?:cat|bat|head|tail|less|more|sed)\b([^|;&\n]*)/g;
+  for (const m of command.matchAll(re)) {
+    for (const tok of m[1].split(/\s+/)) {
+      // skip flags, sed scripts ('1,20p'), redirections
+      if (!tok || tok.startsWith("-") || tok.startsWith("'") || tok.startsWith('"')) continue;
+      if (/[/.]/.test(tok)) out.push(tok);
+    }
+  }
+  return out;
+}
+
 export interface RunOptions {
   systemPrompt?: string;
   allowedTools?: string[];
+  /**
+   * Tools the session must NOT reach. Defaults to DISALLOWED_TOOLS. This — not `allowedTools` —
+   * is the only thing that actually narrows the surface (see config.ts), so a tier that needs a
+   * tighter box (workflowTask) passes its own list here.
+   */
+  disallowedTools?: string[];
   maxTurns?: number;
   cwd?: string;
   model?: string;
@@ -68,10 +108,14 @@ export async function runClaude(prompt: string, opts: RunOptions = {}): Promise<
     permissionMode: "bypassPermissions",
     systemPrompt,
     allowedTools,
-    disallowedTools: DISALLOWED_TOOLS,
+    disallowedTools: opts.disallowedTools ?? DISALLOWED_TOOLS,
     cwd: opts.cwd ?? REPO_ROOT,
     // Default: do NOT load on-disk config — isolates the injected artifact. workflowTask overrides.
     settingSources: opts.settingSources ?? [],
+    // settingSources:["project"] also drags in the repo's .mcp.json — traces showed sessions
+    // calling mcp__devdigest__* and burning turns on tools no eval asserts on. We pass no
+    // mcpServers, so this leaves the session with none.
+    strictMcpConfig: true,
     env: subscriptionEnv(),
   };
 
@@ -80,6 +124,7 @@ export async function runClaude(prompt: string, opts: RunOptions = {}): Promise<
   const subagents: string[] = [];
   const skills: string[] = [];
   const reads: string[] = [];
+  const toolLog: ToolCall[] = [];
   let resultText = "";
   let isError = false;
   let numTurns = 0;
@@ -109,18 +154,25 @@ export async function runClaude(prompt: string, opts: RunOptions = {}): Promise<
             tools.push(block.name);
             toolCallCount++;
             const input = block.input ?? {};
+            const readsHere: string[] = [];
             if (SPAWN_TOOLS.has(block.name)) {
               const sub = input.subagent_type ?? input.agent_type ?? input.name;
               if (sub) subagents.push(sub);
             }
             if (block.name === "Read") {
               const fp = input.file_path ?? input.path;
-              if (fp) reads.push(fp);
+              if (fp) readsHere.push(fp);
+            }
+            if (block.name === "Bash" && typeof input.command === "string") {
+              readsHere.push(...bashReads(input.command));
             }
             if (block.name === "Skill") {
               const s = input.skill ?? input.command;
               if (s) skills.push(s);
             }
+            reads.push(...readsHere);
+            if (readsHere.length === 0) toolLog.push({ tool: block.name });
+            else for (const f of readsHere) toolLog.push({ tool: block.name, file: f });
             // Evidence is in — break the loop before a heavy nested subagent runs to completion.
             // Breaking the async iterator triggers its return()/abort, tearing down the subprocess.
             if (
@@ -156,12 +208,25 @@ export async function runClaude(prompt: string, opts: RunOptions = {}): Promise<
   // Early stop never reached the result message, so fall back to the wall-clock duration.
   if (stoppedEarly && durationMs === 0) durationMs = Date.now() - startedAt;
 
+  // A quota wall is NOT a result. The subscription answers "You've hit your session limit · resets
+  // 8:40pm" in ~0.5s with an empty trace, which every case then scores as a legitimate FAIL —
+  // indistinguishable, in records.jsonl, from the harness actually regressing. (It happened: a whole
+  // 11-case run recorded 0/11 with empty traces.) Throw instead, so the suite dies loudly and the
+  // run is never mistaken for evidence.
+  if (LIMIT_SIGNATURE.test(resultText)) {
+    throw new Error(
+      `Subscription quota exhausted, not an eval result — the session returned: "${resultText.trim()}". ` +
+        `Re-run after the reset; discard this run.`,
+    );
+  }
+
   return {
     text: resultText || textParts.join("\n"),
     toolsUsed: [...new Set(tools)],
     subagents: [...new Set(subagents)],
     skillsInvoked: [...new Set(skills)],
     filesRead: reads,
+    toolLog,
     numTurns,
     isError,
     metrics: { durationMs, inputTokens, outputTokens, toolCallCount },

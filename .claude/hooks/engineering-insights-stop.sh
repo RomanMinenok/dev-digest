@@ -14,6 +14,12 @@
 # the insights write itself does not re-trigger the hook.
 set -euo pipefail
 
+# Eval sessions load this project's settings (hooks included). This hook blocks the stop and
+# orders "invoke the engineering-insights skill" whenever the tree is dirty — which would make the
+# skill-activation evals (positive AND near-miss negative) a function of the developer's git
+# status rather than of the skill's description. Stay out of the way.
+if [ -n "${DEVDIGEST_EVAL:-}" ]; then exit 0; fi
+
 input="$(cat)"
 PROJ_DIR="${CLAUDE_PROJECT_DIR:-.}"
 
