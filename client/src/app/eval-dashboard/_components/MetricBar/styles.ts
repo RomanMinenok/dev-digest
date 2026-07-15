@@ -30,9 +30,11 @@ export const s = {
   } satisfies CSSProperties,
 };
 
-/** Dynamic fill width/color — depends on props, so it stays a function, not a static object. */
+/** Dynamic fill width/color. `display: block` is required — inline spans ignore
+ *  percentage width, so the fill collapses and only the empty grey track shows. */
 export function fillStyle(fraction: number, color: string): CSSProperties {
   return {
+    display: "block",
     height: "100%",
     width: `${Math.round(Math.max(0, Math.min(1, fraction)) * 100)}%`,
     background: color,
