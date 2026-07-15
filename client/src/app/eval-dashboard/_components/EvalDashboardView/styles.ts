@@ -6,7 +6,9 @@ export const s = {
     display: "flex",
     flexDirection: "column",
     gap: 24,
-    padding: "24px 28px 40px",
+    padding: "24px 32px 44px",
+    maxWidth: 1100,
+    margin: "0 auto",
   } satisfies CSSProperties,
   header: {
     display: "flex",

@@ -62,7 +62,7 @@ export function row(index: number, selected: boolean): CSSProperties {
     gridTemplateColumns: GRID_TEMPLATE_COLUMNS,
     alignItems: "center",
     gap: 12,
-    padding: "10px 16px",
+    padding: "14px 16px",
     borderTop: index === 0 ? "none" : "1px solid var(--border)",
     background: selected ? "var(--bg-hover)" : "transparent",
   };
