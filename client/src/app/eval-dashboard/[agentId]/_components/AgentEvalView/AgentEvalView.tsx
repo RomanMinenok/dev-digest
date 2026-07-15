@@ -1,23 +1,28 @@
 /* AgentEvalView — /eval-dashboard/[agentId] container + presenter (mock 02):
-   back link, title + model chip, subtitle, range picker, `Run eval` button,
-   the regression banner, and the three metric cards with their deltas.
-   Container fetches (useAgent + useEvalDashboard(agentId, days)); a single
-   render path always mounts the full chrome, varying only the card-area
-   content for loading/error/empty states. The trend, Recent Runs table and
-   Compare modal are wired in T16–T20 — this task only leaves clearly-named
-   slots for them. The sweep (`Run eval`) is wired in T22/T23; this task only
-   exposes the button as a no-op. */
+   back link, agent selector + model chip, subtitle, range picker, `Run eval`
+   button, the regression banner, the three metric cards with their deltas, the
+   metric trend, the Recent Runs table with row selection, and the Compare
+   modal. Container fetches (useAgent + useEvalDashboard(agentId, days)); a
+   single render path always mounts the full chrome, varying only the card-area
+   content for loading/error/empty states. The sweep (`Run eval`) is wired in
+   T23; this task (T20) leaves it as a no-op. */
 "use client";
 
+import React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button, EmptyState, ErrorState, Icon, MetricCard, Skeleton } from "@devdigest/ui";
-import type { EvalDashboard } from "@devdigest/shared";
+import type { EvalDashboard, EvalVersionRun } from "@devdigest/shared";
 import { AppShell } from "@/components/app-shell";
 import { useAgent } from "@/lib/hooks/agents";
 import { useEvalDashboard } from "@/lib/hooks/evals";
 import { ApiError } from "@/lib/api";
 import { EVAL_RANGE_DAYS_DEFAULT, EVAL_RANGE_OPTIONS, RangePicker, type EvalRangeDays } from "../../../_components/RangePicker";
+import { MetricTrend } from "../MetricTrend";
+import { RecentRunsTable } from "../RecentRunsTable";
+import { CompareRunsModal } from "../CompareRunsModal";
+import { AgentSelector } from "../AgentSelector";
+import { useEvalSweep } from "../../../_components/hooks";
 import { BACK_HREF, EVAL_METRIC_COLORS, METRIC_CARD_FIELDS } from "./constants";
 import { s } from "./styles";
 
@@ -78,8 +83,14 @@ export function AgentEvalView({ agentId }: AgentEvalViewProps) {
     router.replace(`/eval-dashboard/${agentId}?${sp.toString()}`);
   };
 
-  // T22/T23 wire the actual per-agent sweep; this task only exposes the button.
-  const onRunEval = () => {};
+  // The two selected version runs to compare, or null when the modal is closed.
+  const [comparePair, setComparePair] = React.useState<[EvalVersionRun, EvalVersionRun] | null>(null);
+
+  // Client-driven per-case sweep for this one agent (AC-35/37/38).
+  const sweep = useEvalSweep();
+  const onRunEval = () => {
+    void sweep.runAgent(agentId);
+  };
 
   const isLoading = agentLoading || dashboardLoading;
   const isError = agentError || dashboardIsError;
@@ -115,7 +126,11 @@ export function AgentEvalView({ agentId }: AgentEvalViewProps) {
         <div style={s.header}>
           <div style={s.headerText}>
             <div style={s.titleRow}>
-              <h1 style={s.h1}>{agent?.name ?? "…"}</h1>
+              {agent ? (
+                <AgentSelector agentId={agentId} agentName={agent.name} />
+              ) : (
+                <h1 style={s.h1}>…</h1>
+              )}
               {agent && (
                 <span className="mono" style={s.modelChip}>
                   {agent.model}
@@ -138,11 +153,21 @@ export function AgentEvalView({ agentId }: AgentEvalViewProps) {
           </div>
           <div style={s.actions}>
             <RangePicker value={days} onChange={setDays} />
-            <Button kind="primary" icon="Play" onClick={onRunEval}>
-              {t("agentScreen.runEval")}
+            <Button
+              kind="primary"
+              icon="Play"
+              loading={sweep.isSweeping}
+              disabled={sweep.isSweeping}
+              onClick={onRunEval}
+            >
+              {sweep.isSweeping ? t("agentScreen.running") : t("agentScreen.runEval")}
             </Button>
           </div>
         </div>
+
+        {sweep.failures.length > 0 && (
+          <div style={s.sweepError}>{t("agentScreen.sweepFailed", { count: sweep.failures.length })}</div>
+        )}
 
         {isLoading && (
           <div style={s.section}>
@@ -185,16 +210,24 @@ export function AgentEvalView({ agentId }: AgentEvalViewProps) {
               ))}
             </div>
 
-            {/* Metric Trend chart — slot for T16. */}
-            <div style={s.section} />
+            <MetricTrend trend={dashboard.trend} days={days} />
 
-            {/* Recent Runs table with row selection — slot for T17/T20. */}
-            <div style={s.section} />
-
-            {/* Compare runs modal — slot for T19/T20. */}
+            <RecentRunsTable
+              runs={dashboard.version_runs}
+              days={days}
+              onCompare={setComparePair}
+            />
           </>
         )}
       </div>
+
+      {comparePair && (
+        <CompareRunsModal
+          agentId={agentId}
+          pair={comparePair}
+          onClose={() => setComparePair(null)}
+        />
+      )}
     </AppShell>
   );
 }

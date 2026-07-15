@@ -78,4 +78,8 @@ export const s = {
     flexDirection: "column",
     gap: 10,
   } satisfies CSSProperties,
+  sweepError: {
+    fontSize: 13,
+    color: "var(--crit)",
+  } satisfies CSSProperties,
 } as const;

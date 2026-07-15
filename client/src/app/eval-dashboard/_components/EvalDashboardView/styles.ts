@@ -44,4 +44,8 @@ export const s = {
     alignItems: "center",
     gap: 12,
   } satisfies CSSProperties,
+  sweepError: {
+    fontSize: 13,
+    color: "var(--crit)",
+  } satisfies CSSProperties,
 } as const;

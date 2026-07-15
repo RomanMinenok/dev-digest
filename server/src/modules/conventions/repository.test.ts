@@ -31,7 +31,6 @@ d('ConventionsRepository (Testcontainers pg)', () => {
         owner: 'test',
         name: 'test-repo',
         fullName: 'test/test-repo',
-        createdBy: 'system',
       })
       .returning();
     repoId = repo!.id;

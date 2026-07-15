@@ -4,6 +4,7 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button, Icon, SectionLabel } from "@devdigest/ui";
 import type { Agent, EvalCase, EvalDashboard, EvalRunRecord } from "@devdigest/shared";
@@ -170,6 +171,7 @@ export function EvalsTabView({
   onViewRun,
 }: EvalsTabViewProps) {
   const t = useTranslations("eval");
+  const router = useRouter();
 
   // Metrics are unavailable until at least one run exists — NOT merely until a
   // case exists. An agent with cases but no runs has no measurement, and
@@ -194,7 +196,11 @@ export function EvalsTabView({
         <SectionLabel
           icon="Gauge"
           right={
-            <Button kind="ghost" size="sm" disabled>
+            <Button
+              kind="ghost"
+              size="sm"
+              onClick={() => router.push(`/eval-dashboard/${agent.id}`)}
+            >
               {t("evalsTab.viewDashboard")}
             </Button>
           }

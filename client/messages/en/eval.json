@@ -12,7 +12,8 @@
     "metrics": {
       "recall": "RECALL",
       "precision": "PRECISION",
-      "citationAccuracy": "CITATION ACCURACY"
+      "citationAccuracy": "CITATION ACCURACY",
+      "cost": "COST"
     },
     "legend": {
       "recall": "Recall",
@@ -116,7 +117,8 @@
     "agentsHeading": "Agents",
     "recentRunsHeading": "Recent eval runs · all agents",
     "emptyAgents": "No agents yet. Create one in the Agent Editor's Evals tab to start tracking regressions.",
-    "emptyRuns": "No runs in the last {days} days"
+    "emptyRuns": "No runs in the last {days} days",
+    "sweepFailed": "{count, plural, one {# case failed to run} other {# cases failed to run}} — see the console for details."
   },
   "agentScreen": {
     "backToAgents": "All agents",
@@ -133,7 +135,8 @@
     "compare": "Compare",
     "notScoredOnCurrentVersion": "not scored on the current version",
     "lastMeasuredOnVersion": "last measured on v{version}",
-    "emptyRuns": "No runs in the last {days} days"
+    "emptyRuns": "No runs in the last {days} days",
+    "sweepFailed": "{count, plural, one {# case failed to run} other {# cases failed to run}} — see the console for details."
   },
   "compareModal": {
     "title": "Compare runs · {from} → {to}",

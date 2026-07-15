@@ -14,6 +14,7 @@ import { AppShell } from "../../../../components/app-shell";
 import { useEvalWorkspaceDashboard } from "../../../../lib/hooks/eval-dashboard";
 import { ApiError } from "../../../../lib/api";
 import { RangePicker } from "../RangePicker";
+import { useEvalSweep } from "../hooks";
 import { AgentsSection } from "./_components/AgentsSection";
 import { RunsTable } from "./_components/RunsTable";
 import { buildDaysSearch, hasAnyEvalCase, parseDaysParam } from "./helpers";
@@ -31,13 +32,22 @@ export function EvalDashboardView() {
     router.replace(`/eval-dashboard?${buildDaysSearch(search, next)}`);
   };
 
-  // T22/T23 wire the actual sweep; this task only exposes the button/prop.
-  const onRunAll = () => {};
-  const onRunAgent = (_agentId: string) => {};
-
   const agents = data?.agents ?? [];
   const versionRuns = data?.version_runs ?? [];
-  const runAllDisabled = isLoading || isError || !hasAnyEvalCase(agents);
+
+  // Client-driven sweep (AC-35…39). "Run all agents" walks every agent that owns
+  // at least one case; per-agent "Run eval" runs just that one.
+  const sweep = useEvalSweep();
+  const agentsWithCases = agents.filter((a) => a.cases_total > 0).map((a) => a.agent_id);
+  const onRunAll = () => {
+    void sweep.runAgents(agentsWithCases);
+  };
+  const onRunAgent = (agentId: string) => {
+    void sweep.runAgent(agentId);
+  };
+
+  const runAllDisabled =
+    isLoading || isError || sweep.isSweeping || !hasAnyEvalCase(agents);
   const workspaceEmpty = !isLoading && !isError && agents.length === 0;
 
   const crumb = [{ label: t("page.crumbSkillsLab") }, { label: t("page.crumbEvalDashboard") }];
@@ -52,8 +62,14 @@ export function EvalDashboardView() {
           </div>
           <div style={s.actions}>
             <RangePicker value={days} onChange={setDays} />
-            <Button kind="primary" icon="Play" disabled={runAllDisabled} onClick={onRunAll}>
-              {t("overviewPage.runAllAgents")}
+            <Button
+              kind="primary"
+              icon="Play"
+              loading={sweep.isSweeping}
+              disabled={runAllDisabled}
+              onClick={onRunAll}
+            >
+              {sweep.isSweeping ? t("dashboard.running") : t("overviewPage.runAllAgents")}
             </Button>
           </div>
         </div>
@@ -75,9 +91,13 @@ export function EvalDashboardView() {
 
         {workspaceEmpty && <EmptyState icon="Layers" title={t("overviewPage.emptyAgents")} />}
 
+        {sweep.failures.length > 0 && (
+          <div style={s.sweepError}>{t("overviewPage.sweepFailed", { count: sweep.failures.length })}</div>
+        )}
+
         {!isLoading && !isError && agents.length > 0 && (
           <>
-            <AgentsSection agents={agents} onRun={onRunAgent} />
+            <AgentsSection agents={agents} onRun={onRunAgent} runningAgentId={sweep.runningAgentId} />
             <div style={s.section}>
               <div style={s.sectionHeading}>{t("overviewPage.recentRunsHeading")}</div>
               <RunsTable runs={versionRuns} days={days} />
