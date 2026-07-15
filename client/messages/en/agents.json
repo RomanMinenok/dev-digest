@@ -43,6 +43,7 @@
     "createFromScratch": "Create from scratch",
     "disabled": "disabled",
     "runOnPr": "Run on a PR…",
+    "version": "v{version}",
     "tabs": {
       "config": "Config",
       "skills": "Skills",
