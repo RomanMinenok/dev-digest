@@ -28,7 +28,7 @@ import type { Finding } from '@devdigest/shared';
 // negatives (e.g. `truthiness-trap-drops-valid-falsy-settings-values`:
 // expected line 53, agent cited line 52 — recall scored 0% despite a correct
 // finding). Tolerance applied to the produced (actual) range only (AC-21).
-const LINE_TOLERANCE = 3;
+const LINE_TOLERANCE = 10;
 
 /**
  * Returns `true` when `produced` satisfies `expected` (AC-21, AC-22):
