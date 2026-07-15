@@ -88,3 +88,12 @@ export function isConfigChange(
     patch.outputSchema !== undefined
   );
 }
+
+/**
+ * Order-sensitive equality of two skill-id arrays. Reordering the linked skills
+ * changes the assembled prompt (skills are injected in `agent_skills.order`), so
+ * a reorder counts as a change just like an add/remove — hence position matters.
+ */
+export function sameOrderedIds(a: string[], b: string[]): boolean {
+  return a.length === b.length && a.every((id, i) => id === b[i]);
+}

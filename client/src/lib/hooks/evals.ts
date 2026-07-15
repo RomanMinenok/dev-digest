@@ -36,11 +36,14 @@ export function useEvalCases(agentId: string | null | undefined) {
   });
 }
 
-export function useEvalDashboard(agentId: string | null | undefined) {
+export function useEvalDashboard(
+  agentId: string | null | undefined,
+  days: 7 | 30 | 90 = 30
+) {
   return useQuery({
-    queryKey: ["eval-dashboard", agentId],
+    queryKey: ["eval-dashboard", agentId, days],
     queryFn: () =>
-      api.get<EvalDashboard>(`/agents/${agentId}/eval-dashboard`),
+      api.get<EvalDashboard>(`/agents/${agentId}/eval-dashboard?days=${days}`),
     enabled: !!agentId,
   });
 }

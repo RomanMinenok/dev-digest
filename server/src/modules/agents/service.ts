@@ -9,7 +9,7 @@ import type {
   ReviewStrategy,
 } from '@devdigest/shared';
 import { AgentsRepository } from './repository.js';
-import { toAgentDto, toAgentVersionDto } from './helpers.js';
+import { sameOrderedIds, toAgentDto, toAgentVersionDto } from './helpers.js';
 
 /**
  * A2 — agents service. Business logic for the Agents tab + Agent Editor.
@@ -156,7 +156,17 @@ export class AgentsService {
   ): Promise<AgentSkillLink[] | undefined> {
     const agent = await this.repo.getById(workspaceId, agentId);
     if (!agent) return undefined;
+    // The linked-skill set is part of the agent's effective config (the runner
+    // injects linked+enabled skill bodies, in `agent_skills.order`), so a real
+    // change must bump the agent version — otherwise eval runs before and after
+    // a skills edit collapse into one version bucket and the dashboard shows no
+    // difference. Snapshot AFTER the skill write; bump only on a real,
+    // order-sensitive change (a no-op save must not churn the version).
+    const before = await this.repo.skillIdsForAgent(agentId);
     await this.repo.setSkills(agentId, skillIds);
+    if (!sameOrderedIds(before, skillIds)) {
+      await this.repo.bumpVersion(workspaceId, agentId);
+    }
     return this.skillLinks(agentId);
   }
 
@@ -170,8 +180,15 @@ export class AgentsService {
     const agent = await this.repo.getById(workspaceId, agentId);
     if (!agent) return undefined;
     const existing = await this.repo.linkedSkills(agentId);
+    const before = existing.map((l) => l.skill.id);
     const resolvedOrder = order ?? existing.length;
     await this.repo.linkSkill(agentId, skillId, resolvedOrder);
+    // Same rule as setSkills: a genuine link (or reorder) is a versioned config
+    // change; re-linking an already-linked skill at the same slot is a no-op.
+    const after = (await this.repo.linkedSkills(agentId)).map((l) => l.skill.id);
+    if (!sameOrderedIds(before, after)) {
+      await this.repo.bumpVersion(workspaceId, agentId);
+    }
     return this.skillLinks(agentId);
   }
 

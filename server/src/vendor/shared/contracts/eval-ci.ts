@@ -129,9 +129,10 @@ export const EvalRunResult = z.object({
 });
 export type EvalRunResult = z.infer<typeof EvalRunResult>;
 
-/** One point on the dashboard trend (per run, chronological). */
+/** One point on the dashboard trend — now one point per agent version, chronological. */
 export const EvalTrendPoint = z.object({
   ran_at: z.string(),
+  agent_version: z.number().int(),
   recall: z.number(),
   precision: z.number(),
   citation_accuracy: z.number(),
@@ -140,11 +141,50 @@ export const EvalTrendPoint = z.object({
 });
 export type EvalTrendPoint = z.infer<typeof EvalTrendPoint>;
 
+/**
+ * One agent version's aggregated eval-run summary — the row shape for the
+ * cross-agent version comparison (workspace dashboard trend + Compare view).
+ */
+export const EvalVersionRun = z.object({
+  agent_id: z.string(),
+  agent_name: z.string(),
+  agent_version: z.number().int(),
+  ran_at: z.string(),
+  recall: z.number(),
+  precision: z.number(),
+  citation_accuracy: z.number(),
+  cases_passed: z.number().int(),
+  cases_total: z.number().int(),
+  cost_usd: z.number().nullable(),
+});
+export type EvalVersionRun = z.infer<typeof EvalVersionRun>;
+
+/** Per-agent summary row for the workspace-wide eval dashboard. */
+export const EvalAgentSummary = z.object({
+  agent_id: z.string(),
+  name: z.string(),
+  model: z.string(),
+  cases_total: z.number().int(),
+  current_version: z.number().int(),
+  measured_version: z.number().int().nullable(),
+  latest: EvalVersionRun.nullable(),
+  sparkline: z.array(z.number()),
+});
+export type EvalAgentSummary = z.infer<typeof EvalAgentSummary>;
+
+/** Workspace-wide eval dashboard envelope — agent summaries + the cross-agent version-run list. */
+export const EvalWorkspaceDashboard = z.object({
+  agents: z.array(EvalAgentSummary),
+  version_runs: z.array(EvalVersionRun),
+});
+export type EvalWorkspaceDashboard = z.infer<typeof EvalWorkspaceDashboard>;
+
 /** Aggregate dashboard for an owner (agent/skill) or the whole workspace. */
 export const EvalDashboard = z.object({
   owner_kind: EvalOwnerKind.nullable(),
   owner_id: z.string().nullable(),
   cases_total: z.number().int(),
+  measured_version: z.number().int().nullable(),
   current: z.object({
     recall: z.number(),
     precision: z.number(),
@@ -160,6 +200,7 @@ export const EvalDashboard = z.object({
   }),
   trend: z.array(EvalTrendPoint),
   recent_runs: z.array(EvalRunRecord),
+  version_runs: z.array(EvalVersionRun),
   alert: z.string().nullable(),
 });
 export type EvalDashboard = z.infer<typeof EvalDashboard>;

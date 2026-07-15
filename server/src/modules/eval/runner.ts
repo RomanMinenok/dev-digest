@@ -20,6 +20,7 @@ import type { AgentRow } from '../../db/rows.js';
 import { REVIEW_STRATEGY } from '../reviews/constants.js';
 import { caseToReviewInputs } from './prompt-inputs.js';
 import { scoreCase, aggregate } from './scorer.js';
+import { appendEvalRunLog } from './run-log.js';
 import type { EvalCaseRow, EvalEnrichment, EvalInputMeta, ExpectedFinding } from './types.js';
 
 /**
@@ -30,11 +31,16 @@ import type { EvalCaseRow, EvalEnrichment, EvalInputMeta, ExpectedFinding } from
  *                    `container.git` is deliberately NOT used (AC-16).
  * @param agent     - The live Drizzle agent row (systemPrompt, provider, model, …).
  * @param evalCase  - The frozen eval case row from `eval_cases`.
+ * @param logFile   - Optional path to a per-sweep run log file. When set (the
+ *                    caller decides, gated by `EVAL_RUN_LOG_ENABLED`), the full
+ *                    prompt + findings + metrics for this case are appended to
+ *                    it. Undefined = no file logging.
  */
 export async function runCase(
   container: Container,
   agent: AgentRow,
   evalCase: EvalCaseRow,
+  logFile?: string,
 ): Promise<EvalRunResult> {
   const start = Date.now();
 
@@ -76,6 +82,14 @@ export async function runCase(
     ...frozenInputs,
     sessionId: `eval:${evalCase.id}:${agent.id}`,
   });
+
+  if (container.config.evalPromptLogEnabled) {
+    console.log(
+      `\n[eval] prompt — case "${evalCase.name}" · agent "${agent.name}" (v${agent.version})\n` +
+        `--- system ---\n${outcome.assembly.system}\n` +
+        `--- user ---\n${outcome.assembly.user}\n`,
+    );
+  }
 
   // ── 4. Score ────────────────────────────────────────────────────────────────
   // Parse expected_output as ExpectedFinding[] for scoring only — AFTER the model call.
@@ -121,6 +135,34 @@ export async function runCase(
     kept: caseScore.kept,
     dropped: caseScore.dropped,
   });
+
+  // ── Optional per-sweep file log (EVAL_RUN_LOG_ENABLED) ──────────────────────
+  // Best-effort: a logging failure must never fail the eval run itself.
+  if (logFile) {
+    try {
+      await appendEvalRunLog(logFile, {
+        caseName: evalCase.name,
+        agentName: agent.name,
+        version: agent.version,
+        pass: caseScore.pass,
+        recall: metrics.recall,
+        precision: metrics.precision,
+        citationAccuracy: metrics.citation_accuracy,
+        costUsd,
+        durationMs,
+        kept,
+        dropped,
+        systemPrompt: outcome.assembly.system,
+        userPrompt: outcome.assembly.user,
+        rawResponse: outcome.raw,
+        expected,
+        produced,
+        droppedFindings: outcome.dropped,
+      });
+    } catch (err) {
+      console.warn(`[eval] run-log write failed for "${evalCase.name}":`, err);
+    }
+  }
 
   // ── Return ──────────────────────────────────────────────────────────────────
   return {

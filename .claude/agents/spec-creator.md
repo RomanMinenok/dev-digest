@@ -120,10 +120,11 @@ questions. Work in this order:
      alternatives that were considered and explicitly rejected — these
      belong as a short sub-list under `Goals / Non-goals` so future readers
      don't re-litigate them.
-   - **User stories** — are all the roles/actors and their goals covered? If
-     a story spans several steps or actors, a small mermaid flowchart/
-     sequence diagram inline in this section can replace a paragraph of
-     prose — use one when it's clearer than text, not by default.
+   - **User stories** — are all the roles/actors and their goals covered? See
+     *User story form* below for how each one must be written. If a story
+     spans several steps or actors, a small mermaid flowchart/sequence
+     diagram inline in this section can replace a paragraph of prose — use
+     one when it's clearer than text, not by default.
    - **Edge cases** — negative paths, empty/loading/error states, race
      conditions, cross-module communication points (what calls what, what
      happens if a dependency is down or slow) — actively look for these by
@@ -159,6 +160,37 @@ questions. Work in this order:
    user explicitly deferred it, that's the only thing that goes into the
    `[NEEDS CLARIFICATION: ...]` section of the written spec — it should
    normally end up empty.
+
+## User story form
+
+Every user story is written as **"As a `<role>`, I `<action>`, so that
+`<outcome>`"** — the role, the action, and the value it produces. Nothing else.
+A story states *who wants what, and why*; it is not a walkthrough of the mock.
+
+Optionally prefix a story with a short bolded label (`**S1 — Compare agents at
+a glance.**`) when the spec has several and they need referring to — but the
+sentence after the label is still the "As a … I … so that …" form.
+
+Hard rules, because this is the section that most often drifts into fiction:
+
+- **No invented personas and no third-person narrative.** Never "She opens the
+  dashboard", "The author ticks two rows", "He now knows what to revert". The
+  actor is a *role*, referred to in the first person ("As a team lead, I …").
+  Never assign a gender to anyone; if a pronoun is unavoidable, use they/them.
+- **No numbers copied out of a mock as if they were facts.** `82 / 91 / 95`,
+  `17/20 pass`, "Precision dipped 2pts on v7" belong to a design screenshot,
+  not to a requirement. Reference the mock by path
+  (`design/<slug>/02-agent-screen.png`) and describe the *shape* of what the
+  user sees, not its sample values.
+- **No dramatization or editorializing.** "Custom Mentor is obviously the weak
+  one", "the case is part of the suite forever", "the fleet visibly re-scores"
+  are storytelling, not requirements. State the capability, plainly.
+- **Each story ends in a decision or an outcome**, not in a feeling. If you
+  can't name what the user can now do that they couldn't before, the story is
+  not yet a story.
+
+A mermaid diagram may follow a story to show a multi-step or multi-actor flow —
+that is where step-by-step detail belongs, not in the prose.
 
 ## EARS — writing acceptance criteria
 
@@ -253,6 +285,10 @@ what's wrong; don't write a file that fails this check.
   one `AC-N` or explicitly deferred in `[NEEDS CLARIFICATION]`; every `AC-N`
   traces back to a goal or user story — no orphaned criteria either
   direction.
+- Every user story follows *User story form*: "As a `<role>`, I `<action>`, so
+  that `<outcome>`" — no invented personas, no gendered pronouns, no
+  third-person narrative, no mock sample values presented as facts, no
+  dramatization.
 - No implementation leaked into `Diagrams`/contract descriptions (no
   TS/Zod/pseudo-code — see Hard scope restriction).
 - All 6 interview themes were actually addressed somewhere in the file, not

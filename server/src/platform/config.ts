@@ -26,6 +26,15 @@ const EnvSchema = z.object({
   // Note: even when on, sections only populate once the repo is indexed; an
   // unindexed repo degrades gracefully. Per-agent override: agents.repo_intel.
   REPO_INTEL_ENABLED: z.string().optional(),
+  // Debug: console.log the full system/user prompt sent to the LLM for every
+  // eval run. Default OFF; set EVAL_LOG_PROMPT=true for local debugging only.
+  EVAL_LOG_PROMPT: z.string().optional(),
+  // Debug: write a per-run file log of every eval sweep (full prompt + findings
+  // + metrics) to EVAL_RUN_LOG_DIR. Default OFF; set EVAL_RUN_LOG_ENABLED=true.
+  EVAL_RUN_LOG_ENABLED: z.string().optional(),
+  // Directory for the eval run logs above (relative paths resolve from cwd).
+  // Default: `eval-logs/` under the server package.
+  EVAL_RUN_LOG_DIR: z.string().optional(),
   API_PORT: z.coerce.number().int().default(3001),
   WEB_PORT: z.coerce.number().int().default(3000),
   DEVDIGEST_CLONE_DIR: z.string().optional(),
@@ -59,6 +68,12 @@ export type AppConfig = {
    * EXACTLY like the ripgrep-only baseline.
    */
   repoIntelEnabled: boolean;
+  /** Whether to console.log the full LLM prompt for every eval run. Default false. */
+  evalPromptLogEnabled: boolean;
+  /** Whether to write per-sweep eval run log files. Default false. */
+  evalRunLogEnabled: boolean;
+  /** Absolute directory for eval run log files. */
+  evalRunLogDir: string;
 };
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
@@ -77,5 +92,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     webOrigin: `http://localhost:${parsed.WEB_PORT}`,
     embeddingsEnabled: parsed.EMBEDDINGS_ENABLED === 'true',
     repoIntelEnabled: parsed.REPO_INTEL_ENABLED !== 'false',
+    evalPromptLogEnabled: parsed.EVAL_LOG_PROMPT === 'true',
+    evalRunLogEnabled: parsed.EVAL_RUN_LOG_ENABLED === 'true',
+    evalRunLogDir: (() => {
+      const raw = parsed.EVAL_RUN_LOG_DIR ?? 'eval-logs';
+      return isAbsolute(raw) ? raw : resolve(process.cwd(), raw);
+    })(),
   };
 }

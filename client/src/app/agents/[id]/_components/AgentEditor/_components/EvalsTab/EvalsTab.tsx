@@ -119,17 +119,24 @@ export function EvalsTab({ agent }: { agent: Agent }) {
     [cases, latestRunByCase, agent.version],
   );
 
-  const currentUnmeasured =
-    !dashLoading && (dashboard?.current.traces_total ?? 0) === 0;
+  /**
+   * Prefer the dashboard's measured_version — that is exactly which version
+   * `dashboard.current` aggregates (SPEC-04). Fall back to max case latest_run
+   * version when the dashboard hasn't loaded yet / has no runs.
+   */
+  const lastMeasuredVersion = React.useMemo(() => {
+    if (dashboard?.measured_version != null) return dashboard.measured_version;
+    return lastMeasuredAgentVersion(latestRunByCase.values());
+  }, [dashboard?.measured_version, latestRunByCase]);
 
-  const lastMeasuredVersion = React.useMemo(
-    () => lastMeasuredAgentVersion(latestRunByCase.values()),
-    [latestRunByCase],
-  );
-
-  /** Agent bumped with only older-version runs left — metrics + case status are stale. */
+  /**
+   * Agent config is ahead of the last eval sweep. Metrics stay visible (they
+   * are the last-measured aggregates) but labelled stale via the banner —
+   * `current.traces_total === 0` is no longer a reliable skew signal after
+   * SPEC-04 redefined `current` as latest-measured, not live agent version.
+   */
   const fullyStale =
-    currentUnmeasured &&
+    !dashLoading &&
     lastMeasuredVersion != null &&
     lastMeasuredVersion !== agent.version;
 

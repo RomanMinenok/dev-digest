@@ -21,6 +21,7 @@
     },
     "table": {
       "ranAt": "Ran at",
+      "version": "Version",
       "recall": "Recall",
       "precision": "Precision",
       "citation": "Citation",
@@ -72,8 +73,8 @@
   "evalsTab": {
     "metricsTitle": "Eval metrics",
     "metricsSubtitle": "Recall / Precision / Citation for this agent's eval cases",
-    "metricsSubtitleUnmeasured": "No runs against agent v{version} yet — re-run evals to score this config",
-    "staleVersionBanner": "Agent is at v{current}. Last evals ran against v{measured}. Re-run to measure the current config.",
+    "metricsSubtitleUnmeasured": "Showing scores last measured on agent v{measured} — current config is v{version}",
+    "staleVersionBanner": "These metrics were calculated on agent v{measured}. Current config is v{current} — re-run evals to score it.",
     "casesHeading": "Eval cases",
     "newCase": "New eval case",
     "loadingCases": "Loading cases…",
@@ -107,6 +108,42 @@
     "actualColumn": "Actual ({count})",
     "expectedEmpty": "No findings expected",
     "actualEmpty": "No findings produced"
+  },
+  "overviewPage": {
+    "title": "Eval Dashboard",
+    "subtitle": "Regression harness across all reviewer agents · pick an agent to see its runs",
+    "runAllAgents": "Run all agents",
+    "agentsHeading": "Agents",
+    "recentRunsHeading": "Recent eval runs · all agents",
+    "emptyAgents": "No agents yet. Create one in the Agent Editor's Evals tab to start tracking regressions.",
+    "emptyRuns": "No runs in the last {days} days"
+  },
+  "agentScreen": {
+    "backToAgents": "All agents",
+    "subtitle": "Regression harness · {runs, plural, one {# run} other {# runs}} on the {traces}-trace gold set",
+    "range": {
+      "d7": "7 days",
+      "d30": "30 days",
+      "d90": "90 days"
+    },
+    "runEval": "Run eval",
+    "running": "Running…",
+    "recentRunsHeading": "Recent runs",
+    "selectedCount": "{count, plural, one {# selected} other {# selected}}",
+    "compare": "Compare",
+    "notScoredOnCurrentVersion": "not scored on the current version",
+    "lastMeasuredOnVersion": "last measured on v{version}",
+    "emptyRuns": "No runs in the last {days} days"
+  },
+  "compareModal": {
+    "title": "Compare runs · {from} → {to}",
+    "subtitle": "Old prompt vs new — metric deltas and prompt diff on the {traces}-trace gold set",
+    "close": "Close",
+    "systemPromptDiff": "System prompt diff",
+    "noPromptChanges": "No prompt changes",
+    "promptUnavailable": "Prompt unavailable",
+    "versionOld": "{version} (old)",
+    "versionNew": "{version} (new)"
   },
   "page": {
     "crumbSkillsLab": "Skills Lab",

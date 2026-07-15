@@ -16,6 +16,7 @@ coverage/
 .turbo/
 .pnpm-store/
 *.log
+/server/eval-logs/*md
 .devdigest/cache/
 clones/
 playwright-report/

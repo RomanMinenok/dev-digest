@@ -1,10 +1,13 @@
 import type {
+  EvalAgentSummary,
   EvalCase,
   EvalCaseWithLatestRun,
   EvalDashboard,
   EvalRunRecord,
   EvalRunResult,
   EvalTrendPoint,
+  EvalVersionRun,
+  EvalWorkspaceDashboard,
   RunTrace,
 } from '@devdigest/shared';
 import type { Container } from '../../platform/container.js';
@@ -12,10 +15,22 @@ import { BadRequestError, NotFoundError } from '../../platform/errors.js';
 import { parseUnifiedDiff } from '../../adapters/git/diff-parser.js';
 import { rankNoteSentence } from '../reviews/helpers.js';
 import { buildEnrichment } from './capture.js';
+import { composeRegressionBanner } from './regression.js';
 import type { UpdateCaseInput } from './repository.js';
 import { runCase } from './runner.js';
-import { aggregateRunRows } from './scorer.js';
+import { evalRunLogPath } from './run-log.js';
 import type { EvalCaseRow, EvalEnrichment, EvalInputMeta, EvalRunRow } from './types.js';
+import {
+  buildTrend,
+  filterByDays,
+  groupVersionRuns,
+  measuredVersions,
+  metricDelta,
+  type VersionRun,
+} from './version-runs.js';
+
+/** Default lookback window for the trend/run-list when the caller passes none. */
+const DEFAULT_DASHBOARD_DAYS = 30;
 
 /**
  * Application-layer service for eval case CRUD (SPEC-03, T10).
@@ -112,17 +127,31 @@ function toEvalRunRecord(row: EvalRunRow, fallbackVersion: number): EvalRunRecor
 }
 
 /**
- * Given a list of `EvalRunRow` ordered newest-first by `ranAt`, returns only
- * the first (latest) row per `caseId`. This is the canonical "latest run per
- * case within one agent version" definition — never "the newest N runs".
+ * Maps an internal (pure, T3) `VersionRun` to the wire `EvalVersionRun`
+ * contract. `agentId`/`agentName` are threaded in because `VersionRun` itself
+ * is agent-agnostic (T3's module has no notion of "which agent"); every
+ * version run leaves the service through this mapper — routing raw internal
+ * shapes (which also carry `falsePositives`, deliberately NOT part of the
+ * wire contract) straight to HTTP is the exact SPEC-03 DTO-leak bug this
+ * module's INSIGHTS entry warns about.
  */
-function deduplicateLatestPerCase(rows: EvalRunRow[]): EvalRunRow[] {
-  const seen = new Set<string>();
-  return rows.filter((r) => {
-    if (seen.has(r.caseId)) return false;
-    seen.add(r.caseId);
-    return true;
-  });
+function toEvalVersionRunDto(
+  v: VersionRun,
+  agentId: string,
+  agentName: string,
+): EvalVersionRun {
+  return {
+    agent_id: agentId,
+    agent_name: agentName,
+    agent_version: v.agentVersion,
+    ran_at: v.ranAt.toISOString(),
+    recall: v.recall,
+    precision: v.precision,
+    citation_accuracy: v.citationAccuracy,
+    cases_passed: v.casesPassed,
+    cases_total: v.casesTotal,
+    cost_usd: v.costUsd,
+  };
 }
 
 /**
@@ -303,10 +332,22 @@ export class EvalService {
 
     const results: EvalRunResult[] = [];
 
+    // One log file per sweep (gated by EVAL_RUN_LOG_ENABLED). The timestamp is
+    // captured ONCE here so every case in this sweep appends to the same file,
+    // and a re-run on a bumped version writes a separate, comparable file.
+    const logFile = this.container.config.evalRunLogEnabled
+      ? evalRunLogPath(
+          this.container.config.evalRunLogDir,
+          new Date(),
+          agent.name,
+          agent.version,
+        )
+      : undefined;
+
     // AC-17: sequential — one model call at a time.
     for (const evalCase of cases) {
       try {
-        const result = await runCase(this.container, agent, evalCase);
+        const result = await runCase(this.container, agent, evalCase, logFile);
         results.push(result);
       } catch (err) {
         // AC-18: persist a failure row and continue to the next case.
@@ -351,18 +392,27 @@ export class EvalService {
   /**
    * Aggregate eval dashboard for a single agent.
    *
-   * `current` = aggregate over the **latest run per case** at the agent's
-   * current `version` (Insight: "latest run per case within one agent version",
-   * never "the newest N runs across all cases").
+   * `current` + `delta` + `measured_version` come from the **latest measured
+   * version** (the newest `agent_version` that has any runs) and the previous
+   * measured version — independently of `days` (AC-11, AC-13, AC-14, AC-22).
+   * This is deliberately NOT the agent's current config `version`: any config
+   * save except `enabled` bumps it, so the current version usually has zero
+   * runs yet (server INSIGHTS: version skew is the normal state, not a bug).
    *
-   * `delta` = `current` minus the aggregate for the newest *previous* agent
-   * version that has any runs. When no previous version with runs exists,
-   * deltas are `0` (the client decides not to render them — AC-32).
+   * `version_runs` and `trend` are filtered to `days` (AC-16/17/18/20) — the
+   * range picker affects those two only, never the metric cards.
    *
-   * Zero-cases edge case: returns `cases_total: 0`, all metrics `0` (reported
-   * as unavailable, not `1`/`100%`).
+   * `alert` is the deterministic regression banner (T4) comparing the
+   * measured version against the previous measured version.
+   *
+   * Zero-cases edge case: returns `cases_total: 0`, `measured_version: null`,
+   * `version_runs: []`, all metrics `0` (reported as unavailable, not `1`/`100%`).
    */
-  async dashboard(workspaceId: string, agentId: string): Promise<EvalDashboard> {
+  async dashboard(
+    workspaceId: string,
+    agentId: string,
+    days: number = DEFAULT_DASHBOARD_DAYS,
+  ): Promise<EvalDashboard> {
     const agent = await this.container.agentsRepo.getById(workspaceId, agentId);
     if (!agent) throw new NotFoundError('Agent not found');
 
@@ -381,6 +431,7 @@ export class EvalService {
         owner_kind: 'agent',
         owner_id: agentId,
         cases_total: 0,
+        measured_version: null,
         current: {
           recall: 0,
           precision: 0,
@@ -392,77 +443,172 @@ export class EvalService {
         delta: { recall: 0, precision: 0, citation_accuracy: 0 },
         trend: [],
         recent_runs: [],
+        version_runs: [],
         alert: null,
       };
     }
 
-    // Runs for current version — all runs (multiple per case across repeat
-    // executions), ordered newest-first by ran_at.
-    const currentVersionRuns = await this.container.evalRepo.runsForAgentVersion(
-      caseIds,
-      currentVersion,
-    );
+    // All runs for these cases, across every agent version — grouped into one
+    // pooled VersionRun per version (T3), newest-first.
+    const rows = await this.container.evalRepo.runsForCases(caseIds);
+    const versionRuns = groupVersionRuns(rows, currentVersion);
 
-    // Latest run per case for current version (first occurrence per caseId
-    // is the newest because runsForAgentVersion orders desc by ran_at).
-    const latestCurrentRuns = deduplicateLatestPerCase(currentVersionRuns);
+    // current/delta/measured_version: the two most recently MEASURED
+    // versions, independently of `days` (AC-22).
+    const { measured, previous } = measuredVersions(versionRuns);
+    const delta = metricDelta(measured, previous) ?? {
+      recall: 0,
+      precision: 0,
+      citation_accuracy: 0,
+    };
+    const current = measured
+      ? {
+          recall: measured.recall,
+          precision: measured.precision,
+          citation_accuracy: measured.citationAccuracy,
+          traces_passed: measured.casesPassed,
+          traces_total: measured.casesTotal,
+          cost_usd: measured.costUsd,
+        }
+      : {
+          recall: 0,
+          precision: 0,
+          citation_accuracy: 0,
+          traces_passed: 0,
+          traces_total: 0,
+          cost_usd: null,
+        };
 
-    const current = aggregateRunRows(latestCurrentRuns);
-
-    // Delta: find the newest previous version that has any runs.
-    const versions =
-      await this.container.evalRepo.distinctAgentVersionsWithRuns(caseIds);
-    const prevVersion = versions.filter((v) => v < currentVersion).at(-1);
-
-    let delta = { recall: 0, precision: 0, citation_accuracy: 0 };
-    let prevVersionRuns: EvalRunRow[] = [];
-    if (prevVersion !== undefined) {
-      prevVersionRuns = await this.container.evalRepo.runsForAgentVersion(
-        caseIds,
-        prevVersion,
-      );
-      const latestPrevRuns = deduplicateLatestPerCase(prevVersionRuns);
-      const prevAgg = aggregateRunRows(latestPrevRuns);
-      delta = {
-        recall: current.recall - prevAgg.recall,
-        precision: current.precision - prevAgg.precision,
-        citation_accuracy: current.citation_accuracy - prevAgg.citation_accuracy,
-      };
-    }
-
-    // Trend: all runs for the current version in chronological order (oldest
-    // first). Each point maps one run row's stored metrics directly.
-    const trend: EvalTrendPoint[] = [...currentVersionRuns].reverse().map((r) => ({
-      ran_at: r.ranAt.toISOString(),
-      recall: r.recall ?? 0,
-      precision: r.precision ?? 0,
-      citation_accuracy: r.citationAccuracy ?? 0,
-      pass_rate: r.pass === true ? 1 : 0,
-      cost_usd: r.costUsd,
+    // trend/version_runs: range-filtered (AC-20). `filterByDays` preserves
+    // the newest-first order of `versionRuns` for the run list; `buildTrend`
+    // re-sorts chronologically ascending for the chart.
+    const rangeFiltered = filterByDays(versionRuns, days);
+    const trend: EvalTrendPoint[] = buildTrend(rangeFiltered).map((v) => ({
+      ran_at: v.ranAt.toISOString(),
+      agent_version: v.agentVersion,
+      recall: v.recall,
+      precision: v.precision,
+      citation_accuracy: v.citationAccuracy,
+      pass_rate: v.casesTotal > 0 ? v.casesPassed / v.casesTotal : 0,
+      cost_usd: v.costUsd,
     }));
-
-    // Recent runs: up to 20 most recent runs across current AND previous
-    // version. Including previous-version entries lets the client detect
-    // hasPreviousVersion to gate delta display (AC-32: no delta shown when
-    // no previous version has runs). The client derives latestRunByCase from
-    // this list by picking the most recent per case_id — current-version rows
-    // sort first (they are more recent), so pass/fail status is still correct.
-    const allRunsForDisplay = [...currentVersionRuns, ...prevVersionRuns].sort(
-      (a, b) => b.ranAt.getTime() - a.ranAt.getTime(),
+    const version_runs: EvalVersionRun[] = rangeFiltered.map((v) =>
+      toEvalVersionRunDto(v, agentId, agent.name),
     );
-    const recentRunRows = allRunsForDisplay.slice(0, 20);
+
+    const alert = composeRegressionBanner({ measured, previous });
+
+    // Recent runs (per-case, unchanged meaning/shape — SPEC-03's Evals tab
+    // reads it): up to 20 most recent runs across the measured AND previous
+    // measured version, derived from the already-fetched `rows` rather than
+    // re-querying. Including previous-version entries lets the client detect
+    // hasPreviousVersion to gate delta display (AC-32: no delta shown when no
+    // previous version has runs).
+    const measuredVersionNum = measured?.agentVersion;
+    const previousVersionNum = previous?.agentVersion;
+    const recentRunRows = rows
+      .filter((r) => {
+        const v = r.agentVersion ?? currentVersion;
+        return v === measuredVersionNum || v === previousVersionNum;
+      })
+      .slice(0, 20);
     const recent_runs = recentRunRows.map((r) => toEvalRunRecord(r, currentVersion));
 
     return {
       owner_kind: 'agent',
       owner_id: agentId,
       cases_total: cases.length,
+      measured_version: measured?.agentVersion ?? null,
       current,
       delta,
       trend,
       recent_runs,
-      alert: null,
+      version_runs,
+      alert,
     };
+  }
+
+  /**
+   * Workspace-wide eval dashboard (T6, SPEC-04 AC-2/AC-3/AC-4/AC-8/AC-9).
+   *
+   * Lists every agent that owns **at least one eval case** (AC-2 — a
+   * zero-case agent is invisible), each with an `EvalAgentSummary`, plus a
+   * cross-agent `version_runs` list merged from every agent's in-range
+   * version runs, newest-first by `ran_at` (AC-8, AC-9).
+   *
+   * Read count kept small per the spec's < 300ms p95 target: one agents
+   * query, one workspace-wide cases query, one runs query over the union of
+   * case ids — then everything else is in-memory grouping (`groupVersionRuns`,
+   * T3) per agent.
+   */
+  async workspaceDashboard(
+    workspaceId: string,
+    days: number = DEFAULT_DASHBOARD_DAYS,
+  ): Promise<EvalWorkspaceDashboard> {
+    const [agents, cases] = await Promise.all([
+      this.container.agentsRepo.list(workspaceId),
+      this.container.evalRepo.listAgentCasesForWorkspace(workspaceId),
+    ]);
+
+    // Group cases by owning agent, keeping only agents with >= 1 case (AC-2).
+    const caseIdsByAgent = new Map<string, string[]>();
+    for (const c of cases) {
+      const bucket = caseIdsByAgent.get(c.ownerId);
+      if (bucket) {
+        bucket.push(c.id);
+      } else {
+        caseIdsByAgent.set(c.ownerId, [c.id]);
+      }
+    }
+
+    const agentsWithCases = agents.filter((a) => caseIdsByAgent.has(a.id));
+    if (agentsWithCases.length === 0) {
+      return { agents: [], version_runs: [] };
+    }
+
+    // One runs query over the union of every relevant case id.
+    const allCaseIds = agentsWithCases.flatMap((a) => caseIdsByAgent.get(a.id) ?? []);
+    const rows = await this.container.evalRepo.runsForCases(allCaseIds);
+    const rowsByCase = new Map<string, EvalRunRow[]>();
+    for (const row of rows) {
+      const bucket = rowsByCase.get(row.caseId);
+      if (bucket) {
+        bucket.push(row);
+      } else {
+        rowsByCase.set(row.caseId, [row]);
+      }
+    }
+
+    const summaries: EvalAgentSummary[] = [];
+    const allVersionRuns: EvalVersionRun[] = [];
+
+    for (const agent of agentsWithCases) {
+      const agentCaseIds = caseIdsByAgent.get(agent.id) ?? [];
+      const agentRows = agentCaseIds.flatMap((id) => rowsByCase.get(id) ?? []);
+      const versionRuns = groupVersionRuns(agentRows, agent.version);
+      const { measured } = measuredVersions(versionRuns);
+
+      const rangeFiltered = filterByDays(versionRuns, days);
+      const agentVersionRunDtos = rangeFiltered.map((v) =>
+        toEvalVersionRunDto(v, agent.id, agent.name),
+      );
+      allVersionRuns.push(...agentVersionRunDtos);
+
+      summaries.push({
+        agent_id: agent.id,
+        name: agent.name,
+        model: agent.model,
+        cases_total: agentCaseIds.length,
+        current_version: agent.version,
+        measured_version: measured?.agentVersion ?? null,
+        latest: measured ? toEvalVersionRunDto(measured, agent.id, agent.name) : null,
+        sparkline: [...rangeFiltered].reverse().map((v) => v.recall),
+      });
+    }
+
+    allVersionRuns.sort((a, b) => new Date(b.ran_at).getTime() - new Date(a.ran_at).getTime());
+
+    return { agents: summaries, version_runs: allVersionRuns };
   }
 
   /**

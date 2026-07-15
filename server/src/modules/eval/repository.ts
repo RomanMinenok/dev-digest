@@ -140,6 +140,21 @@ export class EvalRepository {
       .where(and(eq(t.evalCases.workspaceId, workspaceId), eq(t.evalCases.id, id)));
   }
 
+  /**
+   * Every `eval_cases` row with `ownerKind = 'agent'` in the workspace — the
+   * source of "agents that have evals" for the workspace-wide dashboard
+   * (AC-2). Unlike `listCasesForOwner`, this spans every owner in the
+   * workspace, not a single agent.
+   */
+  async listAgentCasesForWorkspace(workspaceId: string): Promise<EvalCaseRow[]> {
+    return this.db
+      .select()
+      .from(t.evalCases)
+      .where(
+        and(eq(t.evalCases.workspaceId, workspaceId), eq(t.evalCases.ownerKind, 'agent')),
+      );
+  }
+
   // ── Runs ───────────────────────────────────────────────────────────────────
 
   /** Append a new eval run for a case; returns the created row. */
@@ -206,6 +221,23 @@ export class EvalRepository {
           eq(t.evalRuns.agentVersion, agentVersion),
         ),
       )
+      .orderBy(desc(t.evalRuns.ranAt));
+  }
+
+  /**
+   * All runs for the given cases across ALL agent versions, ordered
+   * `ran_at DESC`. The caller groups by `agentVersion` in memory (AC-18's
+   * "all versions" trend) — this supersedes per-version fan-out for the
+   * dashboard paths. The existing `eval_runs_case_id_idx` index covers the
+   * `inArray` filter.
+   */
+  async runsForCases(caseIds: string[]): Promise<EvalRunRow[]> {
+    if (caseIds.length === 0) return [];
+
+    return this.db
+      .select()
+      .from(t.evalRuns)
+      .where(inArray(t.evalRuns.caseId, caseIds))
       .orderBy(desc(t.evalRuns.ranAt));
   }
 

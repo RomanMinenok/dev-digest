@@ -31,9 +31,9 @@ export interface EvalsTabViewProps {
   hasPreviousVersion: boolean;
   latestRunByCase: ReadonlyMap<string, EvalRunRecord>;
   passingCount: number;
-  /** True when current agent version has 0 runs but prior-version runs exist. */
+  /** True when agent.version is ahead of the last measured eval version. */
   fullyStale: boolean;
-  /** Highest agent_version among latest runs, or null when nothing has ever run. */
+  /** Version behind the metric cards (dashboard.measured_version), or null if never run. */
   lastMeasuredVersion: number | null;
   onRunAll: () => void;
   onRunCase: (caseId: string) => void;
@@ -181,7 +181,10 @@ export function EvalsTabView({
   const totalCount = cases.length;
 
   const metricsSubtitle = fullyStale
-    ? t("evalsTab.metricsSubtitleUnmeasured", { version: agent.version })
+    ? t("evalsTab.metricsSubtitleUnmeasured", {
+        version: agent.version,
+        measured: lastMeasuredVersion ?? 0,
+      })
     : t("evalsTab.metricsSubtitle");
 
   return (
