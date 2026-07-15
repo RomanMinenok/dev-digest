@@ -92,12 +92,13 @@ skill → run the evals → see in numbers whether the agent regressed.
 
 ## User stories
 
-**S1 — Reviewer promotes a decision into a regression test.** A reviewer reads
-a finding on a PR, accepts it (it is a real bug) or dismisses it (it is noise),
-and clicks `Turn into eval case`. They land in the producing agent's Evals tab
-with the modal already filled in: the diff of the finding's file, a name slugged
-from the finding title, and an expected output that mirrors their decision. They
-tweak the name, hit Save, and the case is part of the agent's suite forever.
+**S1 — Promote a review decision into a regression test.** As a reviewer, after
+I accept a finding (it is a real bug) or dismiss it (it is noise), I click
+`Turn into eval case` and land in the producing agent's Evals tab with the case
+modal pre-filled from that finding — the diff of its file, a name derived from
+its title, and an expected output that mirrors my decision — so that my judgment
+on this one finding becomes a permanent regression test for the agent instead of
+being lost once the PR is merged.
 
 ```mermaid
 sequenceDiagram
@@ -120,18 +121,18 @@ sequenceDiagram
     API-->>AE: EvalRunResult (pass, recall, precision, citation_accuracy)
 ```
 
-**S2 — Agent author checks a prompt change for regressions.** The author edits
-the agent's system prompt (which bumps `agents.version`), opens the Evals tab
-and clicks `Run all evals`. Each case runs in turn against the new config; when
-the run finishes the three metric cards show the new aggregate and the delta
-against the *previous agent version*, and the case list shows which cases went
-red.
+**S2 — Check a prompt change for regressions.** As an agent author, after editing
+the agent's system prompt (which bumps `agents.version`), I open the Evals tab and
+run the whole suite against the new config, then read the three metric cards — the
+new aggregate plus its delta against the *previous agent version* — and see which
+individual cases now fail, so that I can tell whether my edit improved the agent or
+broke it before it ever runs on a real PR.
 
-**S3 — Agent author writes a case by hand.** From the Evals tab the author
-clicks `New eval case`, pastes a diff, writes the expected findings as JSON, and
-saves. No PR and no finding involved, so the case carries no frozen enrichment at
-all — it is a diff plus an expectation, and the eval prompt simply omits the
-sections it has no input for.
+**S3 — Author a case by hand.** As an agent author, I create an eval case from
+scratch — a diff plus the findings I expect from it — without going through a PR or
+an existing finding, so that I can cover a scenario the agent has never been run on.
+Such a case carries no frozen enrichment, and the eval prompt omits the sections it
+has no input for.
 
 ## Acceptance criteria (EARS)
 
