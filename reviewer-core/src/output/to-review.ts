@@ -30,13 +30,50 @@ export const FAIL_ON_MIN_RANK: Record<CiFailOn, number> = {
   any: 1,
 };
 
+/** Grounded finding counts keyed by severity bucket (studio ingest + CI artifact). */
+export type SeverityCounts = {
+  critical: number;
+  warning: number;
+  suggestion: number;
+};
+
+/** Count grounded findings by severity bucket. Unknown severities are ignored. */
+export function severityCounts(findings: Finding[]): SeverityCounts {
+  const counts: SeverityCounts = { critical: 0, warning: 0, suggestion: 0 };
+  for (const f of findings) {
+    if (f.severity === 'CRITICAL') counts.critical++;
+    else if (f.severity === 'WARNING') counts.warning++;
+    else if (f.severity === 'SUGGESTION') counts.suggestion++;
+  }
+  return counts;
+}
+
+function countSeverityRank(key: keyof SeverityCounts): number {
+  const sev: Finding['severity'] =
+    key === 'critical' ? 'CRITICAL' : key === 'warning' ? 'WARNING' : 'SUGGESTION';
+  return SEV_RANK[sev] ?? 0;
+}
+
+/**
+ * Does this severity-count snapshot trip the CI gate under `failOn`? Same rule
+ * as `gateTriggered()` but expressed over counts — used when only aggregates
+ * are persisted (studio ingest) rather than individual findings.
+ */
+export function gateTriggeredFromCounts(counts: SeverityCounts, failOn: CiFailOn): boolean {
+  const min = FAIL_ON_MIN_RANK[failOn];
+  return (
+    (counts.critical > 0 && countSeverityRank('critical') >= min) ||
+    (counts.warning > 0 && countSeverityRank('warning') >= min) ||
+    (counts.suggestion > 0 && countSeverityRank('suggestion') >= min)
+  );
+}
+
 /**
  * Does this set of findings trip the CI gate under `failOn`? True → the review
  * should REQUEST_CHANGES and the CI check should fail.
  */
 export function gateTriggered(findings: Finding[], failOn: CiFailOn): boolean {
-  const min = FAIL_ON_MIN_RANK[failOn];
-  return findings.some((f) => (SEV_RANK[f.severity] ?? 0) >= min);
+  return gateTriggeredFromCounts(severityCounts(findings), failOn);
 }
 
 /**
@@ -65,10 +102,9 @@ export interface ToReviewOptions {
   diff?: UnifiedDiff;
 }
 
-function severityCounts(findings: Finding[]): string {
-  const c: Record<string, number> = { CRITICAL: 0, WARNING: 0, SUGGESTION: 0 };
-  for (const f of findings) c[f.severity] = (c[f.severity] ?? 0) + 1;
-  return `${c.CRITICAL} critical · ${c.WARNING} warning · ${c.SUGGESTION} suggestion`;
+function formatSeveritySummary(findings: Finding[]): string {
+  const c = severityCounts(findings);
+  return `${c.critical} critical · ${c.warning} warning · ${c.suggestion} suggestion`;
 }
 
 function composeBody(
@@ -92,7 +128,7 @@ function composeBody(
     return `- ${emoji} **${f.title}** (${f.severity.toLowerCase()}, ${f.category}) — ${loc}\n  - ${f.rationale}${sugg}`;
   });
 
-  const summary = `**${findings.length} finding${findings.length === 1 ? '' : 's'}** · ${severityCounts(findings)}`;
+  const summary = `**${findings.length} finding${findings.length === 1 ? '' : 's'}** · ${formatSeveritySummary(findings)}`;
   return `${header}\n\n${summary}\n\n${lines.join('\n')}\n\n_Posted via DevDigest._`;
 }
 

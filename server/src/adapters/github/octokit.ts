@@ -11,8 +11,31 @@ import type {
   OpenPrPayload,
   CommitFilesPayload,
   IssueMeta,
+  CiWorkflowRun,
 } from '@devdigest/shared';
+import { AppError } from '../../platform/errors.js';
 import { withRetry, withTimeout } from '../../platform/resilience.js';
+
+/** Thrown when the GitHub token lacks the `actions:read` scope (AC-28). */
+export class GitHubActionsReadScopeError extends AppError {
+  readonly missingScope = 'actions:read' as const;
+
+  constructor() {
+    super(
+      'github_actions_read_scope_missing',
+      'GitHub token is missing actions:read scope',
+      403,
+    );
+    this.name = 'GitHubActionsReadScopeError';
+  }
+}
+
+function throwIfActionsForbidden(err: unknown): never {
+  if ((err as { status?: number })?.status === 403) {
+    throw new GitHubActionsReadScopeError();
+  }
+  throw err;
+}
 
 const TIMEOUT = 30_000;
 
@@ -368,5 +391,65 @@ export class OctokitGitHubClient implements GitHubClient {
       withTimeout(this.octokit.rest.users.getAuthenticated(), TIMEOUT),
     );
     return res.data.login;
+  }
+
+  async listWorkflowRuns(repo: RepoRef, workflow: string): Promise<CiWorkflowRun[]> {
+    return withRetry(() =>
+      withTimeout(
+        (async () => {
+          try {
+            const res = await this.octokit.rest.actions.listWorkflowRuns({
+              owner: repo.owner,
+              repo: repo.name,
+              workflow_id: workflow,
+              per_page: 50,
+            });
+            return res.data.workflow_runs.map((run) => ({
+              id: String(run.id),
+              conclusion: run.conclusion,
+              status: run.status,
+              html_url: run.html_url,
+              created_at: run.created_at,
+            }));
+          } catch (err) {
+            throwIfActionsForbidden(err);
+          }
+        })(),
+        TIMEOUT,
+      ),
+    );
+  }
+
+  async downloadRunArtifact(
+    repo: RepoRef,
+    runId: string,
+    name: string,
+  ): Promise<Buffer | null> {
+    return withRetry(() =>
+      withTimeout(
+        (async () => {
+          try {
+            const listRes = await this.octokit.rest.actions.listWorkflowRunArtifacts({
+              owner: repo.owner,
+              repo: repo.name,
+              run_id: Number(runId),
+            });
+            const artifact = listRes.data.artifacts.find((a) => a.name === name);
+            if (!artifact) return null;
+
+            const downloadRes = await this.octokit.rest.actions.downloadArtifact({
+              owner: repo.owner,
+              repo: repo.name,
+              artifact_id: artifact.id,
+              archive_format: 'zip',
+            });
+            return Buffer.from(downloadRes.data as ArrayBuffer);
+          } catch (err) {
+            throwIfActionsForbidden(err);
+          }
+        })(),
+        TIMEOUT,
+      ),
+    );
   }
 }

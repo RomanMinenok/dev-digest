@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { Verdict, Finding, Severity, FindingCategory } from './findings.js';
 import { EvalRun, EvalCase, EvalOwnerKind, Conformance, Provider, CiFailOn } from './knowledge.js';
+import { RunTrace } from './trace.js';
 
 /**
  * A4 — Eval / CI / Compose / Conformance API contracts (L06).
@@ -258,6 +259,13 @@ export const CiFile = z.object({
 });
 export type CiFile = z.infer<typeof CiFile>;
 
+/** Preview (non-mutating) of the files that would be written by export-ci. */
+export const CiPreview = z.object({
+  files: z.array(CiFile),
+  total_bytes: z.number().int(),
+});
+export type CiPreview = z.infer<typeof CiPreview>;
+
 /**
  * AgentManifest — the agent contract shared by the studio and the CI runner.
  *
@@ -296,6 +304,8 @@ export const CiExportInput = z.object({
   post_as: z.enum(['github_review', 'pr_comment', 'none']).default('github_review'),
   triggers: z.array(z.string()).default(['opened', 'synchronize', 'reopened']),
   base: z.string().default('main'),
+  /** Untrusted client input — validated server-side before any write (AC-47). */
+  workflow_override: z.string().nullish(),
 });
 export type CiExportInput = z.infer<typeof CiExportInput>;
 /** Caller-facing input type — `.default()` fields stay optional (web hooks). */
@@ -335,6 +345,13 @@ export const CiRun = z.object({
   source: z.string().nullable(),
   agent: z.string().nullish(),
   duration_s: z.number().nullish(),
+  // N13 fields (AC-35, AC-37, AC-38, AC-39)
+  run_id: z.string().nullable(), // null → no artifact yet → inactive Trace affordance (AC-39)
+  pr_title: z.string().nullish(), // AC-35
+  repo: z.string().nullish(), // repository filter + display (AC-38)
+  critical: z.number().int().nullish(), // AC-37 severity chip
+  warning: z.number().int().nullish(), // AC-37 severity chip
+  suggestion: z.number().int().nullish(), // AC-37 severity chip
 });
 export type CiRun = z.infer<typeof CiRun>;
 
@@ -352,6 +369,8 @@ export const CiResultArtifact = z.object({
   agent: z.string(),
   version: z.string().nullish(),
   pr_number: z.number().int().nullish(),
+  pr_title: z.string().nullish(),
+  trace: RunTrace.nullish(),
 });
 export type CiResultArtifact = z.infer<typeof CiResultArtifact>;
 

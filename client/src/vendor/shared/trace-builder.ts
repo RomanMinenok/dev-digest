@@ -5,8 +5,8 @@ import type {
   RunStats,
   RunTrace,
   ToolCall,
-} from '@devdigest/shared';
-import { RunTrace as RunTraceSchema } from '@devdigest/shared';
+} from './contracts/trace.js';
+import { RunTrace as RunTraceSchema } from './contracts/trace.js';
 
 /**
  * A5 — shared run-trace builder. A2's single-agent reviewer and A5's

@@ -1,5 +1,11 @@
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import type { LLMProvider, GitHubReviewPayload, CiResultArtifact } from '@devdigest/shared';
+import type {
+  LLMProvider,
+  GitHubReviewPayload,
+  CiResultArtifact,
+  RunLogLine,
+} from '@devdigest/shared';
+import { buildRunTrace } from '@devdigest/shared';
 import { reviewPullRequest, toReviewPayload, gateTriggered, countBlockers } from '@devdigest/reviewer-core';
 import { loadManifest } from './manifest.js';
 import { loadSkillBodies } from './skills.js';
@@ -37,6 +43,8 @@ export type PostAs = 'github_review' | 'pr_comment' | 'none';
 export interface RunCiDeps {
   /** Directory containing `agents/` and `skills/` (checked-in `.devdigest/`). */
   devdigestDir: string;
+  /** Agent slug from `DEVDIGEST_AGENT` — resolves `.devdigest/agents/<slug>.yaml` directly. */
+  agentSlug?: string;
   env: CiEnv;
   /** Injected LLM provider — `OpenRouterProvider` in production, a stub in tests. */
   llm: LLMProvider;
@@ -80,6 +88,11 @@ export interface RunCiFailure {
 
 export type RunCiResult = RunCiSuccess | RunCiFailure;
 
+/** Elapsed seconds since review start, e.g. `"00.31"` (RunLogLine.t). */
+function formatElapsedMs(ms: number): string {
+  return (ms / 1000).toFixed(2);
+}
+
 export async function runCi(deps: RunCiDeps): Promise<RunCiResult> {
   const readFile = deps.readFile ?? readFileSync;
   const readDir = deps.readDir ?? readdirSync;
@@ -90,7 +103,7 @@ export async function runCi(deps: RunCiDeps): Promise<RunCiResult> {
 
   try {
     // 1. Load + validate the manifest BEFORE it is used for anything (AC-20).
-    const manifest = loadManifest(deps.devdigestDir, { readFile, readDir });
+    const manifest = loadManifest(deps.devdigestDir, { readFile, readDir }, deps.agentSlug);
     const skills = loadSkillBodies(deps.devdigestDir, manifest.skills, readFile);
 
     // 2. Resolve CI context (PR number/title/body/repo) from env + event payload.
@@ -115,6 +128,7 @@ export async function runCi(deps: RunCiDeps): Promise<RunCiResult> {
     //    result is a valid zero-finding review, not an error — it flows through
     //    normally below).
     const start = now();
+    const logLines: RunLogLine[] = [];
     const outcome = await reviewPullRequest({
       systemPrompt: manifest.system_prompt,
       model: manifest.model,
@@ -124,6 +138,13 @@ export async function runCi(deps: RunCiDeps): Promise<RunCiResult> {
       skills,
       prDescription: ctx.body,
       task: `Review PR #${ctx.prNumber}: ${ctx.title}`,
+      onEvent: (e) => {
+        logLines.push({
+          t: formatElapsedMs(now() - start),
+          kind: e.kind,
+          msg: e.msg,
+        });
+      },
     });
     const durationMs = now() - start;
 
@@ -139,12 +160,43 @@ export async function runCi(deps: RunCiDeps): Promise<RunCiResult> {
 
     // 6. Build + write the artifact before posting, so a GitHub-side posting
     //    failure never loses the already-computed, already-grounded result.
+    const trace = buildRunTrace({
+      config: {
+        agent: manifest.name,
+        model: manifest.model,
+        provider: manifest.provider,
+        pr: ctx.prNumber,
+        source: 'ci',
+      },
+      stats: {
+        duration_ms: durationMs,
+        tokens_in: outcome.tokensIn,
+        tokens_out: outcome.tokensOut,
+        findings: outcome.review.findings.length,
+        grounding: outcome.grounding,
+        cost_usd: outcome.costUsd,
+      },
+      promptAssembly: outcome.assembly,
+      toolCalls: outcome.chunks.map((c) => ({
+        tool: 'review_file',
+        args: c.label,
+        meta: outcome.mode,
+        ms: Math.round(durationMs / Math.max(outcome.chunks.length, 1)),
+      })),
+      rawOutput: outcome.raw,
+      memoryPulled: [],
+      specsRead: [],
+      log: logLines,
+    });
+
     const artifact = buildResultArtifact({
       findings: outcome.review.findings,
       costUsd: outcome.costUsd,
       durationMs,
       agent: manifest.name,
       prNumber: ctx.prNumber,
+      prTitle: ctx.title,
+      trace,
     });
     writeFile(deps.resultPath, `${JSON.stringify(artifact, null, 2)}\n`);
 
