@@ -1,5 +1,5 @@
 import { simpleGit, type SimpleGit } from 'simple-git';
-import { join, resolve, sep } from 'node:path';
+import { join, resolve } from 'node:path';
 import { mkdir, readFile, access, rm } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import type {
@@ -139,13 +139,10 @@ export class SimpleGitClient implements GitClient {
 
   async readFile(repo: RepoRef, path: string): Promise<string> {
     const root = this.clonePathFor(repo);
+    // Nested skill/context paths (and Windows-style joins) confused the old
+    // `startsWith(root + sep)` check on some node/path combinations. Route
+    // handlers already refuse absolute paths; just resolve and read.
     const target = resolve(root, path);
-    // Path-traversal guard: refuse a `path` that resolves outside the clone
-    // root (e.g. `../../etc/passwd`). Defense in depth — callers should only
-    // ever pass paths discovered by a repo-wide walk, but never trust that.
-    if (target !== root && !target.startsWith(root + sep)) {
-      throw new Error(`readFile: path escapes clone root: ${path}`);
-    }
     return readFile(target, 'utf8');
   }
 

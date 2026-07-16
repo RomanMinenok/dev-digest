@@ -1,5 +1,8 @@
 import type { Container } from '../../platform/container.js';
 import type { Skill, SkillSource, SkillStats, SkillType, SkillVersion } from '@devdigest/shared';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { SkillsRepository } from './repository.js';
 import {
   extractFromArchive,
@@ -174,13 +177,16 @@ export class SkillsService {
 
   /**
    * Preview the skill extracted from an uploaded file. Dispatches on extension:
-   * `.zip` → archive extraction (markdown core); everything else is treated as a
-   * text/markdown file. Stateless — nothing is persisted.
+   * `.zip` → stage the full skill pack (scripts + assets + markdown core) under
+   * a temp dir so the UI can show attached files; everything else is treated as
+   * a text/markdown file. Stateless — nothing is persisted to the skills table.
    */
   importPreview(file: { filename: string; buffer: Buffer }): ExtractedSkill {
     const isZip = file.filename.toLowerCase().endsWith('.zip');
-    return isZip
-      ? extractFromArchive(file.buffer)
-      : extractFromMarkdown(file.buffer.toString('utf8'));
+    if (!isZip) {
+      return extractFromMarkdown(file.buffer.toString('utf8'));
+    }
+    const stagingDir = mkdtempSync(join(tmpdir(), 'devdigest-skill-'));
+    return extractFromArchive(file.buffer, stagingDir);
   }
 }

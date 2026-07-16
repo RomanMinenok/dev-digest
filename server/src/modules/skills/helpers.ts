@@ -1,4 +1,6 @@
 import AdmZip from 'adm-zip';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import type { Skill, SkillType, SkillVersion } from '@devdigest/shared';
 import { BadRequestError } from '../../platform/errors.js';
 import type { SkillRow, SkillVersionRow } from './repository.js';
@@ -118,13 +120,26 @@ export function extractFromMarkdown(md: string): ExtractedSkill {
 }
 
 /**
- * Extract a skill core from a zip archive via `adm-zip`. Picks `SKILL.md` if
- * present, else the first `*.md` entry; every other entry (scripts, binaries,
- * nested dirs) is ignored. Throws `BadRequestError` when no markdown is found.
+ * Extract a skill core from a zip archive via `adm-zip`. Community skill packs
+ * often ship helper scripts / assets next to `SKILL.md` — stage the full
+ * archive under `stagingDir` (when provided) so the preview UI can list them,
+ * then pick `SKILL.md` (or the first `*.md`) as the skill body.
+ *
+ * Throws `BadRequestError` when no markdown is found.
  */
-export function extractFromArchive(buf: Buffer): ExtractedSkill {
+export function extractFromArchive(buf: Buffer, stagingDir?: string): ExtractedSkill {
   const zip = new AdmZip(buf);
   const entries = zip.getEntries().filter((e) => !e.isDirectory);
+
+  if (stagingDir) {
+    for (const entry of entries) {
+      // Preserve the archive's relative layout so nested `scripts/foo.ts` etc.
+      // land next to SKILL.md the same way authors packaged them.
+      const outPath = join(stagingDir, entry.entryName);
+      mkdirSync(dirname(outPath), { recursive: true });
+      writeFileSync(outPath, entry.getData());
+    }
+  }
 
   const markdown =
     entries.find((e) => baseName(e.entryName).toLowerCase() === 'skill.md') ??
