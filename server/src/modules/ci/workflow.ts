@@ -43,7 +43,7 @@ permissions:
 
 jobs:
   review:
-    if: github.event.pull_request.head.repo.fork == false
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     env:
       OPENROUTER_API_KEY: \${{ secrets.OPENROUTER_API_KEY }}

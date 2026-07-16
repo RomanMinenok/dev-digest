@@ -15,9 +15,9 @@ const SECRET_PATTERNS: readonly RegExp[] = [
   /-----BEGIN .* PRIVATE KEY-----/,
 ];
 
-/** Matches the fork guard emitted by `workflowYaml` (AC-19). */
-const FORK_CONDITION_PATTERN =
-  /github\.event\.pull_request\.head\.repo\.fork\s*==\s*false/;
+/** Matches the same-repo guard emitted by `workflowYaml` (AC-19). */
+const SAME_REPO_CONDITION_PATTERN =
+  /github\.event\.pull_request\.head\.repo\.full_name\s*==\s*github\.repository/;
 
 export interface ValidateWorkflowOverrideDeps {
   /** Resolved secret values from SecretsProvider — never logged on rejection. */
@@ -84,7 +84,7 @@ export function validateWorkflowOverride(
     }
   }
 
-  assertForkCondition(workflow);
+  assertSameRepoCondition(workflow);
 }
 
 function permissionsMatchRequired(permissions: unknown): boolean {
@@ -105,25 +105,25 @@ function permissionsMatchRequired(permissions: unknown): boolean {
   );
 }
 
-function assertForkCondition(workflow: Record<string, unknown>): void {
+function assertSameRepoCondition(workflow: Record<string, unknown>): void {
   const jobs = workflow.jobs;
   if (!jobs || typeof jobs !== 'object' || Array.isArray(jobs)) {
-    throw new BadRequestError('Workflow override is missing the fork pull request guard');
+    throw new BadRequestError('Workflow override is missing the same-repository pull request guard');
   }
 
   const jobEntries = Object.entries(jobs as Record<string, unknown>);
   if (jobEntries.length === 0) {
-    throw new BadRequestError('Workflow override is missing the fork pull request guard');
+    throw new BadRequestError('Workflow override is missing the same-repository pull request guard');
   }
 
   for (const [, job] of jobEntries) {
     if (!job || typeof job !== 'object' || Array.isArray(job)) {
-      throw new BadRequestError('Workflow override is missing the fork pull request guard');
+      throw new BadRequestError('Workflow override is missing the same-repository pull request guard');
     }
 
     const ifCondition = (job as Record<string, unknown>).if;
-    if (typeof ifCondition !== 'string' || !FORK_CONDITION_PATTERN.test(ifCondition)) {
-      throw new BadRequestError('Workflow override is missing the fork pull request guard');
+    if (typeof ifCondition !== 'string' || !SAME_REPO_CONDITION_PATTERN.test(ifCondition)) {
+      throw new BadRequestError('Workflow override is missing the same-repository pull request guard');
     }
   }
 }
