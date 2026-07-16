@@ -74,7 +74,7 @@
       "githubTokenDesc": "Auto-provided by Actions",
       "hint": "Add these to your repo's Actions secrets before the workflow runs.",
       "status": {
-        "not_set": "not set",
+        "not_set": "must be added",
         "ready": "ready"
       }
     },
