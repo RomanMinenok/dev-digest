@@ -20,7 +20,7 @@ import {
 import type { FindingRecord, FindingActionKind } from "@devdigest/shared";
 import { SEV_COLOR, SEV_COLOR_FALLBACK } from "./constants";
 import { lineLabel } from "./helpers";
-import { githubBlobUrl } from "../../../../../../../lib/github-urls";
+import { githubBlobUrl, externalHandoffUrl } from "../../../../../../../lib/github-urls";
 import { s } from "./styles";
 
 export function FindingCard({
@@ -50,10 +50,17 @@ export function FindingCard({
   const t = useTranslations("prReview");
   const [expanded, setExpanded] = React.useState(defaultExpanded ?? false);
   const sevColor = SEV_COLOR[f.severity] ?? SEV_COLOR_FALLBACK;
-  const fileHref =
+  const blobUrl =
     repoFullName && headSha
       ? githubBlobUrl(repoFullName, headSha, f.file, f.start_line, f.end_line)
       : undefined;
+  // Bounce through /go so closing the GitHub tab can land back on this PR.
+  const fileHref = blobUrl
+    ? externalHandoffUrl(
+        blobUrl,
+        typeof window !== "undefined" ? window.location.pathname : "/",
+      )
+    : undefined;
   const accepted = !!f.accepted_at;
   const dismissed = !!f.dismissed_at;
   const muted = accepted || dismissed;

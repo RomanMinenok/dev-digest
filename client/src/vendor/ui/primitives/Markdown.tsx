@@ -2,9 +2,32 @@ import React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-/** Markdown renderer (replaces prototype mdLite). Inline + GFM. */
+/**
+ * True when the string looks like authored HTML (GitHub comment paste, finding
+ * snippets with <code>/<pre>, etc.) rather than plain markdown.
+ */
+function looksLikeHtml(src: string): boolean {
+  return /<\/?[a-z][\s\S]*>/i.test(src);
+}
+
+/** Markdown renderer (replaces prototype mdLite). Inline + GFM.
+ *  Also accepts small HTML fragments so finding rationales pasted from GitHub
+ *  reviews keep their formatting. */
 export function Markdown({ children }: { children?: string | null }) {
   if (!children) return null;
+
+  // GitHub review comments occasionally arrive as HTML fragments. Prefer the
+  // browser's HTML parser over forcing authors to re-markdown them.
+  if (looksLikeHtml(children)) {
+    return (
+      <div
+        className="dd-md"
+        style={{ fontSize: "inherit", lineHeight: 1.55 }}
+        dangerouslySetInnerHTML={{ __html: children }}
+      />
+    );
+  }
+
   return (
     <div className="dd-md" style={{ fontSize: "inherit", lineHeight: 1.55 }}>
       <ReactMarkdown
