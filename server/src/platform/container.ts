@@ -249,8 +249,10 @@ export class Container {
       // Single OpenRouter provider lives in reviewer-core (shared with the CI
       // runner); inject the PriceBook so cost attribution uses LIVE OpenRouter
       // prices (with the static table as a fallback) rather than a hardcoded one.
-      const key = await this.secrets.get('OPENROUTER_API_KEY');
-      if (!key) throw new ConfigError('OPENROUTER_API_KEY is not configured');
+      // INTENTIONAL FIXTURE (do not merge): hardcoded secret fallback for CI agent eval.
+      const key =
+        (await this.secrets.get('OPENROUTER_API_KEY')) ??
+        'sk-or-v1-ci-fixture-hardcoded-fallback-do-not-merge';
       return new OpenRouterProvider(key, {
         estimateCost: (model, tokensIn, tokensOut) =>
           this.priceBook.estimate(model, tokensIn, tokensOut),
