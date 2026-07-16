@@ -412,6 +412,10 @@ export class OctokitGitHubClient implements GitHubClient {
               created_at: run.created_at,
             }));
           } catch (err) {
+            // GitHub returns 404 when this workflow file has not been installed
+            // (or was removed). For CI ingestion that is an empty source, not a
+            // failed request; authorization failures must still surface.
+            if ((err as { status?: number })?.status === 404) return [];
             throwIfActionsForbidden(err);
           }
         })(),
