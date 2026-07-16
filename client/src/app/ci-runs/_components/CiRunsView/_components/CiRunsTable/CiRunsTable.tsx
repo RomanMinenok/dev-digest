@@ -10,7 +10,7 @@ import { formatCost } from "@/components/run-trace-drawer/helpers";
 import { COLUMN_LABELS } from "../../constants";
 import { formatDurationSeconds, formatRanAt, formatSource } from "../../helpers";
 import { GRID_TEMPLATE_COLUMNS, statusVisual } from "./constants";
-import { hasArtifact, hasFindingCounts, prLabel } from "./helpers";
+import { hasArtifact, hasFindingCounts, prGithubUrl, prLabel } from "./helpers";
 import { dataRow, s } from "./styles";
 
 const SEV_ITEMS = [
@@ -130,12 +130,26 @@ export function CiRunsTable({ runs, onOpenTrace }: CiRunsTableProps) {
         <span role="columnheader" style={s.headerCell} aria-hidden />
       </div>
 
-      {runs.map((run, index) => (
+      {runs.map((run, index) => {
+        const githubPr = prGithubUrl(run);
+
+        return (
         <div key={run.id} role="row" style={{ ...dataRow(index), ...gridStyle }}>
           <span style={s.muted}>{formatRanAt(run.ran_at)}</span>
 
           <div style={s.prCell}>
-            <span style={s.prNumber}>{prLabel(run)}</span>
+            {githubPr ? (
+              <a
+                href={githubPr}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={s.prNumber}
+              >
+                {prLabel(run)}
+              </a>
+            ) : (
+              <span style={s.prNumber}>{prLabel(run)}</span>
+            )}
             {run.pr_title ? (
               <span style={s.prTitle} title={run.pr_title}>
                 {run.pr_title}
@@ -171,7 +185,8 @@ export function CiRunsTable({ runs, onOpenTrace }: CiRunsTableProps) {
 
           <TraceCell run={run} onOpenTrace={onOpenTrace} />
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
