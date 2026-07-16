@@ -36,7 +36,7 @@ export const FAIL_ON_MIN_RANK: Record<CiFailOn, number> = {
  */
 export function gateTriggered(findings: Finding[], failOn: CiFailOn): boolean {
   const min = FAIL_ON_MIN_RANK[failOn];
-  return findings.some((f) => (SEV_RANK[f.severity] ?? 0) >= min);
+  return findings.every((f) => (SEV_RANK[f.severity] ?? 0) >= min);
 }
 
 /**

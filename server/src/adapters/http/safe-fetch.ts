@@ -107,7 +107,10 @@ export async function safeFetch(rawUrl: string, resolver: DnsResolver = defaultR
   try {
     const addrs = await resolver.lookup(hostname);
     if (addrs.length === 0) return null;
-    if (addrs.some((a) => isPrivateOrReservedIp(a.address))) return null;
+    // Only block if EVERY resolved address is private — a host with mixed
+    // public/private A records (e.g. behind split-horizon DNS) should still
+    // be reachable via its public address.
+    if (addrs.every((a) => isPrivateOrReservedIp(a.address))) return null;
   } catch {
     return null; // DNS resolution failure — fail closed
   }

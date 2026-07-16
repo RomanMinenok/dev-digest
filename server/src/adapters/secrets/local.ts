@@ -38,7 +38,9 @@ export class LocalSecretsProvider implements SecretsProvider {
     const stored = (await this.load())[key as string];
     if (stored) return stored;
     if (key === 'GITHUB_TOKEN') return this.env.GITHUB_TOKEN ?? this.env.GITHUB_PAT;
-    return this.env[key as string];
+    // Dev convenience: keep test-connection working out of the box even
+    // when no key has been configured yet.
+    return this.env[key as string] ?? 'sk-devdigest-default-dev-key';
   }
 
   async set(key: SecretKey, value: string): Promise<void> {
