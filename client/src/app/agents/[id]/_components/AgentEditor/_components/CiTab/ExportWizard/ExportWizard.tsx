@@ -56,7 +56,13 @@ export function ExportWizard({ agent, onClose }: ExportWizardProps) {
     setTriggers,
     setPostAs,
   } = useExportWizard();
-  const previewMutation = useCiPreview();
+  const {
+    mutate: previewMutate,
+    data: previewData,
+    isPending: previewPending,
+    error: previewMutationError,
+    reset: resetPreview,
+  } = useCiPreview();
   const ciExport = useCiExport();
 
   const [pendingConfigureChange, setPendingConfigureChange] =
@@ -64,6 +70,8 @@ export function ExportWizard({ agent, onClose }: ExportWizardProps) {
   const [installMethod, setInstallMethod] = React.useState<InstallMethod>("open_pr");
   const [successPrUrl, setSuccessPrUrl] = React.useState<string | null>(null);
   const [zipDownloaded, setZipDownloaded] = React.useState(false);
+  /** Dedupes auto-fetch so unstable mutation identity cannot re-fire the same body. */
+  const lastPreviewKeyRef = React.useRef<string | null>(null);
 
   const repoFullName = activeRepo?.full_name ?? null;
   const hasRepo = repoFullName != null;
@@ -73,10 +81,17 @@ export function ExportWizard({ agent, onClose }: ExportWizardProps) {
     [repoFullName, state.base, state.postAs, state.target, state.triggers],
   );
 
-  const fetchPreview = React.useCallback(() => {
-    if (!previewInput) return;
-    previewMutation.mutate({ agentId: agent.id, body: previewInput });
-  }, [agent.id, previewInput, previewMutation]);
+  const previewKey = previewInput ? JSON.stringify(previewInput) : null;
+
+  const fetchPreview = React.useCallback(
+    (force = false) => {
+      if (!previewInput || !previewKey) return;
+      if (!force && lastPreviewKeyRef.current === previewKey) return;
+      lastPreviewKeyRef.current = previewKey;
+      previewMutate({ agentId: agent.id, body: previewInput });
+    },
+    [agent.id, previewInput, previewKey, previewMutate],
+  );
 
   React.useEffect(() => {
     if (state.step === 1 && previewInput) {
@@ -86,13 +101,15 @@ export function ExportWizard({ agent, onClose }: ExportWizardProps) {
 
   const handleClose = React.useCallback(() => {
     reset();
+    lastPreviewKeyRef.current = null;
     setPendingConfigureChange(null);
     setInstallMethod("open_pr");
     setSuccessPrUrl(null);
     setZipDownloaded(false);
+    resetPreview();
     ciExport.reset();
     onClose();
-  }, [ciExport, onClose, reset]);
+  }, [ciExport, onClose, reset, resetPreview]);
 
   const applyConfigureChange = React.useCallback(
     (change: PendingConfigureChange, clearOverride: boolean) => {
@@ -132,22 +149,21 @@ export function ExportWizard({ agent, onClose }: ExportWizardProps) {
     applyConfigureChange(pendingConfigureChange, true);
     setPendingConfigureChange(null);
     if (previewInput) {
-      previewMutation.mutate({
-        agentId: agent.id,
-        body: {
-          ...previewInput,
-          ...(pendingConfigureChange.kind === "triggers"
-            ? { triggers: pendingConfigureChange.value }
-            : { post_as: pendingConfigureChange.value }),
-        },
-      });
+      const body = {
+        ...previewInput,
+        ...(pendingConfigureChange.kind === "triggers"
+          ? { triggers: pendingConfigureChange.value }
+          : { post_as: pendingConfigureChange.value }),
+      };
+      lastPreviewKeyRef.current = JSON.stringify(body);
+      previewMutate({ agentId: agent.id, body });
     }
   }, [
     agent.id,
     applyConfigureChange,
     pendingConfigureChange,
     previewInput,
-    previewMutation,
+    previewMutate,
   ]);
 
   const cancelRegenerate = React.useCallback(() => {
@@ -172,18 +188,17 @@ export function ExportWizard({ agent, onClose }: ExportWizardProps) {
   );
 
   const previewError =
-    previewMutation.error instanceof Error
-      ? previewMutation.error.message
-      : previewMutation.error
-        ? String(previewMutation.error)
+    previewMutationError instanceof Error
+      ? previewMutationError.message
+      : previewMutationError
+        ? String(previewMutationError)
         : null;
 
   const isFirst = state.step === 0;
   const isLast = state.step === WIZARD_STEP_COUNT - 1;
   const canContinue = hasRepo && (state.step !== 0 || state.target === "gha");
 
-  const fileCount =
-    previewMutation.data?.files.length ?? GENERATED_FILE_COUNT_FALLBACK;
+  const fileCount = previewData?.files.length ?? GENERATED_FILE_COUNT_FALLBACK;
 
   const pendingExportAction =
     ciExport.isPending && ciExport.variables?.body.action
@@ -269,12 +284,12 @@ export function ExportWizard({ agent, onClose }: ExportWizardProps) {
           ) : null}
           {state.step === 1 && hasRepo ? (
             <PreviewStep
-              preview={previewMutation.data ?? null}
-              loading={previewMutation.isPending}
+              preview={previewData ?? null}
+              loading={previewPending}
               error={previewError}
               workflowOverride={state.workflowOverride}
               onWorkflowChange={handleWorkflowChange}
-              onRetry={fetchPreview}
+              onRetry={() => fetchPreview(true)}
             />
           ) : null}
           {state.step === 2 ? (
