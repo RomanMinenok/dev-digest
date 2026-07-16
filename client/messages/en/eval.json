@@ -12,7 +12,8 @@
     "metrics": {
       "recall": "RECALL",
       "precision": "PRECISION",
-      "citationAccuracy": "CITATION ACCURACY"
+      "citationAccuracy": "CITATION ACCURACY",
+      "cost": "COST"
     },
     "legend": {
       "recall": "Recall",
@@ -21,6 +22,7 @@
     },
     "table": {
       "ranAt": "Ran at",
+      "version": "Version",
       "recall": "Recall",
       "precision": "Precision",
       "citation": "Citation",
@@ -33,15 +35,19 @@
   "caseEditor": {
     "newCase": "New eval case",
     "caseTitle": "Eval case · {name}",
+    "subtitle": "{agentName} · simulate a PR and assert the expected output",
     "runCase": "Run case",
     "running": "Running…",
     "save": "Save",
     "saving": "Saving…",
+    "cancel": "Cancel",
+    "runOnSave": "Run on save",
     "nameLabel": "Name",
     "namePlaceholder": "stripe-key-leak",
     "inputLabel": "Input",
     "tabs": {
       "diff": "Diff",
+      "files": "Files",
       "prMeta": "PR meta"
     },
     "diffPlaceholder": "--- a/src/config.ts\n+++ b/src/config.ts\n@@ -10,6 +10,7 @@\n+  stripeKey: \"sk_live_...\"",
@@ -49,29 +55,98 @@
     "titlePlaceholder": "Add Stripe integration",
     "bodyLabel": "Body",
     "bodyPlaceholder": "Wire up payments via Stripe SDK.",
+    "numberLabel": "PR number",
+    "authorLabel": "Author",
     "preview": "Preview",
     "expectedOutput": "Expected output",
     "validJson": "valid JSON",
     "invalidJson": "invalid JSON",
+    "incompleteExpected": "incomplete",
+    "findingSkeleton": "Finding skeleton",
+    "filesEmpty": "No files found in diff",
+    "offDiffWarn": "{count, plural, one {1 expected file} other {# expected files}} not found in diff — findings for those files will never match",
+    "emptyDiffError": "Diff is required to save",
     "lastRunPassed": "Last run passed",
     "lastRunFailed": "Last run failed",
-    "resultSummary": "recall {recall}% · precision {precision}% · citation {citation}% · {duration}s"
+    "resultCounts": "{expected, plural, one {expected 1 finding} other {expected # findings}}, got {actual} · {duration}s{costSuffix}",
+    "resultSummary": "recall {recall}% · precision {precision}% · citation {citation}%"
   },
   "evalsTab": {
     "metricsTitle": "Eval metrics",
     "metricsSubtitle": "Recall / Precision / Citation for this agent's eval cases",
+    "metricsSubtitleUnmeasured": "Showing scores last measured on agent v{measured} — current config is v{version}",
+    "staleVersionBanner": "These metrics were calculated on agent v{measured}. Current config is v{current} — re-run evals to score it.",
     "casesHeading": "Eval cases",
-    "newCase": "New case",
+    "newCase": "New eval case",
     "loadingCases": "Loading cases…",
     "emptyCases": "No eval cases yet. Create one to assert this agent's expected findings on a sample diff.",
     "neverRun": "never run",
     "passed": "passed",
     "failed": "failed",
+    "staleRun": "last measured on v{version}",
+    "expectedGot": "expected {expected, plural, one {# finding} other {# findings}}, got {got}",
+    "emptyBadge": "empty []",
     "recallSuffix": " · recall {recall}%",
     "run": "Run",
     "running": "Running…",
+    "viewRun": "View result",
     "edit": "Edit",
-    "delete": "Delete"
+    "delete": "Delete",
+    "runAll": "Run all evals",
+    "passingCount": "{passing} / {total} passing",
+    "notScoredOnVersion": "not scored on v{version}",
+    "viewDashboard": "View full dashboard →"
+  },
+  "runDetail": {
+    "title": "Run result · {name}",
+    "passed": "Passed",
+    "failed": "Failed",
+    "noVerdict": "No verdict (run failed to complete)",
+    "matchedOf": "{matched} / {total} matched",
+    "falsePositives": "{count} false positive(s)",
+    "keptDropped": "{kept} kept · {dropped} dropped",
+    "expectedColumn": "Expected ({count})",
+    "actualColumn": "Actual ({count})",
+    "expectedEmpty": "No findings expected",
+    "actualEmpty": "No findings produced"
+  },
+  "overviewPage": {
+    "title": "Eval Dashboard",
+    "subtitle": "Regression harness across all reviewer agents · pick an agent to see its runs",
+    "runAllAgents": "Run all agents",
+    "agentsHeading": "Agents",
+    "recentRunsHeading": "Recent eval runs · all agents",
+    "emptyAgents": "No agents yet. Create one in the Agent Editor's Evals tab to start tracking regressions.",
+    "emptyRuns": "No runs in the last {days} days",
+    "sweepFailed": "{count, plural, one {# case failed to run} other {# cases failed to run}} — see the console for details."
+  },
+  "agentScreen": {
+    "backToAgents": "All agents",
+    "subtitle": "Regression harness · {runs, plural, one {# run} other {# runs}} on the {traces}-trace gold set",
+    "range": {
+      "d7": "7 days",
+      "d30": "30 days",
+      "d90": "90 days"
+    },
+    "runEval": "Run eval",
+    "running": "Running…",
+    "recentRunsHeading": "Recent runs",
+    "selectedCount": "{count, plural, one {# selected} other {# selected}}",
+    "compare": "Compare",
+    "notScoredOnCurrentVersion": "not scored on the current version",
+    "lastMeasuredOnVersion": "last measured on v{version}",
+    "emptyRuns": "No runs in the last {days} days",
+    "sweepFailed": "{count, plural, one {# case failed to run} other {# cases failed to run}} — see the console for details."
+  },
+  "compareModal": {
+    "title": "Compare runs · {from} → {to}",
+    "subtitle": "Old prompt vs new — metric deltas and prompt diff on the {traces}-trace gold set",
+    "close": "Close",
+    "systemPromptDiff": "System prompt diff",
+    "noPromptChanges": "No prompt changes",
+    "promptUnavailable": "Prompt unavailable",
+    "versionOld": "{version} (old)",
+    "versionNew": "{version} (new)"
   },
   "page": {
     "crumbSkillsLab": "Skills Lab",

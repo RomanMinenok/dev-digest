@@ -8,6 +8,8 @@ export const s = {
   h2: { fontSize: 18, fontWeight: 700 } satisfies CSSProperties,
   count: { fontSize: 13, color: "var(--text-secondary)" } satisfies CSSProperties,
   hint: { fontSize: 12, color: "var(--text-muted)", marginTop: 8 } satisfies CSSProperties,
+  actions: { display: "flex", alignItems: "center", gap: 12, marginTop: 12 } satisfies CSSProperties,
+  unsaved: { fontSize: 12, color: "var(--text-muted)" } satisfies CSSProperties,
   list: {
     border: "1px solid var(--border)",
     borderRadius: 8,

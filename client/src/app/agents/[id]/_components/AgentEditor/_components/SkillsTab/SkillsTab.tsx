@@ -1,13 +1,15 @@
 /* SkillsTab — link/unlink + reorder the skills attached to an agent.
-   Linked skills come first (in order), then unlinked. Toggling membership or
-   dropping a reordered row immediately persists the ordered linked ids via
-   useSetAgentSkills. Reorder uses native HTML5 drag (no DnD dep in the repo);
-   the pure ordering logic lives in helpers.ts. */
+   Linked skills come first (in order), then unlinked. Membership toggles and
+   reorders edit a LOCAL draft; nothing is persisted until "Save skills" is
+   pressed (useSetAgentSkills). This is deliberate: persisting the linked-skill
+   set now bumps the agent version server-side, so per-checkbox auto-save would
+   churn a new version on every click. Reorder uses native HTML5 drag (no DnD
+   dep in the repo); the pure ordering logic lives in helpers.ts. */
 "use client";
 
 import React from "react";
 import { useTranslations } from "next-intl";
-import { TextInput, Badge } from "@devdigest/ui";
+import { TextInput, Badge, Button } from "@devdigest/ui";
 import type { Agent } from "@devdigest/shared";
 import { useSkills, useAgentSkills, useSetAgentSkills } from "../../../../../../../lib/hooks/skills";
 import {
@@ -21,6 +23,11 @@ import {
 import { TYPE_COLOR } from "./constants";
 import { s } from "./styles";
 
+/** Order-sensitive equality — reordering linked skills is a real change. */
+function sameIds(a: string[], b: string[]): boolean {
+  return a.length === b.length && a.every((id, i) => id === b[i]);
+}
+
 export function SkillsTab({ agent }: { agent: Agent }) {
   const t = useTranslations("agents");
   const { data: skills } = useSkills();
@@ -32,32 +39,38 @@ export function SkillsTab({ agent }: { agent: Agent }) {
   const [dragFrom, setDragFrom] = React.useState<number | null>(null);
 
   // Seed/refresh local order whenever the server data or the agent changes.
+  // After a save, the invalidated `links` query refetches and this resets the
+  // draft to the persisted set (clearing the dirty state).
   React.useEffect(() => {
     setRows(buildRows(skills ?? [], links ?? []));
   }, [skills, links, agent.id]);
 
-  const persist = (next: SkillRow[]) =>
-    setAgentSkills.mutate({ agentId: agent.id, skill_ids: linkedIds(next) });
-
   const toggle = (skillId: string) => {
-    const next = toggleMembership(rows, skillId);
-    setRows(next);
-    persist(next);
+    setRows((prev) => toggleMembership(prev, skillId));
   };
 
   // Drag handlers operate on positions within the linked sub-list.
   const onDrop = (toLinkedIdx: number) => {
     if (dragFrom == null) return;
-    const next = reorderLinked(rows, dragFrom, toLinkedIdx);
     setDragFrom(null);
-    if (next === rows) return;
-    setRows(next);
-    persist(next);
+    setRows((prev) => reorderLinked(prev, dragFrom, toLinkedIdx));
   };
 
   const visible = filterRows(rows, filter);
   const total = rows.length;
   const linkedCount = rows.filter((r) => r.linked).length;
+
+  // Dirty = the draft's ordered linked ids differ from what the server holds.
+  const savedIds = React.useMemo(
+    () => [...(links ?? [])].sort((a, b) => a.order - b.order).map((l) => l.skill_id),
+    [links],
+  );
+  const dirty = !sameIds(linkedIds(rows), savedIds);
+
+  const save = () => {
+    if (!dirty || setAgentSkills.isPending) return;
+    setAgentSkills.mutate({ agentId: agent.id, skill_ids: linkedIds(rows) });
+  };
 
   // Map each linked row to its index within the linked sub-list for DnD.
   let linkedSeen = -1;
@@ -71,6 +84,17 @@ export function SkillsTab({ agent }: { agent: Agent }) {
         </div>
         <TextInput value={filter} onChange={setFilter} placeholder={t("skills.filterPlaceholder")} />
         <div style={s.hint}>{t("skills.orderHint")}</div>
+        <div style={s.actions}>
+          <Button
+            kind="primary"
+            icon="Check"
+            onClick={save}
+            disabled={!dirty || setAgentSkills.isPending}
+          >
+            {t("skills.save")}
+          </Button>
+          {dirty && <span style={s.unsaved}>{t("skills.unsaved")}</span>}
+        </div>
       </div>
 
       <div style={s.list}>

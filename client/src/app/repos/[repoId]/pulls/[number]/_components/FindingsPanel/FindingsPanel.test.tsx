@@ -8,6 +8,21 @@ vi.mock("../../../../../../../lib/hooks/reviews", () => ({
   useFindingAction: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
+// FindingsPanel calls useRouter() (for the "Turn into eval case" navigation),
+// useAgents() (fail-closed agent check), and usePullDetail() (prefill PR data).
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+}));
+vi.mock("../../../../../../../lib/hooks/agents", () => ({
+  useAgents: () => ({ data: [] }),
+}));
+vi.mock("../../../../../../../lib/hooks/core", () => ({
+  usePullDetail: () => ({ data: null }),
+}));
+vi.mock("../../../../../../../lib/eval-prefill", () => ({
+  writeEvalPrefill: vi.fn(),
+}));
+
 import { FindingsPanel } from "./FindingsPanel";
 
 afterEach(cleanup);

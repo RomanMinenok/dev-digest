@@ -52,7 +52,7 @@ d('Conventions module (Testcontainers pg)', () => {
     // Repo A — no clonePath (for 400 test).
     const [repoA] = await pg.handle.db
       .insert(t.repos)
-      .values({ workspaceId, owner: 'test', name: 'no-clone', fullName: 'test/no-clone', createdBy: 'system' })
+      .values({ workspaceId, owner: 'test', name: 'no-clone', fullName: 'test/no-clone' })
       .returning();
     noCloneRepoId = repoA!.id;
 
@@ -69,7 +69,6 @@ d('Conventions module (Testcontainers pg)', () => {
         owner: 'test',
         name: 'with-clone',
         fullName: 'test/with-clone',
-        createdBy: 'system',
         clonePath: cloneDir,
       })
       .returning();
@@ -132,9 +131,7 @@ d('Conventions module (Testcontainers pg)', () => {
           workspaceId: other!.id,
           owner: 'x',
           name: 'foreign',
-          fullName: 'x/foreign',
-          createdBy: 'system',
-        })
+          fullName: 'x/foreign',        })
         .returning();
       const res = await app.inject({ method: 'GET', url: `/repos/${foreign!.id}/conventions` });
       expect(res.statusCode).toBe(404);

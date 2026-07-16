@@ -166,6 +166,8 @@ export function ReviewRunAccordion({
             prId={prId}
             repoFullName={repoFullName}
             headSha={headSha}
+            agentId={review.agent_id}
+            runId={review.run_id}
             activeSeverity={activeSeverity}
             targetFindingId={targetFindingId}
             onScrolledToTarget={onScrolledToTarget}

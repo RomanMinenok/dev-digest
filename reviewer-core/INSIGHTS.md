@@ -20,12 +20,14 @@ bit us and shouldn't bite us twice. Referenced from `reviewer-core/CLAUDE.md`.
 
 ## Tool & Library Notes
 <!-- Dependency quirks, version gotchas, env/config oddities. -->
+- **`pnpm run build` / `pnpm run typecheck` / `pnpm exec tsc` in this package can all fail with `[ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: esbuild@0.21.5, esbuild@0.28.1` before `tsc` even runs — a supply-chain gate on `esbuild`'s postinstall script, unrelated to any code change.** `pnpm exec`/`pnpm run` re-triggers pnpm's dependency-status check on every invocation, and it refuses to proceed while those builds are pending approval (`pnpm approve-builds` fixes it permanently but prompts interactively / mutates project config — not appropriate mid-task). Fastest workaround that avoids both: call the installed binary directly, bypassing pnpm's wrapper — `./node_modules/.bin/tsc --noEmit -p tsconfig.json` — which typechecks cleanly with zero output on success and skips the install-gate entirely.
 
 ## Recurring Errors & Fixes
 <!-- Error signature → root cause → fix. -->
 
 ## Session Notes
 <!-- Dated wrap-ups, newest first: ### YYYY-MM-DD — <one-line summary> -->
+### 2026-07-14 — Injected one deliberate fail-open bug for a review-eval fixture PR (`test/review-fixture-security` off `main`, PR #18): `output/to-review.ts::gateTriggered` changed from `findings.some(...)` to `findings.every(...)`, so a PR with one CRITICAL among several lower-severity findings no longer trips the CI fail gate. `./node_modules/.bin/tsc --noEmit` confirmed clean (see Tool & Library Notes for why `pnpm run build` itself was blocked). Not meant to be merged.
 ### 2026-07-02 — Added the Declared-intent prompt slot (wrapUntrusted intent + trusted one-signal-finding scope rule) threaded via promptParts + PromptAssembly.intent; omit-when-empty keeps the no-intent prompt byte-identical (23 tests green)
 
 ## Open Questions

@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { Verdict, Finding } from './findings.js';
-import { EvalRun, EvalOwnerKind, Conformance } from './knowledge.js';
+import { Verdict, Finding, Severity, FindingCategory } from './findings.js';
+import { EvalRun, EvalCase, EvalOwnerKind, Conformance } from './knowledge.js';
 
 /**
  * A4 — Eval / CI / Compose / Conformance API contracts (L06).
@@ -28,6 +28,55 @@ export const EvalCaseInput = z.object({
   notes: z.string().nullish(),
 });
 export type EvalCaseInput = z.infer<typeof EvalCaseInput>;
+/** Caller-facing input type — `.default()` fields stay optional (web hooks). */
+export type EvalCaseInputBody = z.input<typeof EvalCaseInput>;
+
+/**
+ * An expected finding in an eval case — used for recall/precision matching
+ * against the agent's actual output. `file` and `start_line` are the matching
+ * coordinates; all other fields are informational labels.
+ */
+export const ExpectedFinding = z.object({
+  severity: Severity,
+  category: FindingCategory,
+  title: z.string().min(1),
+  file: z.string(),
+  start_line: z.number().int(),
+  end_line: z.number().int().nullish(),
+});
+export type ExpectedFinding = z.infer<typeof ExpectedFinding>;
+
+/** Structured `input_meta` for an eval case sourced from a real review run. */
+export const EvalCaseInputMeta = z.object({
+  pr: z.object({
+    number: z.number().int(),
+    title: z.string(),
+    body: z.string(),
+    author: z.string(),
+  }),
+  enrichment: z.object({
+    callers: z.string().nullable(),
+    repo_map: z.string().nullable(),
+    rank_note: z.string(),
+    intent: z
+      .object({
+        intent: z.string(),
+        in_scope: z.array(z.string()),
+        out_of_scope: z.array(z.string()),
+      })
+      .nullable(),
+    context_docs: z.array(
+      z.object({ path: z.string(), content: z.string() }),
+    ),
+  }),
+  source: z.object({
+    finding_id: z.string(),
+    review_id: z.string(),
+    run_id: z.string(),
+    pr_id: z.string(),
+  }),
+});
+export type EvalCaseInputMeta = z.infer<typeof EvalCaseInputMeta>;
 
 /** A persisted eval run row (one execution of a case), returned by the API. */
 export const EvalRunRecord = z.object({
@@ -42,8 +91,35 @@ export const EvalRunRecord = z.object({
   citation_accuracy: z.number().nullable(),
   duration_ms: z.number().int().nullable(),
   cost_usd: z.number().nullable(),
+  agent_version: z.number().int(),
+  // Raw scoring counts (see server's scorer.ts poolMetrics) — exposed so the
+  // client can show WHY a case passed/failed (matched vs expected, grounding
+  // kept/dropped) without re-deriving anything from actual_output.
+  matched: z.number().int().nullable(),
+  expected_total: z.number().int().nullable(),
+  produced: z.number().int().nullable(),
+  false_positives: z.number().int().nullable(),
+  kept: z.number().int().nullable(),
+  dropped: z.number().int().nullable(),
 });
 export type EvalRunRecord = z.infer<typeof EvalRunRecord>;
+
+/**
+ * An eval case together with its most recent run — the shape returned by
+ * `GET /agents/:id/eval-cases`.
+ *
+ * `latest_run` is the ONLY correct source for a case's pass/fail state in the
+ * list (AC-33/34): it is the newest run across every agent version, with no
+ * truncation. Do not derive per-case status from `EvalDashboard.recent_runs`,
+ * which is capped and scoped to two agent versions, so a case can silently fall
+ * out of it and render as "never run".
+ *
+ * `null` ↔ the case has genuinely never been run.
+ */
+export const EvalCaseWithLatestRun = EvalCase.extend({
+  latest_run: EvalRunRecord.nullable(),
+});
+export type EvalCaseWithLatestRun = z.infer<typeof EvalCaseWithLatestRun>;
 
 /** Result of running a single case: the metrics (EvalRun) + the persisted row id. */
 export const EvalRunResult = z.object({
@@ -53,9 +129,10 @@ export const EvalRunResult = z.object({
 });
 export type EvalRunResult = z.infer<typeof EvalRunResult>;
 
-/** One point on the dashboard trend (per run, chronological). */
+/** One point on the dashboard trend — now one point per agent version, chronological. */
 export const EvalTrendPoint = z.object({
   ran_at: z.string(),
+  agent_version: z.number().int(),
   recall: z.number(),
   precision: z.number(),
   citation_accuracy: z.number(),
@@ -64,11 +141,50 @@ export const EvalTrendPoint = z.object({
 });
 export type EvalTrendPoint = z.infer<typeof EvalTrendPoint>;
 
+/**
+ * One agent version's aggregated eval-run summary — the row shape for the
+ * cross-agent version comparison (workspace dashboard trend + Compare view).
+ */
+export const EvalVersionRun = z.object({
+  agent_id: z.string(),
+  agent_name: z.string(),
+  agent_version: z.number().int(),
+  ran_at: z.string(),
+  recall: z.number(),
+  precision: z.number(),
+  citation_accuracy: z.number(),
+  cases_passed: z.number().int(),
+  cases_total: z.number().int(),
+  cost_usd: z.number().nullable(),
+});
+export type EvalVersionRun = z.infer<typeof EvalVersionRun>;
+
+/** Per-agent summary row for the workspace-wide eval dashboard. */
+export const EvalAgentSummary = z.object({
+  agent_id: z.string(),
+  name: z.string(),
+  model: z.string(),
+  cases_total: z.number().int(),
+  current_version: z.number().int(),
+  measured_version: z.number().int().nullable(),
+  latest: EvalVersionRun.nullable(),
+  sparkline: z.array(z.number()),
+});
+export type EvalAgentSummary = z.infer<typeof EvalAgentSummary>;
+
+/** Workspace-wide eval dashboard envelope — agent summaries + the cross-agent version-run list. */
+export const EvalWorkspaceDashboard = z.object({
+  agents: z.array(EvalAgentSummary),
+  version_runs: z.array(EvalVersionRun),
+});
+export type EvalWorkspaceDashboard = z.infer<typeof EvalWorkspaceDashboard>;
+
 /** Aggregate dashboard for an owner (agent/skill) or the whole workspace. */
 export const EvalDashboard = z.object({
   owner_kind: EvalOwnerKind.nullable(),
   owner_id: z.string().nullable(),
   cases_total: z.number().int(),
+  measured_version: z.number().int().nullable(),
   current: z.object({
     recall: z.number(),
     precision: z.number(),
@@ -84,6 +200,7 @@ export const EvalDashboard = z.object({
   }),
   trend: z.array(EvalTrendPoint),
   recent_runs: z.array(EvalRunRecord),
+  version_runs: z.array(EvalVersionRun),
   alert: z.string().nullable(),
 });
 export type EvalDashboard = z.infer<typeof EvalDashboard>;

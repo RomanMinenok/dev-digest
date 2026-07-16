@@ -7,6 +7,9 @@ import messages from "../../../../../messages/en/skills.json";
 const mutate = vi.fn();
 vi.mock("../../../../lib/hooks/skills", () => ({
   useUpdateSkill: () => ({ mutate, isPending: false }),
+  // SkillCard also calls useDeleteSkill (del.mutate / del.isPending) for its
+  // Trash action — the mock must provide it or the module resolves undefined.
+  useDeleteSkill: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
 import { SkillCard } from "./SkillCard";

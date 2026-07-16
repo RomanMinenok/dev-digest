@@ -167,6 +167,28 @@ export class AgentsRepository {
     return row;
   }
 
+  /**
+   * Bump the agent's version by 1 and snapshot the current config into
+   * `agent_versions` (which already records the linked-skill ids). Used for a
+   * config-affecting change that `isConfigChange` does NOT cover — the linked
+   * skill set — so a skills-only edit is a first-class agent version, exactly
+   * like a prompt/model change. The caller MUST have already persisted the
+   * skill change (the snapshot reads the live skill ids). Idempotency (only
+   * bump on a real change) is the caller's decision, made in the service layer.
+   */
+  async bumpVersion(workspaceId: string, id: string): Promise<AgentRow | undefined> {
+    const existing = await this.getById(workspaceId, id);
+    if (!existing) return undefined;
+    const nextVersion = existing.version + 1;
+    const [row] = await this.db
+      .update(t.agents)
+      .set({ version: nextVersion })
+      .where(and(eq(t.agents.workspaceId, workspaceId), eq(t.agents.id, id)))
+      .returning();
+    if (row) await this.snapshotVersion(row, nextVersion);
+    return row;
+  }
+
   private async snapshotVersion(row: AgentRow, version: number): Promise<void> {
     const skills = await this.skillIdsForAgent(row.id);
     await this.db

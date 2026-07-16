@@ -31,6 +31,8 @@ export function FindingCard({
   pending,
   repoFullName,
   headSha,
+  agentId,
+  onTurnIntoEvalCase,
 }: {
   f: FindingRecord;
   focused?: boolean;
@@ -39,6 +41,11 @@ export function FindingCard({
   pending?: boolean;
   repoFullName?: string | null;
   headSha?: string | null;
+  /** The agent that produced this finding. Null when the review has no agent. */
+  agentId?: string | null;
+  /** Handler to turn this finding into an eval case. Absent when the agent no
+   *  longer exists in the workspace (fail-closed: button renders disabled). */
+  onTurnIntoEvalCase?: () => void;
 }) {
   const t = useTranslations("prReview");
   const [expanded, setExpanded] = React.useState(defaultExpanded ?? false);
@@ -50,6 +57,13 @@ export function FindingCard({
   const accepted = !!f.accepted_at;
   const dismissed = !!f.dismissed_at;
   const muted = accepted || dismissed;
+
+  // Fail-closed: button only appears when agentId is present; disabled when the
+  // agent has since been deleted (no handler provided by FindingsPanel).
+  const evalCaseDisabled = agentId != null && !onTurnIntoEvalCase;
+  const evalCaseTitle = evalCaseDisabled
+    ? t("finding.evalCaseAgentGone")
+    : t("finding.turnIntoEvalCase");
 
   return (
     <div data-finding-id={f.id} style={s.card(!!focused, sevColor, muted)}>
@@ -109,6 +123,19 @@ export function FindingCard({
             >
               {t("finding.dismiss")}
             </Button>
+            {agentId != null && (
+              <Button
+                kind="ghost"
+                size="sm"
+                icon="FlaskConical"
+                disabled={evalCaseDisabled}
+                title={evalCaseTitle}
+                aria-label={evalCaseTitle}
+                onClick={onTurnIntoEvalCase}
+              >
+                {t("finding.turnIntoEvalCase")}
+              </Button>
+            )}
           </div>
         </div>
       )}

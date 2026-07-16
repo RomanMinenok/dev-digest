@@ -12,7 +12,7 @@ let linksData: AgentSkillLink[] = [];
 vi.mock("../../../../../../../lib/hooks/skills", () => ({
   useSkills: () => ({ data: skillsData }),
   useAgentSkills: () => ({ data: linksData }),
-  useSetAgentSkills: () => ({ mutate: setMutate }),
+  useSetAgentSkills: () => ({ mutate: setMutate, isPending: false }),
 }));
 
 import { SkillsTab } from "./SkillsTab";
@@ -46,6 +46,11 @@ function checkbox(name: string) {
   return screen.getByRole("checkbox", { name });
 }
 
+/** The "Save skills" button. */
+function saveButton() {
+  return screen.getByRole("button", { name: "Save skills" });
+}
+
 beforeEach(() => {
   setMutate.mockClear();
   skillsData = [skill("s1", "alpha"), skill("s2", "beta"), skill("s3", "gamma")];
@@ -60,19 +65,27 @@ describe("agent SkillsTab", () => {
     expect(screen.getByText("1 of 3 enabled")).toBeInTheDocument();
   });
 
-  it("persists the new skill_ids when linking a skill", () => {
+  it("does not persist a membership change until Save is pressed", () => {
+    renderTab();
+    fireEvent.click(checkbox("alpha")); // draft edit only
+    expect(setMutate).not.toHaveBeenCalled();
+  });
+
+  it("persists the new skill_ids on Save when linking a skill", () => {
     renderTab();
     fireEvent.click(checkbox("alpha")); // link s1 (appended after linked s2)
+    fireEvent.click(saveButton());
     expect(setMutate).toHaveBeenCalledWith({ agentId: "ag1", skill_ids: ["s2", "s1"] });
   });
 
-  it("persists the remaining skill_ids when unlinking a skill", () => {
+  it("persists the remaining skill_ids on Save when unlinking a skill", () => {
     renderTab();
     fireEvent.click(checkbox("beta")); // unlink s2
+    fireEvent.click(saveButton());
     expect(setMutate).toHaveBeenCalledWith({ agentId: "ag1", skill_ids: [] });
   });
 
-  it("persists the reordered linked ids on drag-drop", () => {
+  it("persists the reordered linked ids on Save after drag-drop", () => {
     // Two linked skills so a reorder is possible.
     linksData = [
       { agent_id: "ag1", skill_id: "s2", order: 0 },
@@ -86,6 +99,7 @@ describe("agent SkillsTab", () => {
     fireEvent.dragStart(rowS1!);
     fireEvent.dragOver(rowS2!);
     fireEvent.drop(rowS2!);
+    fireEvent.click(saveButton());
 
     expect(setMutate).toHaveBeenCalledWith({ agentId: "ag1", skill_ids: ["s1", "s2"] });
   });
