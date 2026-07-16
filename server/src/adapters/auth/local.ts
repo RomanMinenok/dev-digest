@@ -10,6 +10,12 @@ import { DEFAULT_WORKSPACE_NAME, SYSTEM_USER_EMAIL } from '../../db/seed.js';
  * cached) so every request scopes to the same workspace_id.
  *
  * Swap for a real AuthProvider later; call sites only depend on the interface.
+ *
+ * Demo PR for the Blast Radius feature: this doc-comment-only change is the
+ * minimal-blast-radius counterpart to the getContext change above — expect
+ * ~0 callers and 0 endpoints here, since callers reach these methods only
+ * through the AuthProvider interface (container.auth.currentUser(...)),
+ * which the caller-resolver does not follow across the interface boundary.
  */
 export class LocalNoAuthProvider implements AuthProvider {
   private cachedUser?: AuthUser;
