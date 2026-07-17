@@ -4,17 +4,19 @@ import type { AttributedFinding, LocationGroup } from './types.js';
 import {
   titleTokens,
   jaccard,
+  containment,
   isMatched,
   isDivergent,
   isAgreed,
   DIVERGENT_MAX_J,
   AGREED_MIN_J,
+  AGREED_MIN_CONTAINMENT,
 } from './similarity.js';
 
 /**
- * Titles are chosen so the cross-agent Jaccard lands on an exact, hand-checked
- * value — the thresholds are `<=` / `>=`, so the boundary itself is the
- * interesting case, not a value near it.
+ * Titles are chosen so the cross-agent Jaccard / containment lands on an
+ * exact, hand-checked value — the thresholds are `<=` / `>=`, so the
+ * boundary itself is the interesting case, not a value near it.
  */
 const finding = (id: string, title: string): Finding => ({
   id,
@@ -71,6 +73,27 @@ describe('jaccard', () => {
     const a = titleTokens('alpha beta gamma');
     const b = titleTokens('alpha beta delta epsilon');
     expect(jaccard(a, b)).toBe(jaccard(b, a));
+  });
+});
+
+describe('containment', () => {
+  it('is 1 when the shorter set is fully embedded in the longer', () => {
+    expect(containment(titleTokens('a b'), titleTokens('a b c d'))).toBe(1);
+  });
+
+  it('is 0 for disjoint token sets', () => {
+    expect(containment(titleTokens('a b'), titleTokens('c d'))).toBe(0);
+  });
+
+  it('is 0 when either set is empty', () => {
+    expect(containment(new Set(), titleTokens('a'))).toBe(0);
+    expect(containment(titleTokens('a'), new Set())).toBe(0);
+  });
+
+  it('is symmetric', () => {
+    const a = titleTokens('alpha beta');
+    const b = titleTokens('alpha beta gamma');
+    expect(containment(a, b)).toBe(containment(b, a));
   });
 });
 
@@ -134,24 +157,58 @@ describe('isAgreed', () => {
     expect(isAgreed(group([a, b]))).toBe(true);
   });
 
-  it('is false when the only cross-agent pair sits just below the threshold', () => {
-    // 4 shared / 7 union = 0.571… < 0.6
+  it(`is true when containment sits exactly on ${AGREED_MIN_CONTAINMENT} even if J is below`, () => {
+    // 3 shared / 5 min = 0.6 containment; 3 / 9 union = 0.333… Jaccard
     const a = attributed('1', 'alpha beta gamma delta epsilon', 'agent-a');
-    const b = attributed('2', 'alpha beta gamma delta zeta eta', 'agent-b');
-    expect(jaccard(titleTokens(a.finding.title), titleTokens(b.finding.title))).toBeLessThan(
-      AGREED_MIN_J,
+    const b = attributed('2', 'alpha beta gamma zeta eta theta iota', 'agent-b');
+    const ta = titleTokens(a.finding.title);
+    const tb = titleTokens(b.finding.title);
+    expect(containment(ta, tb)).toBeCloseTo(0.6, 10);
+    expect(jaccard(ta, tb)).toBeLessThan(AGREED_MIN_J);
+    expect(isAgreed(group([a, b]))).toBe(true);
+  });
+
+  it('is true when a short title is fully contained in a longer one (live Hardcoded API Key shape)', () => {
+    const short = attributed('1', 'Hardcoded API Key', 'security');
+    const long = attributed(
+      '2',
+      'Hardcoded OpenRouter API key fallback in container.ts',
+      'shrek',
     );
+    const ta = titleTokens(short.finding.title);
+    const tb = titleTokens(long.finding.title);
+    expect(containment(ta, tb)).toBe(1);
+    expect(jaccard(ta, tb)).toBeLessThan(AGREED_MIN_J);
+    expect(isAgreed(group([short, long]))).toBe(true);
+  });
+
+  it('is false when both Jaccard and containment sit below their thresholds', () => {
+    // 4 shared / 11 union ≈ 0.364 J; 4 / 7 min ≈ 0.571 containment
+    const a = attributed(
+      '1',
+      'alpha beta gamma delta epsilon zeta eta',
+      'agent-a',
+    );
+    const b = attributed(
+      '2',
+      'alpha beta gamma delta theta iota kappa lambda',
+      'agent-b',
+    );
+    const ta = titleTokens(a.finding.title);
+    const tb = titleTokens(b.finding.title);
+    expect(jaccard(ta, tb)).toBeLessThan(AGREED_MIN_J);
+    expect(jaccard(ta, tb)).toBeGreaterThan(DIVERGENT_MAX_J);
+    expect(containment(ta, tb)).toBeLessThan(AGREED_MIN_CONTAINMENT);
     expect(isAgreed(group([a, b]))).toBe(false);
   });
 });
 
-describe('the deliberate 0.3 < J < 0.6 band', () => {
-  // This band is Matched only — it is the designed outcome, not a gap.
+describe('the soft band — Matched only', () => {
+  // Neither Jaccard nor containment clears Agreed; J is also above Divergent.
   it('is Matched but neither Divergent nor Agreed', () => {
-    // 4 shared / 7 union = 0.571…
     const g = group([
-      attributed('1', 'alpha beta gamma delta epsilon', 'agent-a'),
-      attributed('2', 'alpha beta gamma delta zeta eta', 'agent-b'),
+      attributed('1', 'alpha beta gamma delta epsilon zeta eta', 'agent-a'),
+      attributed('2', 'alpha beta gamma delta theta iota kappa lambda', 'agent-b'),
     ]);
     expect(isMatched(g)).toBe(true);
     expect(isDivergent(g)).toBe(false);

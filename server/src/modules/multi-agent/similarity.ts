@@ -50,6 +50,28 @@ export function jaccard(a: Set<string>, b: Set<string>): number {
 }
 
 /**
+ * Containment: |a∩b| / min(|a|,|b|).
+ *
+ * How fully the shorter title is embedded in the longer one. Catches the
+ * common multi-agent pattern where one agent writes a short label
+ * ("Hardcoded API Key") and another expands it — Jaccard stays mid-band
+ * because the union is inflated, but containment hits 1.0.
+ *
+ * Either side empty → `0` (no evidence), same rationale as `jaccard`.
+ */
+export function containment(a: Set<string>, b: Set<string>): number {
+  const smaller = a.size <= b.size ? a : b;
+  const larger = a.size <= b.size ? b : a;
+  if (smaller.size === 0) return 0;
+
+  let intersectionSize = 0;
+  for (const token of smaller) {
+    if (larger.has(token)) intersectionSize++;
+  }
+  return intersectionSize / smaller.size;
+}
+
+/**
  * Divergent threshold: cross-agent pairwise J at or below this value counts
  * as evidence of divergence. This is the requester's first guess (per the
  * spec) — expected to be tuned against real multi-agent runs, not a final
@@ -58,10 +80,18 @@ export function jaccard(a: Set<string>, b: Set<string>): number {
 export const DIVERGENT_MAX_J = 0.3;
 
 /**
- * Agreed threshold: cross-agent pairwise J at or above this value counts as
- * evidence of agreement. Same tuning caveat as `DIVERGENT_MAX_J`.
+ * Agreed threshold (Jaccard): cross-agent pairwise J at or above this value
+ * counts as evidence of agreement. Same tuning caveat as `DIVERGENT_MAX_J`.
  */
 export const AGREED_MIN_J = 0.6;
+
+/**
+ * Agreed threshold (containment): cross-agent pairwise containment at or
+ * above this value also counts as agreement. Same numeric start as
+ * `AGREED_MIN_J`, but a softer bar (denominator is min, not union) — tune
+ * independently if live runs get noisy.
+ */
+export const AGREED_MIN_CONTAINMENT = 0.6;
 
 /**
  * Every cross-agent pair of findings in a group, as their title-token sets.
@@ -117,11 +147,15 @@ export function isDivergent(group: LocationGroup): boolean {
 
 /**
  * Agreed: 2+ distinct agents AND at least one cross-agent pair has
- * J ≥ AGREED_MIN_J. Existential over pairs, same as `isDivergent`. A group
- * may satisfy both `isDivergent` and `isAgreed` — this is honest and
- * deliberate (AC-43), do not add a mutual-exclusivity tie-break.
+ * J ≥ AGREED_MIN_J **or** containment ≥ AGREED_MIN_CONTAINMENT.
+ * Existential over pairs, same as `isDivergent`. A group may satisfy both
+ * `isDivergent` and `isAgreed` — this is honest and deliberate (AC-43), do
+ * not add a mutual-exclusivity tie-break.
  */
 export function isAgreed(group: LocationGroup): boolean {
   if (contributingAgents(group).size < 2) return false;
-  return crossAgentTokenPairs(group).some(([a, b]) => jaccard(a, b) >= AGREED_MIN_J);
+  return crossAgentTokenPairs(group).some(
+    ([a, b]) =>
+      jaccard(a, b) >= AGREED_MIN_J || containment(a, b) >= AGREED_MIN_CONTAINMENT,
+  );
 }
