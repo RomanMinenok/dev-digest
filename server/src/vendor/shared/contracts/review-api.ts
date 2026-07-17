@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Finding, Verdict } from './findings.js';
+import { Finding, Severity, Verdict } from './findings.js';
 import { Intent, SmartDiff } from './brief.js';
 
 /**
@@ -63,3 +63,107 @@ export type PrIntentRecord = z.infer<typeof PrIntentRecord>;
 /** Smart-diff response for a PR (the SmartDiff). */
 export const SmartDiffResponse = SmartDiff;
 export type SmartDiffResponse = z.infer<typeof SmartDiffResponse>;
+
+/**
+ * Multi-agent review (SPEC-05, T-09). Wire (snake_case) mirrors of the pure
+ * domain shapes in `modules/multi-agent/{types,cells,status,estimate}.ts` —
+ * see those files' headers for the rules these shapes carry (grouping is
+ * coordinates-only, cells are a 3-state union, estimates are nullable-not-zero).
+ * Nothing here is persisted (AC-31); it is assembled on every read.
+ */
+
+/**
+ * One matrix cell — mirrors the `Cell` discriminated union in
+ * `modules/multi-agent/cells.ts`. Kept as a real discriminated union on the
+ * wire too: the three states (`severity` / `did_not_flag` / `failed`) must
+ * never collapse into a single string with optional extras.
+ */
+export const MultiAgentCell = z.discriminatedUnion('state', [
+  z.object({ state: z.literal('severity'), agent_id: z.string(), severity: Severity }),
+  z.object({ state: z.literal('did_not_flag'), agent_id: z.string() }),
+  z.object({ state: z.literal('failed'), agent_id: z.string() }),
+]);
+export type MultiAgentCell = z.infer<typeof MultiAgentCell>;
+
+/** A finding as it appears inside a location group — carries its producing agent's id (AC-32). */
+export const MultiAgentGroupFinding = Finding.extend({
+  agent_id: z.string(),
+});
+export type MultiAgentGroupFinding = z.infer<typeof MultiAgentGroupFinding>;
+
+/**
+ * One location group of the "Findings by location" matrix. `matched` /
+ * `divergent` / `agreed` are the classification flags `similarity.ts`
+ * computes (AC-38..AC-43) — the client consumes them as-is and must never
+ * recompute Jaccard itself.
+ */
+export const MultiAgentGroup = z.object({
+  file: z.string(),
+  start_line: z.number().int(),
+  end_line: z.number().int(),
+  label: z.string(),
+  findings: z.array(MultiAgentGroupFinding),
+  cells: z.array(MultiAgentCell),
+  matched: z.boolean(),
+  divergent: z.boolean(),
+  agreed: z.boolean(),
+});
+export type MultiAgentGroup = z.infer<typeof MultiAgentGroup>;
+
+/** Derived overall status of a multi-agent run — mirrors `MultiRunStatus` in `modules/multi-agent/status.ts`. */
+export const MultiAgentRunStatus = z.enum(['running', 'done', 'partial', 'failed']);
+export type MultiAgentRunStatus = z.infer<typeof MultiAgentRunStatus>;
+
+/**
+ * One member (agent run) of a multi-agent run. `agent_id`/`agent_name` are
+ * nullable — `agent_runs.agent_id` is `on delete set null` (`db/schema/runs.ts:15`),
+ * so a deleted agent must still render as a historical member, not disappear.
+ */
+export const MultiAgentMember = z.object({
+  agent_id: z.string().nullable(),
+  agent_name: z.string().nullable(),
+  status: z.string().nullable(),
+  score: z.number().int().nullable(),
+  duration_ms: z.number().int().nullable(),
+  cost_usd: z.number().nullable(),
+  error: z.string().nullable(),
+  run_id: z.string(),
+  findings: z.array(FindingRecord),
+});
+export type MultiAgentMember = z.infer<typeof MultiAgentMember>;
+
+/** `GET /pulls/:id/multi-agent-run` response — the latest multi-agent run for a PR. */
+export const MultiAgentRunView = z.object({
+  id: z.string(),
+  pr_id: z.string(),
+  ran_at: z.string(),
+  status: MultiAgentRunStatus,
+  members: z.array(MultiAgentMember),
+  groups: z.array(MultiAgentGroup),
+});
+export type MultiAgentRunView = z.infer<typeof MultiAgentRunView>;
+
+/**
+ * Per-agent duration/cost estimate from recent completed-run history
+ * (AC-9..AC-11). `duration_ms`/`cost_usd` are nullable, never `0` — `null`
+ * means "no history"/"unknown price" and `0` is a legitimate value; they must
+ * not share a representation (see `modules/multi-agent/estimate.ts`).
+ */
+export const AgentEstimate = z.object({
+  agent_id: z.string(),
+  duration_ms: z.number().int().nullable(),
+  cost_usd: z.number().nullable(),
+});
+export type AgentEstimate = z.infer<typeof AgentEstimate>;
+
+/**
+ * Selection-level rollup across multiple agents' estimates — mirrors
+ * `EstimateTotals` in `modules/multi-agent/estimate.ts`. `approx` is data,
+ * not a UI re-derivation: `true` renders with `≈`, `false` with `≥`.
+ */
+export const EstimateTotals = z.object({
+  duration_ms: z.number().int().nullable(),
+  cost_usd: z.number().nullable(),
+  approx: z.boolean(),
+});
+export type EstimateTotals = z.infer<typeof EstimateTotals>;

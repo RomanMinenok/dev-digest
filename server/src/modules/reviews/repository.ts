@@ -144,6 +144,8 @@ export class ReviewRepository {
     prId: string;
     provider: string | null;
     model: string | null;
+    /** Membership in a multi-agent run; null for CI/single-agent runs (AC-6/AC-13). */
+    multiAgentRunId?: string | null;
   }): Promise<string> {
     return runRepo.createAgentRun(this.db, values);
   }

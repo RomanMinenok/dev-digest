@@ -1,4 +1,6 @@
-node_modules/
+# No trailing slash: worktree sessions symlink node_modules in from the main
+# checkout, and git treats a symlink as a file — `node_modules/` would miss it.
+node_modules
 dist/
 # agent-runner ships as a JS GitHub Action — its bundled dist/ MUST be committed
 # (GitHub runs action.yml `main: dist/index.js` as-is, with no build step).

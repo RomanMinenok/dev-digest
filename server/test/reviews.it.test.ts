@@ -96,6 +96,30 @@ async function setupRepoAndPr(db: PgFixture['handle']['db'], workspaceId: string
   return { repo: repo!, pr: pr! };
 }
 
+/**
+ * SPEC-05 AC-6: assert a PR's runs were started by a legacy body — i.e. every
+ * `agent_runs` row is unbound and no `multi_agent_runs` row exists for the PR.
+ * Scoped by `prId` (not global) so it stays true whatever else the suite ran.
+ */
+async function expectUnbound(
+  db: PgFixture['handle']['db'],
+  prId: string,
+  expectedRuns: number,
+): Promise<void> {
+  const runs = await db
+    .select({ multiAgentRunId: t.agentRuns.multiAgentRunId })
+    .from(t.agentRuns)
+    .where(eq(t.agentRuns.prId, prId));
+  expect(runs).toHaveLength(expectedRuns);
+  expect(runs.map((r) => r.multiAgentRunId)).toEqual(runs.map(() => null));
+
+  const multiRuns = await db
+    .select()
+    .from(t.multiAgentRuns)
+    .where(eq(t.multiAgentRuns.prId, prId));
+  expect(multiRuns).toEqual([]);
+}
+
 d('A2 reviews + agents (Testcontainers pg)', () => {
   let pg: PgFixture;
   let workspaceId: string;
@@ -297,6 +321,37 @@ d('A2 reviews + agents (Testcontainers pg)', () => {
     ).json();
     // seed has 2 enabled agents; we may have created more above in this PR's ws.
     expect(body.runs.length).toBeGreaterThanOrEqual(2);
+
+    // SPEC-05 AC-6: `{all:true}` is a legacy body — it must create no
+    // multi-agent run and bind none of its runs. Membership hangs off a single
+    // flag (`reviews/routes.ts`: `Boolean(body.agentIds?.length)`), so a
+    // regression there would silently start grouping legacy runs together and
+    // surfacing them on /multi-agent-review.
+    await expectUnbound(pg.handle.db, pr.id, body.runs.length);
+    await app.close();
+  });
+
+  it('a single-agent review is a legacy body too: no multi-agent run, nothing bound', async () => {
+    const app = await appWith(REVIEW_FIXTURE);
+    const { pr } = await setupRepoAndPr(pg.handle.db, workspaceId);
+    const agent = (
+      await app.inject({
+        method: 'POST',
+        url: '/agents',
+        payload: { name: 'Solo', provider: 'openai', model: 'gpt-4.1', system_prompt: 'solo' },
+      })
+    ).json();
+
+    const body = (
+      await app.inject({
+        method: 'POST',
+        url: `/pulls/${pr.id}/review`,
+        payload: { agentId: agent.id },
+      })
+    ).json();
+    expect(body.runs).toHaveLength(1);
+
+    await expectUnbound(pg.handle.db, pr.id, 1);
     await app.close();
   });
 });

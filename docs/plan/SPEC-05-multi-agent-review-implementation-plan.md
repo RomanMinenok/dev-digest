@@ -16,35 +16,36 @@ Spec: [SPEC-05-multi-agent-review](../../specs/SPEC-05-multi-agent-review.md)
 
 | Task | Module | Title | Status |
 | --- | --- | --- | --- |
-| T-01 | server | `agent_runs.multi_agent_run_id` column + index | ⬜ Not started |
-| T-02 | server | Generate + apply migration 0018 | ⬜ Not started |
-| T-03 | server | Extract the shared coordinate rule into `_shared/finding-location.ts` | ⬜ Not started |
-| T-04 | server | Pure grouping: findings → location groups | ⬜ Not started |
-| T-05 | server | Pure similarity: Jaccard + Matched/Divergent/Agreed predicates | ⬜ Not started |
-| T-06 | server | Pure derived multi-run status | ⬜ Not started |
-| T-07 | server | Pure estimate: per-agent medians + selection totals | ⬜ Not started |
-| T-08 | server | Pure cell builder (severity / did not flag / failed) | ⬜ Not started |
-| T-09 | shared | Contracts: `RunRequest.agentIds`, `MultiAgentRunView`, `AgentEstimate` | ⬜ Not started |
-| T-10 | server | `MultiAgentRepository` (create + latest-for-PR + estimate rows) | ⬜ Not started |
-| T-11 | server | `createAgentRun` accepts `multiAgentRunId` | ⬜ Not started |
-| T-12 | server | `ReviewService`: resolve `agentIds` + create/bind the multi-run | ⬜ Not started |
-| T-13 | server | `MultiAgentService.latestForPull` (assemble members + groups) | ⬜ Not started |
-| T-14 | server | `MultiAgentService.estimates` | ⬜ Not started |
-| T-15 | server | `modules/multi-agent/routes.ts` + plugin registration | ⬜ Not started |
-| T-16 | server | Container wiring: `multiAgentRepo` | ⬜ Not started |
-| T-17 | server | `POST /pulls/:id/review` accepts `agentIds` | ⬜ Not started |
-| T-18 | client | Mirror the contracts into the client's vendored copy | ⬜ Not started |
-| T-19 | client | `lib/hooks/multi-agent.ts` + `useRunReview({ agentIds })` | ⬜ Not started |
-| T-20 | client | Promote `RunTraceDrawer` to `src/components/` | ⬜ Not started |
-| T-21 | client | `AgentRunPicker` shared component | ⬜ Not started |
-| T-22 | client | `RunReviewDropdown` renders the picker | ⬜ Not started |
-| T-23 | client | Sidebar: `GLOBAL` group + Multi-Agent Review item | ⬜ Not started |
-| T-24 | client | `/multi-agent-review` route: empty state + Configure run | ⬜ Not started |
-| T-25 | client | Results — Columns mode (lanes) | ⬜ Not started |
-| T-26 | client | Results — Tabs mode + finding detail + actions | ⬜ Not started |
-| T-27 | client | "Findings by location" matrix + 4-state filter | ⬜ Not started |
-| T-28 | client | i18n `multiAgent.json` | ⬜ Not started |
-| T-29 | both | End-to-end verification pass | ⬜ Not started |
+| T-01 | server | `agent_runs.multi_agent_run_id` column + index | ✅ Done |
+| T-02 | server | Generate + apply migration 0018 | ✅ Done |
+| T-03 | server | Extract the shared coordinate rule into `_shared/finding-location.ts` | ✅ Done |
+| T-04 | server | Pure grouping: findings → location groups | ✅ Done |
+| T-05 | server | Pure similarity: Jaccard + Matched/Divergent/Agreed predicates | ✅ Done |
+| T-06 | server | Pure derived multi-run status | ✅ Done |
+| T-07 | server | Pure estimate: per-agent medians + selection totals | ✅ Done |
+| T-08 | server | Pure cell builder (severity / did not flag / failed) | ✅ Done |
+| T-09 | shared | Contracts: `RunRequest.agentIds`, `MultiAgentRunView`, `AgentEstimate` | ✅ Done |
+| T-10 | server | `MultiAgentRepository` (create + latest-for-PR + estimate rows) | ✅ Done |
+| T-11 | server | `createAgentRun` accepts `multiAgentRunId` | ✅ Done |
+| T-12 | server | `ReviewService`: resolve `agentIds` + create/bind the multi-run | ✅ Done |
+| T-13 | server | `MultiAgentService.latestForPull` (assemble members + groups) | ✅ Done |
+| T-14 | server | `MultiAgentService.estimates` | ✅ Done |
+| T-15 | server | `modules/multi-agent/routes.ts` + plugin registration | ✅ Done |
+| T-16 | server | Container wiring: `multiAgentRepo` | ✅ Done |
+| T-17 | server | `POST /pulls/:id/review` accepts `agentIds` | ✅ Done |
+| T-18 | client | Mirror the contracts into the client's vendored copy | ✅ Done |
+| T-19 | client | `lib/hooks/multi-agent.ts` + `useRunReview({ agentIds })` | ✅ Done |
+| T-20 | client | Promote `RunTraceDrawer` to `src/components/` | ✅ Done |
+| T-21 | client | `AgentRunPicker` shared component | ✅ Done |
+| T-22 | client | `RunReviewDropdown` renders the picker | ✅ Done |
+| T-23 | client | Sidebar: `GLOBAL` group + Multi-Agent Review item | ✅ Done |
+| T-24 | client | `/multi-agent-review` route: empty state + Configure run | ✅ Done |
+| T-24b | client | Scope amendment: `AgentRunPicker.showSelectAll` (AC-8), resolves T-21/T-24 conflict (D-8) | ✅ Done |
+| T-25 | client | Results — Columns mode (lanes) | ✅ Done |
+| T-26 | client | Results — Tabs mode + finding detail + actions | ✅ Done |
+| T-27 | client | "Findings by location" matrix + 4-state filter | ✅ Done |
+| T-28 | client | i18n `multiAgent.json` | ✅ Done |
+| T-29 | both | End-to-end verification pass | ✅ Done |
 
 ---
 
@@ -317,8 +318,8 @@ flowchart TD
 > cheap, or filed as follow-ups. "Done when" never *requires* the new test to
 > exist, but always requires existing tests + `tsc` to stay green.
 
-### [ ] T-01 — `agent_runs.multi_agent_run_id` column + index  (module: server)
-**Status:** ⬜ Not started · **Satisfies:** AC-13 · **Depends on:** —
+### [x] T-01 — `agent_runs.multi_agent_run_id` column + index  (module: server)
+**Status:** ✅ Done · **Satisfies:** AC-13 · **Depends on:** —
 - **Scope:** Add `multiAgentRunId: uuid('multi_agent_run_id').references(() => multiAgentRuns.id, { onDelete: 'set null' })` to `agentRuns`, plus an index on it (the per-PR read filters by it; Postgres does **not** auto-index FK columns). Nullable — single-agent and CI runs carry no membership. **Do not** touch `multiAgentRuns`' columns: the spec pins it to its current stub shape and derives status on read. Declare the reference with an arrow function (`() => multiAgentRuns.id`) — `multiAgentRuns` is declared *below* `agentRuns` in the same file, so a direct reference is a TDZ error.
 - **Files owned:** `server/src/db/schema/runs.ts`
 - **Skills to load:** `postgresql-table-design`, `drizzle-orm-patterns`, `typescript-expert`
@@ -326,8 +327,8 @@ flowchart TD
 - **Tests the ACs demand:** none directly (T-13's integration test reads the column back).
 - **Done when:** `cd server && pnpm typecheck` clean; the schema declares the column + index; no other table changed.
 
-### [ ] T-02 — Generate + apply migration 0018  (module: server)
-**Status:** ⬜ Not started · **Satisfies:** AC-13 · **Depends on:** T-01
+### [x] T-02 — Generate + apply migration 0018  (module: server)
+**Status:** ✅ Done · **Satisfies:** AC-13 · **Depends on:** T-01
 - **Scope:** `cd server && pnpm db:generate`, then `pnpm db:migrate` against the local Postgres (`./scripts/dev.sh --db-only` if it isn't up). **Read the generated SQL before applying it.** It must contain exactly one `ALTER TABLE "agent_runs" ADD COLUMN "multi_agent_run_id" uuid`, one FK constraint with `ON DELETE set null`, and one `CREATE INDEX`. If it mentions any other table/column, stop and inspect `meta/0017_snapshot.json` — that is the stale-snapshot failure, not a code problem.
 - **Files owned:** `server/src/db/migrations/0018_*.sql`, `server/src/db/migrations/meta/0018_snapshot.json`, `server/src/db/migrations/meta/_journal.json`
 - **Skills to load:** `drizzle-orm-patterns`, `postgresql-table-design`
@@ -335,8 +336,8 @@ flowchart TD
 - **Tests the ACs demand:** none.
 - **Done when:** `pnpm db:migrate` applies cleanly; `\d agent_runs` shows the column, the FK, and the index; the generated SQL touches nothing else.
 
-### [ ] T-03 — Extract the shared coordinate rule into `_shared/finding-location.ts`  (module: server)
-**Status:** ⬜ Not started · **Satisfies:** AC-29 (foundation) · **Depends on:** T-02
+### [x] T-03 — Extract the shared coordinate rule into `_shared/finding-location.ts`  (module: server)
+**Status:** ✅ Done · **Satisfies:** AC-29 (foundation) · **Depends on:** T-02
 - **Scope:** New pure module `modules/_shared/finding-location.ts`, following the `session-window.ts` precedent (pure, no I/O, no framework, module-local types only). Export `LINE_TOLERANCE` (**keep the current value `10` verbatim** — `eval/scorer.ts:31`) and a `sameLocation(a, b)` predicate: identical `file` **and** intersecting `[start_line, end_line]` ranges with `b`'s range widened by `±LINE_TOLERANCE`. Then refactor `matchesExpectation` (`eval/scorer.ts:45-56`) to delegate to it, passing `expected` as `a` and `produced` as `b` so the widening still applies to the produced side **only**. Document the symmetry proof (see "Architecture") in the module header, and that grouping relies on it. **`matchesExpectation`'s observable behaviour must not change** — SPEC-03/SPEC-04 metrics must not shift. Keep the `end_line ?? start_line` normalization in the scorer where it is; it is an `ExpectedFinding` concern, not a coordinate concern.
 - **Files owned:** `server/src/modules/_shared/finding-location.ts`, `server/src/modules/eval/scorer.ts`
 - **Skills to load:** `onion-architecture`, `typescript-expert`
@@ -344,8 +345,8 @@ flowchart TD
 - **Tests the ACs demand:** unit tests for `sameLocation` (same file/intersecting, same file/disjoint, different file, boundary-touching, tolerance edges) + a symmetry test (`sameLocation(a,b) === sameLocation(b,a)`). The **existing** `eval/scorer` tests are the regression guard for `matchesExpectation`.
 - **Done when:** `pnpm typecheck` clean; the full existing `server` suite is green — in particular every `eval/scorer` test, unchanged.
 
-### [ ] T-04 — Pure grouping: findings → location groups  (module: server)
-**Status:** ⬜ Not started · **Satisfies:** AC-29, AC-30, AC-32 · **Depends on:** T-03
+### [x] T-04 — Pure grouping: findings → location groups  (module: server)
+**Status:** ✅ Done · **Satisfies:** AC-29, AC-30, AC-32 · **Depends on:** T-03
 - **Scope:** New `modules/multi-agent/grouping.ts` + `modules/multi-agent/types.ts`. `groupByLocation(findings: AttributedFinding[]): LocationGroup[]` where `AttributedFinding` carries the finding **plus its `agentId` and `runId`** (AC-32 — attribution must survive into the grouped output). Grouping is **coordinates only** via T-03's `sameLocation` — title similarity plays **no** part (AC-29). Transitive/union-find chaining (A~B, B~C ⇒ one group) is the rule; document it. Output order must be **stable and deterministic** for identical input (AC-30): sort groups by `(file, min start_line, min end_line)` and findings within a group by `(start_line, end_line, id)` — never rely on `Map` insertion order surviving a repository row-order change. No LLM, no embedding, no DB, no adapter import.
 - **Files owned:** `server/src/modules/multi-agent/grouping.ts`, `server/src/modules/multi-agent/types.ts`
 - **Skills to load:** `onion-architecture`, `typescript-expert`
@@ -353,8 +354,8 @@ flowchart TD
 - **Tests the ACs demand:** AC-29 — two same-location findings with **unrelated titles** land in **one** group (this is the case the retired Jaccard-in-grouping rule made unreachable). AC-30 — repeated calls return identical groups in identical order; and a shuffled-input test producing the same output. AC-32 — every grouped finding carries its `agentId`. Plus: the mock's two `ratelimit.ts:52` findings are **one** group, not two.
 - **Done when:** `pnpm typecheck` clean; the module imports nothing outside `@devdigest/shared` types + `_shared/finding-location.js`.
 
-### [ ] T-05 — Pure similarity: Jaccard + Matched/Divergent/Agreed predicates  (module: server)
-**Status:** ⬜ Not started · **Satisfies:** AC-40, AC-41, AC-42, AC-43 · **Depends on:** T-04
+### [x] T-05 — Pure similarity: Jaccard + Matched/Divergent/Agreed predicates  (module: server)
+**Status:** ✅ Done · **Satisfies:** AC-40, AC-41, AC-42, AC-43 · **Depends on:** T-04
 - **Scope:** New `modules/multi-agent/similarity.ts`. (a) `titleTokens(title)` → case-folded, punctuation-stripped token **set**. (b) `jaccard(a, b)` → `|a∩b| / |a∪b|`; define and document the empty/empty case explicitly (both empty ⇒ return `0`, i.e. no evidence of agreement — do not return `1`). (c) Named constants `DIVERGENT_MAX_J = 0.3` and `AGREED_MIN_J = 0.6` living **next to the predicates**, not at call sites — the spec is explicit that they are guesses expected to be tuned. (d) `isMatched(g)` = `|F| ≥ 2`; `isDivergent(g)` = `|F| ≥ 2 ∧ ∃ cross-agent pair with J ≤ 0.3`; `isAgreed(g)` = `|F| ≥ 2 ∧ ∃ cross-agent pair with J ≥ 0.6`. **`F` = the set of agents contributing ≥1 finding to the group** — an agent contributing two findings counts **once** (AC-35). Pairs are **cross-agent only**: two findings from the same agent never form a pair (AC-35). Divergent/Agreed are **existential over pairs, never aggregate** — a group may satisfy both and appear under both filters (AC-43); do not add a mutual-exclusivity tie-break.
 - **Files owned:** `server/src/modules/multi-agent/similarity.ts`
 - **Skills to load:** `onion-architecture`, `typescript-expert`, `security`
@@ -362,8 +363,8 @@ flowchart TD
 - **Tests the ACs demand:** AC-40 — `|F| ≥ 2` predicate. AC-41/AC-42 — just-above and just-below **each** threshold (`J = 0.3` is Divergent, `0.30001` is not; `J = 0.6` is Agreed, `0.59999` is not — the comparisons are `≤` and `≥`). AC-43 — a three-finding / two-agent fixture whose cross-agent pairwise J spans both thresholds (e.g. `{1.0, 0.077, 0.077}`) shows under **both** Divergent and Agreed. Plus the deliberate `0.3 < J < 0.6` band: Matched only, neither Divergent nor Agreed — **this is correct, not a gap to close.**
 - **Done when:** `pnpm typecheck` clean; both thresholds are exported named constants; zero call-site literals.
 
-### [ ] T-06 — Pure derived multi-run status  (module: server)
-**Status:** ⬜ Not started · **Satisfies:** AC-15, AC-34 · **Depends on:** T-05
+### [x] T-06 — Pure derived multi-run status  (module: server)
+**Status:** ✅ Done · **Satisfies:** AC-15, AC-34 · **Depends on:** T-05
 - **Scope:** New `modules/multi-agent/status.ts`. `deriveStatus(members: { status: string | null }[]) : 'running' | 'done' | 'partial' | 'failed'`. Rules: `running` while **any** member is still running; `done` when every member is `'done'`; `partial` when every member finished and ≥1 failed **and** ≥1 succeeded; `failed` when every member failed. `'cancelled'` and reaped-orphan rows (`ReviewService.reapStaleRuns` rewrites them to `'failed'`, `run.repo.ts:136-143`) are **terminal-and-not-`done`**, i.e. they count as failed members (AC-34). Decide and document the zero-members case (return `'failed'`; a multi-run with no members cannot be `done`). Treat any status that is neither `'running'` nor `'done'` as failed rather than enumerating — new statuses must not silently read as success.
 - **Files owned:** `server/src/modules/multi-agent/status.ts`
 - **Skills to load:** `onion-architecture`, `typescript-expert`
@@ -371,8 +372,8 @@ flowchart TD
 - **Tests the ACs demand:** AC-15 — one fixture per branch (any-running, all-done, mixed, all-failed). AC-34 — a `cancelled` member counts as failed for the derived status.
 - **Done when:** `pnpm typecheck` clean; pure, no imports beyond types.
 
-### [ ] T-07 — Pure estimate: per-agent medians + selection totals  (module: server)
-**Status:** ⬜ Not started · **Satisfies:** AC-9, AC-10, AC-11 · **Depends on:** T-06
+### [x] T-07 — Pure estimate: per-agent medians + selection totals  (module: server)
+**Status:** ✅ Done · **Satisfies:** AC-9, AC-10, AC-11 · **Depends on:** T-06
 - **Scope:** New `modules/multi-agent/estimate.ts`. (a) `estimateForAgent(rows)` — median `duration_ms` and median `cost_usd` over that agent's **last 5 completed (`status = 'done'`) runs**; the repository (T-10) does the workspace-scoped `WHERE`/`ORDER BY`/`LIMIT 5`, this function is pure arithmetic over the rows it is handed. Define the median precisely: sort ascending, odd ⇒ middle, even ⇒ mean of the two middles; compute `duration` and `cost` medians **independently** (they need not come from the same run). Handle `null` `cost_usd` (an unknown-price run) explicitly — exclude nulls from the cost median rather than coercing them to `0`; a run with a duration but no cost still contributes its duration. (b) `estimateTotals(estimates)` — **max** of durations, **sum** of costs. (c) Zero completed runs ⇒ **no estimate** (`null`), which the UI renders as "no history yet", excludes from both totals, and which flips the total's prefix from `≈` to `≥` (AC-11) — return that prefix decision as data (e.g. `{ approx: boolean }`), do not leave it to the UI to re-derive. Fewer than 5 completed runs ⇒ median over what exists; **only zero** triggers the no-history path.
 - **Files owned:** `server/src/modules/multi-agent/estimate.ts`
 - **Skills to load:** `onion-architecture`, `typescript-expert`
@@ -380,8 +381,8 @@ flowchart TD
 - **Tests the ACs demand:** AC-9 — median over fixture rows (odd/even counts, `<5` runs, failed runs excluded). AC-10 — totals are max-duration / sum-cost. AC-11 — a no-history agent yields `null`, is excluded from both totals, and flips `approx` to false.
 - **Done when:** `pnpm typecheck` clean; pure.
 
-### [ ] T-08 — Pure cell builder (severity / did not flag / failed)  (module: server)
-**Status:** ⬜ Not started · **Satisfies:** AC-33, AC-34, AC-35, AC-36 (data side) · **Depends on:** T-07
+### [x] T-08 — Pure cell builder (severity / did not flag / failed)  (module: server)
+**Status:** ✅ Done · **Satisfies:** AC-33, AC-34, AC-35, AC-36 (data side) · **Depends on:** T-07
 - **Scope:** New `modules/multi-agent/cells.ts`. `buildCells(group, members)` → **one cell per member agent of the multi-run, in the members' order** (the same order as the lanes/tabs — the whole value of a matrix is that the reader doesn't re-map columns per row), each in **exactly one of three states**: (a) the agent's severity at that location; (b) `did_not_flag` when that agent's run reached a **terminal** state and contributed no finding to the group; (c) `failed` when its run did not complete successfully — including `cancelled` and reaped orphans (AC-34: **no fourth cell vocabulary**). Two-or-more findings from one agent in one group ⇒ **highest** severity in the cell (AC-35); define the severity ordering as a named constant (`CRITICAL > WARNING > SUGGESTION`) rather than relying on string sort. **No rationale/explanation field exists on a `did_not_flag` cell** (AC-36) — do not add a nullable one "for later"; the spec forbids reserving the space. Grounding-gate-dropped findings are a deliberate Non-goal: such an agent reads `did_not_flag`.
 - **Files owned:** `server/src/modules/multi-agent/cells.ts`
 - **Skills to load:** `onion-architecture`, `typescript-expert`
@@ -389,8 +390,8 @@ flowchart TD
 - **Tests the ACs demand:** AC-33 — a fixture with one flagging, one silent, and one failed agent produces the three states in member order. AC-34 — a `cancelled` row renders as `failed`, not a new label. AC-35 — a two-findings-one-agent fixture shows the **higher** severity and counts once in `F`.
 - **Done when:** `pnpm typecheck` clean; the cell type is a three-member discriminated union — not a string with optional extras.
 
-### [ ] T-09 — Contracts: `RunRequest.agentIds`, `MultiAgentRunView`, `AgentEstimate`  (module: shared → server copy)
-**Status:** ⬜ Not started · **Satisfies:** AC-5, AC-6, AC-14, AC-9 · **Depends on:** T-08
+### [x] T-09 — Contracts: `RunRequest.agentIds`, `MultiAgentRunView`, `AgentEstimate`  (module: shared → server copy)
+**Status:** ✅ Done · **Satisfies:** AC-5, AC-6, AC-14, AC-9 · **Depends on:** T-08
 - **Scope:** Edit **`server/src/vendor/shared/contracts/`** only (T-18 mirrors to the client — deliberately a separate task so the mirror can't be forgotten). (a) `platform.ts:273-277` — add `agentIds: z.array(z.string()).optional()` to `RunRequest`. **Optional and additive**: `{agentId}` and `{all:true}` must keep working byte-for-byte (AC-6). (b) `review-api.ts` — add `MultiAgentRunView` (`id`, `pr_id`, `ran_at`, derived `status`, `members[]`, `groups[]`) where a member carries agent identity (`agent_id` nullable — `agent_runs.agent_id` is `on delete set null`, `runs.ts:13`), `agent_name` nullable, `status`, `score`, `duration_ms`, `cost_usd`, `error`, `run_id`, `findings[]` (AC-14); and a group carries `file`, `start_line`, `end_line`, `label`, `findings[]` (each with its `agent_id` — AC-32) and `cells[]`. (c) `AgentEstimate` (`agent_id`, `duration_ms: nullable`, `cost_usd: nullable`) + the totals shape. **snake_case throughout** — these are wire contracts. Every new field on an existing contract must be `.optional()`/`.nullish()`.
 - **Files owned:** `server/src/vendor/shared/contracts/platform.ts`, `server/src/vendor/shared/contracts/review-api.ts`
 - **Skills to load:** `zod`, `typescript-expert`
@@ -398,8 +399,8 @@ flowchart TD
 - **Tests the ACs demand:** AC-6 is verified at T-17/T-12 (integration). Here: make sure `server/test/contracts.test.ts` still passes.
 - **Done when:** `cd server && pnpm typecheck` clean **and** `pnpm test` green (contract fixtures included). Do **not** touch the client copy in this task.
 
-### [ ] T-10 — `MultiAgentRepository` (create + latest-for-PR + estimate rows)  (module: server)
-**Status:** ⬜ Not started · **Satisfies:** AC-14, AC-16, AC-31 · **Depends on:** T-09
+### [x] T-10 — `MultiAgentRepository` (create + latest-for-PR + estimate rows)  (module: server)
+**Status:** ✅ Done · **Satisfies:** AC-14, AC-16, AC-31 · **Depends on:** T-09
 - **Scope:** New `modules/multi-agent/repository.ts`, class shape `constructor(private db: Db)` mirroring `ReviewRepository`. Three methods: (a) `create(workspaceId, prId)` → insert one `multi_agent_runs` row, return its id. (b) `latestForPull(workspaceId, prId)` → the newest `multi_agent_runs` row for that PR **and** its member `agent_runs` (left-joined to `agents` for the name — the agent may be deleted), each member's `reviews` row and its `findings` (the join chain is `findings.review_id → reviews.id → reviews.run_id`; **`agent_runs` has no direct FK to `findings`** — `server/INSIGHTS.md`). (c) `doneRunsForEstimate(workspaceId, agentIds)` → per agent, the last 5 rows with `status = 'done'`, ordered `ran_at DESC`, returning `duration_ms` + `cost_usd`. **Every method's `.where` must carry `eq(t.<table>.workspaceId, workspaceId)`** (AC-16). Rows out, decisions **not** made here — no grouping, no status derivation, no median (those are T-04..T-08). **No writes to any groups table — groups are computed on read and never persisted (AC-31); do not add a table.**
 - **Files owned:** `server/src/modules/multi-agent/repository.ts`
 - **Skills to load:** `drizzle-orm-patterns`, `postgresql-table-design`, `onion-architecture`, `typescript-expert`, `security`
@@ -407,8 +408,8 @@ flowchart TD
 - **Tests the ACs demand:** AC-16 — an integration test requesting another workspace's PR gets a not-found (lands at T-15 once the route exists).
 - **Done when:** `pnpm typecheck` clean; every `.where` in the file names `workspaceId`; no `multi_agent_runs.status` column is read or written.
 
-### [ ] T-11 — `createAgentRun` accepts `multiAgentRunId`  (module: server)
-**Status:** ⬜ Not started · **Satisfies:** AC-13 · **Depends on:** T-10
+### [x] T-11 — `createAgentRun` accepts `multiAgentRunId`  (module: server)
+**Status:** ✅ Done · **Satisfies:** AC-13 · **Depends on:** T-10
 - **Scope:** Add an optional `multiAgentRunId?: string | null` to `createAgentRun`'s `values` in `repository/run.repo.ts:148-171` and write it on insert. Then add the **matching signature to the `ReviewRepository` class wrapper** in `modules/reviews/repository.ts` — the two are independent declarations and a mismatch errors at the *call site*, not the definition. Default `null` so existing callers (CI runs, single-agent runs) are unchanged (AC-6/AC-13: runs not started from the picker carry no membership).
 - **Files owned:** `server/src/modules/reviews/repository/run.repo.ts`, `server/src/modules/reviews/repository.ts`
 - **Skills to load:** `drizzle-orm-patterns`, `onion-architecture`, `typescript-expert`
@@ -416,8 +417,8 @@ flowchart TD
 - **Tests the ACs demand:** covered by T-12's integration test.
 - **Done when:** `pnpm typecheck` clean; existing `run-executor-*.it.test.ts` still green.
 
-### [ ] T-12 — `ReviewService`: resolve `agentIds` + create/bind the multi-run  (module: server)
-**Status:** ⬜ Not started · **Satisfies:** AC-5, AC-6, AC-13, AC-26 · **Depends on:** T-11
+### [x] T-12 — `ReviewService`: resolve `agentIds` + create/bind the multi-run  (module: server)
+**Status:** ✅ Done · **Satisfies:** AC-5, AC-6, AC-13, AC-26 · **Depends on:** T-11
 - **Scope:** (a) `resolveTargets` (`service.ts:46-57`) gains an `agentIds?: string[]` branch: fetch each agent by id **workspace-scoped** (`this.agents.getById(workspaceId, id)`), preserving the requested order, `NotFoundError` on any miss. Precedence: `agentIds` (non-empty) wins; `all` and `agentId` keep their exact current behaviour; the existing `invalid_run_request` 400 still fires when nothing is provided. (b) `runReview` gains an optional `multiAgent: boolean` (or takes a pre-created id): when the run came from the picker, create **one** `multi_agent_runs` row via `container.multiAgentRepo.create(workspaceId, prId)` **before** the `createAgentRun` loop, and pass its id into every `createAgentRun` call. **N = 1 is still a multi-agent run of one** (AC-5). Legacy `{agentId}`/`{all:true}` bodies create **no** multi-run and bind nothing (AC-6). Everything else is untouched: fan-out, per-agent contexts, the fire-and-forget `executeRuns`, the SSE bus. **Do not touch `ReviewRunExecutor`** — `failAll`'s all-or-nothing pre-work behaviour is deliberately specified-as-is (AC-26); every member lane failing together is the *correct* outcome and needs no code, only the derived status from T-06.
 - **Files owned:** `server/src/modules/reviews/service.ts`
 - **Skills to load:** `fastify-best-practices`, `onion-architecture`, `zod`, `security`, `typescript-expert`
@@ -425,8 +426,8 @@ flowchart TD
 - **Tests the ACs demand:** AC-5 — `fastify.inject` with N ≥ 1 `agentIds` creates one multi-run and exactly N bound `agent_runs` (incl. the N = 1 case). AC-6 — both legacy bodies still succeed and leave `multi_agent_run_id` null. AC-13 — read the row back. AC-26 — force a diff-load failure and assert every member fails and the derived status is `failed`.
 - **Done when:** `pnpm typecheck` clean; full `server` suite green (re-run once if a Testcontainers `.it.test.ts` flakes — see the insight).
 
-### [ ] T-13 — `MultiAgentService.latestForPull` (assemble members + groups)  (module: server)
-**Status:** ⬜ Not started · **Satisfies:** AC-14, AC-15, AC-30, AC-31, AC-32, AC-33, AC-35 · **Depends on:** T-12
+### [x] T-13 — `MultiAgentService.latestForPull` (assemble members + groups)  (module: server)
+**Status:** ✅ Done · **Satisfies:** AC-14, AC-15, AC-30, AC-31, AC-32, AC-33, AC-35 · **Depends on:** T-12
 - **Scope:** New `modules/multi-agent/service.ts`. `latestForPull(workspaceId, prId)`: fetch via `MultiAgentRepository.latestForPull` → derive status (T-06) → flatten members' findings into `AttributedFinding[]` → `groupByLocation` (T-04) → `buildCells` per group (T-08) → classify each group's `matched`/`divergent`/`agreed` flags (T-05) → **map everything through an explicit DTO mapper to the snake_case `MultiAgentRunView`** and return. The PR must be workspace-scoped (`NotFoundError` otherwise, AC-16). A group's `label` is the shortest/first finding title in the group — a display convenience with no AC riding on it; do **not** invent a synthesised label and do **not** call a model for one. Nothing is persisted (AC-31). If the PR has no multi-agent run: return "no run" cleanly (null/404 — pick one and put it in the contract); **do not fall back to unrelated single-agent runs from the PR's history.**
 - **Files owned:** `server/src/modules/multi-agent/service.ts`
 - **Skills to load:** `fastify-best-practices`, `onion-architecture`, `zod`, `security`, `typescript-expert`
@@ -434,8 +435,8 @@ flowchart TD
 - **Tests the ACs demand:** AC-14 — `fastify.inject` returns every member's identity/status/score/duration/cost/error/run id/findings (lands at T-15). AC-31 — repeated reads agree and no new table is written. AC-32 — every grouped finding carries its agent id.
 - **Done when:** `pnpm typecheck` clean; grep the file for `$inferSelect` / raw table rows on a return path → zero hits.
 
-### [ ] T-14 — `MultiAgentService.estimates`  (module: server)
-**Status:** ⬜ Not started · **Satisfies:** AC-9, AC-10, AC-11, AC-12 · **Depends on:** T-13
+### [x] T-14 — `MultiAgentService.estimates`  (module: server)
+**Status:** ✅ Done · **Satisfies:** AC-9, AC-10, AC-11, AC-12 · **Depends on:** T-13
 - **Scope:** Add `estimates(workspaceId, agentIds?)` to `MultiAgentService`: fetch the done-run rows (T-10c, workspace-scoped) → `estimateForAgent` per agent (T-07) → map to the snake_case `AgentEstimate[]` DTO. Return an estimate entry for **every** requested/workspace agent, with `null` duration/cost for the no-history case (AC-11) — do not omit the entry, the UI needs the row to render "no history yet". Totals (AC-10) are computed **client-side from the selection** (the selection lives in the UI and changes per checkbox click; a round trip per tick would be absurd) using the same pure rule — so T-07's `estimateTotals` must be reachable from the client too, or reimplemented once in `client/.../helpers.ts` and unit-tested there. **Choose the second**: the server module is not importable from the client (it isn't `shared`), so mirror the max/sum rule in a client helper and test it there. **Zero model calls** (AC-12): this method touches only the DB.
 - **Files owned:** `server/src/modules/multi-agent/service.ts` (append)
 - **Skills to load:** `fastify-best-practices`, `onion-architecture`, `zod`, `security`, `typescript-expert`
@@ -443,8 +444,8 @@ flowchart TD
 - **Tests the ACs demand:** AC-12 — an integration test registering a spy `MockLLMProvider` **under every provider key** and asserting zero calls after hitting the estimate endpoint (lands at T-15).
 - **Done when:** `pnpm typecheck` clean; no `container.llm` reference anywhere in `modules/multi-agent/`.
 
-### [ ] T-15 — `modules/multi-agent/routes.ts` + plugin registration  (module: server)
-**Status:** ⬜ Not started · **Satisfies:** AC-14, AC-16, AC-12, AC-30 · **Depends on:** T-14
+### [x] T-15 — `modules/multi-agent/routes.ts` + plugin registration  (module: server)
+**Status:** ✅ Done · **Satisfies:** AC-14, AC-16, AC-12, AC-30 · **Depends on:** T-14
 - **Scope:** New `modules/multi-agent/routes.ts`, mirroring `reviews/routes.ts`'s shape (`withTypeProvider<ZodTypeProvider>`, `getContext(container, req)` first line of every handler, `IdParams` from `_shared/schemas.js`). **Exactly two read endpoints — the spec caps it at two:**
   - `GET /pulls/:id/multi-agent-run` → `MultiAgentService.latestForPull`. The **latest** run only; **no** `?runId=`, no list, no history param (Non-goal).
   - `GET /multi-agent/estimates` → `MultiAgentService.estimates`.
@@ -455,8 +456,8 @@ flowchart TD
 - **Tests the ACs demand:** AC-14 — the read returns members with identity/status/score/duration/cost/error/run id/findings. AC-16 — another workspace's PR → not-found. AC-12 + AC-30 — a spy mock registered under **every** provider key (`overrides.llm = { openai: spy, anthropic: spy, openrouter: spy }`) records **zero** calls after hitting both endpoints.
 - **Done when:** `pnpm typecheck` clean; `curl localhost:3001/pulls/<id>/multi-agent-run` returns real snake_case JSON (**not** just a green typecheck — the insight above is explicit that the first real-JSON inspection is part of "done").
 
-### [ ] T-16 — Container wiring: `multiAgentRepo`  (module: server)
-**Status:** ⬜ Not started · **Satisfies:** AC-14 (enabler) · **Depends on:** T-15
+### [x] T-16 — Container wiring: `multiAgentRepo`  (module: server)
+**Status:** ✅ Done (pulled forward ahead of T-13..T-15, user-approved deviation — unblocked T-12's `container.multiAgentRepo` call site so `pnpm typecheck` is clean) · **Satisfies:** AC-14 (enabler) · **Depends on:** T-15
 - **Scope:** Add `private _multiAgentRepo?: MultiAgentRepository` + a lazy getter `get multiAgentRepo()` to `platform/container.ts`, exactly mirroring `evalRepo`/`briefRepo`/`intentRepo` (`container.ts:140-144`). This is the cross-entity repository pattern from `server/CLAUDE.md` — `ReviewService` (T-12) reaches it via `container.multiAgentRepo` rather than importing another module's folder. Verify T-12's call site now resolves against the real getter rather than any placeholder.
 - **Files owned:** `server/src/platform/container.ts`
 - **Skills to load:** `onion-architecture`, `typescript-expert`
@@ -464,8 +465,8 @@ flowchart TD
 - **Tests the ACs demand:** none.
 - **Done when:** `pnpm typecheck` clean; full `server` suite green.
 
-### [ ] T-17 — `POST /pulls/:id/review` accepts `agentIds`  (module: server)
-**Status:** ⬜ Not started · **Satisfies:** AC-5, AC-6 · **Depends on:** T-16
+### [x] T-17 — `POST /pulls/:id/review` accepts `agentIds`  (module: server)
+**Status:** ✅ Done · **Satisfies:** AC-5, AC-6 · **Depends on:** T-16
 - **Scope:** In `reviews/routes.ts:27-44`, thread `body.agentIds` into `service.resolveTargets` and signal `runReview` that this is a picker-started run. Keep the handler's tolerant body parse exactly as it is (`RunRequest.parse(req.body ?? {})`, both legacy fields still optional, empty body still OK) and the existing per-route rate limit (`max: 10, timeWindow: '1 minute'`) untouched — one call can still fan out to N expensive LLM runs. The route stays the **only** run trigger: **do not add a separate "start multi-agent run" route** (explicitly rejected by the spec — it would duplicate target resolution and fan-out for no behavioural gain).
 - **Files owned:** `server/src/modules/reviews/routes.ts`
 - **Skills to load:** `fastify-best-practices`, `onion-architecture`, `zod`, `security`, `typescript-expert`
@@ -473,8 +474,8 @@ flowchart TD
 - **Tests the ACs demand:** AC-5 — `inject` with `{agentIds:[a,b]}` → one multi-run, two bound runs. AC-6 — `{agentId}` and `{all:true}` both still succeed with `multi_agent_run_id` null.
 - **Done when:** `pnpm typecheck` clean; full `server` suite green; **the server half of the plan is complete and independently verifiable via `curl` before any client work starts.**
 
-### [ ] T-18 — Mirror the contracts into the client's vendored copy  (module: client)
-**Status:** ⬜ Not started · **Satisfies:** AC-5, AC-14, AC-9 (enablers) · **Depends on:** T-17
+### [x] T-18 — Mirror the contracts into the client's vendored copy  (module: client)
+**Status:** ✅ Done · **Satisfies:** AC-5, AC-14, AC-9 (enablers) · **Depends on:** T-17
 - **Scope:** Copy T-09's contract additions **verbatim** into `client/src/vendor/shared/contracts/platform.ts` and `review-api.ts`. This is a mechanical mirror; the two vendored copies must not diverge.
 - **Files owned:** `client/src/vendor/shared/contracts/platform.ts`, `client/src/vendor/shared/contracts/review-api.ts`
 - **Skills to load:** `zod`, `typescript-expert`
@@ -482,8 +483,8 @@ flowchart TD
 - **Tests the ACs demand:** none.
 - **Done when:** `cd client && pnpm typecheck` clean; `diff` of the two vendored contract files shows no drift in the touched schemas.
 
-### [ ] T-19 — `lib/hooks/multi-agent.ts` + `useRunReview({ agentIds })`  (module: client)
-**Status:** ⬜ Not started · **Satisfies:** AC-5, AC-14, AC-9, AC-24 (enablers) · **Depends on:** T-18
+### [x] T-19 — `lib/hooks/multi-agent.ts` + `useRunReview({ agentIds })`  (module: client)
+**Status:** ✅ Done · **Satisfies:** AC-5, AC-14, AC-9, AC-24 (enablers) · **Depends on:** T-18
 - **Scope:** (a) New `client/src/lib/hooks/multi-agent.ts`: `useLatestMultiAgentRun(prId)` → `api.get<MultiAgentRunView>('/pulls/:id/multi-agent-run')`, and `useAgentEstimates()` → `api.get<AgentEstimate[]>('/multi-agent/estimates')`. `queryKey`s are `["multi-agent-run", prId]` / `["agent-estimates"]` — the `["resource-type", id]` convention so `invalidateQueries` works. (b) Extend `useRunReview` (`lib/hooks/reviews.ts:136-148`) with `agentIds?: string[]`, spread the same omit-when-empty way as the existing fields; invalidate `["multi-agent-run", prId]` on success alongside `["reviews", prId]`. **No polling**: `useLatestMultiAgentRun` must **not** set `refetchInterval` — live lane status comes from the existing SSE stream (`useRunEvents`), per the Non-functional requirement. All calls go through `src/lib/api.ts`; never `fetch` in a component.
 - **Files owned:** `client/src/lib/hooks/multi-agent.ts`, `client/src/lib/hooks/reviews.ts`
 - **Skills to load:** `react-best-practices`, `react-component-architecture`, `next-best-practices`, `security`, `typescript-expert`
@@ -491,8 +492,8 @@ flowchart TD
 - **Tests the ACs demand:** none directly (the hooks are exercised by T-24..T-27's RTL tests with mocked responses).
 - **Done when:** `pnpm typecheck` clean; grep the new hook file for `refetchInterval` → zero hits.
 
-### [ ] T-20 — Promote `RunTraceDrawer` to `src/components/`  (module: client)
-**Status:** ⬜ Not started · **Satisfies:** AC-27 · **Depends on:** T-19
+### [x] T-20 — Promote `RunTraceDrawer` to `src/components/`  (module: client)
+**Status:** ✅ Done · **Satisfies:** AC-27 · **Depends on:** T-19
 - **Scope:** Move the whole `RunTraceDrawer/` folder from `app/repos/[repoId]/pulls/[number]/_components/` to `client/src/components/RunTraceDrawer/` and update every import (the PR page at `app/repos/[repoId]/pulls/[number]/page.tsx`, and its co-located test). This is `client/CLAUDE.md`'s promotion rule: `_components/` is route-private, and the drawer is about to be used from a second, unrelated route. **A move and nothing else** — the drawer is otherwise **unmodified** (explicit Non-goal). It already does everything AC-27 needs: the `running` prop defaults it to the Live-log tab (`RunTraceDrawer.tsx:45`).
 - **Files owned:** `client/src/components/RunTraceDrawer/**` (moved), `client/src/app/repos/[repoId]/pulls/[number]/page.tsx` (import line)
 - **Skills to load:** `react-component-architecture`, `next-best-practices`, `typescript-expert`
@@ -500,8 +501,8 @@ flowchart TD
 - **Tests the ACs demand:** the existing `RunTraceDrawer.test.tsx` moves with it and must stay green — it is the regression guard proving the move changed nothing.
 - **Done when:** `pnpm typecheck` + `pnpm build` clean; `RunTraceDrawer.test.tsx` green at its new path; `git diff` shows **only** path/import changes inside the moved folder.
 
-### [ ] T-21 — `AgentRunPicker` shared component  (module: client)
-**Status:** ⬜ Not started · **Satisfies:** AC-1, AC-2, AC-3, AC-4, AC-8, AC-11 · **Depends on:** T-20
+### [x] T-21 — `AgentRunPicker` shared component  (module: client)
+**Status:** ✅ Done · **Satisfies:** AC-1, AC-2, AC-3, AC-4, AC-8, AC-11 · **Depends on:** T-20
 - **Scope:** New `client/src/components/agentRunPicker/` (`AgentRunPicker.tsx`, `constants.ts`, `helpers.ts`, `styles.ts`, `index.ts` — barrel re-exports the main component only). Shared from the start: both the PR dropdown (T-22) and Configure run (T-24) render it. Renders **one checkbox per workspace agent**, each with name + time hint from `useAgentEstimates` (AC-1); a **"Clear"** action unchecking everything (AC-3); a primary button labelled **"Run multi-agent review (N)"**, **disabled while N = 0** (AC-2); a **"Configure agents…"** footer link. **No "run all" and no single-agent action anywhere** (AC-4) — running one agent is checking one box. `helpers.ts` holds the pure `estimateTotals` mirror (max duration / sum cost, AC-10) + the `≈`/`≥` prefix rule (AC-11) with **unit tests** — it is the client-side twin of T-07 and the only place those two rules live client-side. A checked agent with no history renders "no history yet" and is excluded from both totals (AC-11). Zero agents in the workspace → the existing "No agents yet — create one" affordance (`RunReviewDropdown.tsx:61`), not an empty checkbox list. Selection state is the picker's own; the parent gets `agentIds` via callback. Icon: use the existing static `Cpu` — **grep `client/src/vendor/ui/icons.tsx`'s export list before wiring any icon name.**
 - **Files owned:** `client/src/components/agentRunPicker/**`
 - **Skills to load:** `react-best-practices`, `react-component-architecture`, `next-best-practices`, `security`, `typescript-expert`
@@ -509,8 +510,8 @@ flowchart TD
 - **Tests the ACs demand:** AC-1 — a checkbox per agent, with name + time hint, plus Clear and the Configure-agents link. AC-2 — the label reads "(N)" and the button is disabled at N = 0. AC-3 — Clear unchecks everything. AC-4 — **assert no "run all" / single-agent control renders** (a negative assertion). AC-11 — a no-history agent shows "no history yet" and the total is prefixed `≥`. Unit-test `estimateTotals` in `helpers.ts` (AC-10). **Use `fireEvent`, never `user-event`** — it isn't a dependency and takes the whole file down at resolve time.
 - **Done when:** `pnpm typecheck` + `pnpm build` clean; `grep -ri "run all" client/src/components/agentRunPicker/` → zero hits.
 
-### [ ] T-22 — `RunReviewDropdown` renders the picker  (module: client)
-**Status:** ⬜ Not started · **Satisfies:** AC-1, AC-2, AC-3, AC-4, AC-5 · **Depends on:** T-21
+### [x] T-22 — `RunReviewDropdown` renders the picker  (module: client)
+**Status:** ✅ Done · **Satisfies:** AC-1, AC-2, AC-3, AC-4, AC-5 · **Depends on:** T-21
 - **Scope:** Replace the dropdown's **contents** (`RunReviewDropdown.tsx:63-82` — the "Run all enabled agents" item + the per-agent item list) with `<AgentRunPicker/>`. **The trigger button is unchanged**: same label, same position, no second run affordance next to the existing one. On run, call `useRunReview({ prId, agentIds })` and keep handing `runIds` up via the existing `onRunsStarted` so the parent's SSE subscription keeps working untouched. Keep the `warnMerged` muted-warning row. The `kick({all:true})` and `kick({agentId})` paths disappear **from this component** — the server still accepts both (AC-6), they simply have no UI here any more.
 - **Files owned:** `client/src/app/repos/[repoId]/pulls/[number]/_components/RunReviewDropdown/**`
 - **Skills to load:** `react-best-practices`, `react-component-architecture`, `next-best-practices`, `security`, `typescript-expert`
@@ -518,8 +519,8 @@ flowchart TD
 - **Tests the ACs demand:** the existing `RunReviewDropdown.test.tsx` must be **updated** — it asserts the old "Run all" item and will now fail correctly. New assertions: AC-1/2/3/4 through the dropdown, and that starting a run posts `agentIds`.
 - **Done when:** `pnpm typecheck` + `pnpm build` clean; `RunReviewDropdown.test.tsx` green against the new contents; the dropdown opens and starts a 2-agent run in the browser.
 
-### [ ] T-23 — Sidebar: `GLOBAL` group + Multi-Agent Review item  (module: client)
-**Status:** ⬜ Not started · **Satisfies:** AC-28 · **Depends on:** T-22
+### [x] T-23 — Sidebar: `GLOBAL` group + Multi-Agent Review item  (module: client)
+**Status:** ✅ Done · **Satisfies:** AC-28 · **Depends on:** T-22
 - **Scope:** Add a **new `GLOBAL` section** to `NAV` (`client/src/vendor/ui/nav.ts:21-38`) — it does not exist today — containing **one** item: `{ key: "multi-agent", label: "Multi-Agent Review", icon: <verified name>, href: "/multi-agent-review", gKey: "m" }`. Add the matching `g m` entry to `SHORTCUTS`. **Only this item.** The mock's `GLOBAL` group also shows Memory / Agent Performance / CI Runs — those are other lessons and out of scope; adding them would ship dead links. `activeKeyFor` already returns `"multi-agent"` for `/multi-agent…` (`app-shell/helpers.ts:28`) — **verify it, don't duplicate it.** Confirm the icon name exists in `client/src/vendor/ui/icons.tsx`'s export list before wiring it (`Users` is the mock's shape; `Cpu`/`Workflow` are known-registered fallbacks).
 - **Files owned:** `client/src/vendor/ui/nav.ts`
 - **Skills to load:** `react-component-architecture`, `next-best-practices`, `typescript-expert`
@@ -527,17 +528,18 @@ flowchart TD
 - **Tests the ACs demand:** AC-28 is verified by **manual click-through from the sidebar** (per the AC itself).
 - **Done when:** `pnpm build` clean; clicking **Multi-Agent Review** in the sidebar lands on `/multi-agent-review` and the item highlights.
 
-### [ ] T-24 — `/multi-agent-review` route: empty state + Configure run  (module: client)
-**Status:** ⬜ Not started · **Satisfies:** AC-7, AC-8, AC-11, AC-17, AC-18 · **Depends on:** T-23
+### [x] T-24 — `/multi-agent-review` route: empty state + Configure run  (module: client)
+**Status:** ✅ Done · **Satisfies:** AC-7, AC-8, AC-11, AC-17, AC-18 · **Depends on:** T-23
 - **Scope:** New `client/src/app/multi-agent-review/page.tsx` + `_components/ConfigureRun/`. The page is **global but always PR-scoped**: `/multi-agent-review?pr=<id>`. No `?pr` → the **"Pick a pull request first"** empty state, a PR picker, **no agent list, no estimate, no run button** (AC-7, AC-17). PR chosen → `<AgentRunPicker/>` (T-21) with icon, name, one-line gist (= `Agent.description`), checkbox, estimate, plus a **"Select all"** action (AC-8) — note this is Configure-run's own affordance, distinct from the forbidden "run all" *run* action (AC-4). With a `?pr` present, render the **latest** multi-agent run (AC-18) and offer **no navigation to earlier runs** — no history list, no run switcher (Non-goal). PR has no multi-run yet → an empty state pointing at Configure run; **never** fall back to unrelated single-agent runs from the PR's history. Next.js 15: `searchParams` is **async** in server components; this page is a client component (`"use client"`) using `useSearchParams`, which **requires a `<Suspense>` boundary** or the route bails out to CSR.
 - **Files owned:** `client/src/app/multi-agent-review/page.tsx`, `client/src/app/multi-agent-review/_components/ConfigureRun/**`
 - **Skills to load:** `react-best-practices`, `react-component-architecture`, `next-best-practices`, `security`, `typescript-expert`
 - **Insights to apply:** `client/INSIGHTS.md` — (a) *keep one render path; don't early-return a stripped layout per edge state* — vary only the content inside the card area, or the page chrome vanishes. (b) *`AppShell` calls `useRouter()` and crashes RTL* — mock it away in the test file. (c) *check `helpers.ts` and `messages/en/` before wiring a new route* — `activeKeyFor` is already pre-wired here (T-23), which is exactly that pattern. (d) Container/Presenter split is mandatory for data-fetching components: container fetches + guards, presenter takes typed props.
 - **Tests the ACs demand:** AC-7 — no PR selected ⇒ empty state and **no agent list**. AC-8 — PR selected ⇒ every agent with gist/checkbox/estimate + "Select all". AC-11 — RTL for the no-history agent. AC-17 — no `?pr` ⇒ "Pick a pull request first". AC-18 — RTL + manual: latest run renders, no earlier-run navigation exists.
 - **Done when:** `pnpm typecheck` + `pnpm build` clean; both states render in the browser; no `useSearchParams` Suspense warning in the console.
+- **Note (T-24b):** AC-8's "Select all" affordance could not be built here without editing `AgentRunPicker.tsx` (T-21's file), which held selection state entirely internally with no prop for a parent to select every agent — a genuine cross-task file-scope conflict, not an omission (see `SPEC-05-overnight-decisions.md` D-8). It was completed by the **T-24b** scope amendment: `AgentRunPicker` gained an optional `showSelectAll` prop (default `false`, byte-identical behaviour when omitted — T-22's PR dropdown is unaffected), and `ConfigureRun.tsx` passes `showSelectAll` to render the action. AC-8 is satisfied as of T-24b, not T-24 alone.
 
-### [ ] T-25 — Results — Columns mode (lanes)  (module: client)
-**Status:** ⬜ Not started · **Satisfies:** AC-19, AC-20, AC-24, AC-25, AC-27 · **Depends on:** T-24
+### [x] T-25 — Results — Columns mode (lanes)  (module: client)
+**Status:** ✅ Done · **Satisfies:** AC-19, AC-20, AC-24, AC-25, AC-27 · **Depends on:** T-24
 - **Scope:** New `_components/ResultsColumns/`. A **two-mode switcher** (Columns | Tabs) over the **same** `MultiAgentRunView` data (AC-19). Columns: **one column per member agent** — header with score ring + duration + cost, a stack of finding cards (severity icon, title, `file.ts:line` monospace, severity-coloured left border), footer with **"View trace"** + the finding count (AC-20). Header shows **live status while in flight, from the existing SSE stream via `useRunEvents` — no polling loop** (AC-24). A **failed** member: status failed + the run's recorded `error` text, **no score ring**, **keeps "View trace"**, and the other lanes are visually unaffected (AC-25). A member whose agent was deleted (`agent_id` null) renders from the run row's own persisted provider/model/score, labelled as a removed agent — **do not crash on a null agent**. "View trace" mounts the **unmodified** promoted `RunTraceDrawer` (T-20) with that member's `runId` and `running={status === 'running'}` so it defaults to Live log while in flight (AC-27). Context strip: agent count · total duration · total cost — **not** the mock's "fan-out via worktrees" (runs fan out in-process; no worktree is involved).
 - **Files owned:** `client/src/app/multi-agent-review/_components/ResultsColumns/**`
 - **Skills to load:** `react-best-practices`, `react-component-architecture`, `next-best-practices`, `security`, `typescript-expert`
@@ -545,8 +547,8 @@ flowchart TD
 - **Tests the ACs demand:** AC-19 — both modes render from one fixture. AC-20 — a lane's ring/duration/cost/cards/footer. AC-24 — RTL with a **mocked event stream** shows live status. AC-25 — RTL: failed lane shows the error, no ring, keeps View trace; + an integration test that siblings still complete. AC-27 — RTL asserting the shared drawer mounts **with the run's id**.
 - **Done when:** `pnpm typecheck` + `pnpm build` clean; **the network panel shows no repeated fetch while a run is in flight** (the Non-functional live-updates check).
 
-### [ ] T-26 — Results — Tabs mode + finding detail + actions  (module: client)
-**Status:** ⬜ Not started · **Satisfies:** AC-21, AC-22, AC-23, AC-27 · **Depends on:** T-25
+### [x] T-26 — Results — Tabs mode + finding detail + actions  (module: client)
+**Status:** ✅ Done · **Satisfies:** AC-21, AC-22, AC-23, AC-27 · **Depends on:** T-25
 - **Scope:** New `_components/ResultsTabs/`. **One tab per member agent** with a score badge; the active tab shows an **agent summary card** (score ring, name, prose verdict, "View trace" + duration/cost) and **finding cards expandable to their confidence and suggested fix** (AC-21). An expanded finding renders **exactly three actions — Accept, Dismiss, "Turn into eval case"** — and renders **neither `Learn` nor "Reply to author"** in **any** state: **not disabled, not "coming soon", absent from the DOM entirely** (AC-22). `actOnFinding` supports only accept/dismiss and throws `invalid_action` for anything else; there is no backend for the other two. Accept/Dismiss reuse the existing `useFindingAction` routes. "Turn into eval case" reuses the **existing capture path** (AC-23), not a new one: `writeEvalPrefill(...)` + `router.push("/agents/:agentId?tab=evals&prefill=1")` with the shared helpers from `client/src/lib/eval-capture.ts` (`slugifyTitle` / `sliceDiffToFile` / `expectedFromFinding`) — see `FindingsPanel.tsx:113-144` for the exact shape, including its **fail-closed** guard (no handler when the agent no longer exists). **Agent-authored prose (explanation, suggested fix) renders through `@devdigest/ui`'s shared `Markdown`** — never `dangerouslySetInnerHTML`.
 - **Files owned:** `client/src/app/multi-agent-review/_components/ResultsTabs/**`
 - **Skills to load:** `react-best-practices`, `react-component-architecture`, `next-best-practices`, `security`, `typescript-expert`
@@ -554,8 +556,8 @@ flowchart TD
 - **Tests the ACs demand:** AC-21 — a tab's badge/summary card/expandable finding with confidence + suggested fix. AC-22 — **assert `Learn` and `Reply to author` are absent from the DOM** in both collapsed and expanded states (a negative assertion, and the AC names it explicitly). AC-23 — activating it calls the shared capture path with the right prefill + push target. AC-27 — the drawer mounts with the run id.
 - **Done when:** `pnpm typecheck` + `pnpm build` clean; `grep -ri "Learn\|Reply to author" client/src/app/multi-agent-review/` → zero rendering hits.
 
-### [ ] T-27 — "Findings by location" matrix + 4-state filter  (module: client)
-**Status:** ⬜ Not started · **Satisfies:** AC-33, AC-36, AC-37, AC-38, AC-39, AC-40, AC-41, AC-42, AC-43 · **Depends on:** T-26
+### [x] T-27 — "Findings by location" matrix + 4-state filter  (module: client)
+**Status:** ✅ Done · **Satisfies:** AC-33, AC-36, AC-37, AC-38, AC-39, AC-40, AC-41, AC-42, AC-43 · **Depends on:** T-26
 - **Scope:** New `_components/FindingsByLocation/`, rendered under **both** modes. It is a **matrix**: one row per location group, **one column per member agent, in the same order as the lanes/tabs above** (AC-33) — the server already sends cells in member order (T-08); render them in the order received, do **not** re-sort or build a per-group column set. Each cell shows exactly one of three states: severity · "did not flag" · "failed" (AC-33/AC-34). **No explanatory sentence beneath a "did not flag" cell** — the cell contains only the label; **reserve no space and no nullable field** (AC-36). **The block does not render at all while any member run is non-terminal**; it renders once every member has finished with **any** status (AC-37) — and **only this block waits**; the lanes above keep streaming throughout. A **four-state filter — All · Matched · Divergent · Agreed** (AC-38), replacing the mock's two-state "Show only conflicts" toggle. **All is the default** and shows every group (AC-39); the block is **not** pre-filtered to disagreement. Matched/Divergent/Agreed read the server-computed flags (T-05) — **do not reimplement Jaccard client-side**. A group may appear under **both** Divergent and Agreed (AC-43) — that is honest, not a bug to dedupe. Groups whose only cross-agent pairs sit at `0.3 < J < 0.6` appear under **Matched only** — deliberate, **do not widen a threshold to close the band**. Empty states: all members done with zero findings ⇒ the block's empty state; one member checked ⇒ every group has `|F| = 1`, so Matched/Divergent/Agreed are all empty and only All shows rows — **correct, not a bug.** Block heading = the single i18n key from T-28.
 - **Files owned:** `client/src/app/multi-agent-review/_components/FindingsByLocation/**`
 - **Skills to load:** `react-best-practices`, `react-component-architecture`, `next-best-practices`, `security`, `typescript-expert`
@@ -563,8 +565,8 @@ flowchart TD
 - **Tests the ACs demand:** AC-33 — column order matches the lanes; the three cell states from a one-flagging/one-silent/one-failed fixture. AC-36 — the cell contains **only** the label. AC-37 — RTL with **one member still running** ⇒ the block is absent from the DOM. AC-38/39 — the four-state filter; All shows every group. AC-40/41/42/43 — the predicates are unit-tested server-side (T-05); here assert the filter **routes rows by the server's flags**, incl. a group appearing under both Divergent and Agreed.
 - **Done when:** `pnpm typecheck` + `pnpm build` clean; `grep -ri "jaccard\|0\.3\|0\.6" client/src/app/multi-agent-review/_components/FindingsByLocation/` → zero threshold literals (they live server-side next to the predicate).
 
-### [ ] T-28 — i18n `multiAgent.json`  (module: client)
-**Status:** ⬜ Not started · **Satisfies:** AC-1..AC-43 (copy) · **Depends on:** T-27
+### [x] T-28 — i18n `multiAgent.json`  (module: client)
+**Status:** ✅ Done · **Satisfies:** AC-1..AC-43 (copy) · **Depends on:** T-27
 - **Scope:** New `client/messages/en/multiAgent.json` with every string this feature introduces: the picker (header, Clear, "Run multi-agent review (N)", "Configure agents…", "no history yet"), Configure run ("Run a Multi-Agent Review", "Pick a pull request first", "Select all"), the results page (Columns/Tabs, "View trace", failed/removed-agent labels), and the block (**`byLocation.title` = "Findings by location"**, All/Matched/Divergent/Agreed, "did not flag", "failed", empty state). **The block's title is the open `[NEEDS CLARIFICATION]` — one key, copy only, no behaviour.** Ship the working title; renaming it later is a one-line JSON edit. **Do not** add a second key, a fallback, or a TODO branch for it. Register the namespace wherever the other `messages/en/*.json` files are registered. Note the real path is `client/messages/en/`, **not** `client/src/messages/en/`.
 - **Files owned:** `client/messages/en/multiAgent.json` (+ the namespace registration file)
 - **Skills to load:** `next-best-practices`, `react-component-architecture`, `typescript-expert`

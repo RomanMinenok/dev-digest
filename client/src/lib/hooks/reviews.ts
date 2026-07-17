@@ -131,18 +131,21 @@ export interface RunReviewInput {
   prId: string;
   agentId?: string;
   all?: boolean;
+  agentIds?: string[];
 }
 
 export function useRunReview() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ prId, agentId, all }: RunReviewInput) =>
+    mutationFn: ({ prId, agentId, all, agentIds }: RunReviewInput) =>
       api.post<ReviewRunResponse>(`/pulls/${prId}/review`, {
         ...(agentId ? { agentId } : {}),
         ...(all ? { all } : {}),
+        ...(agentIds && agentIds.length > 0 ? { agentIds } : {}),
       }),
     onSuccess: (_d, { prId }) => {
       qc.invalidateQueries({ queryKey: ["reviews", prId] });
+      qc.invalidateQueries({ queryKey: ["multi-agent-run", prId] });
     },
   });
 }

@@ -33,12 +33,19 @@ export default async function reviewsRoutes(appBase: FastifyInstance) {
     const targets = await service.resolveTargets(workspaceId, {
       ...(body.agentId !== undefined ? { agentId: body.agentId } : {}),
       ...(body.all !== undefined ? { all: body.all } : {}),
+      ...(body.agentIds !== undefined ? { agentIds: body.agentIds } : {}),
     });
+    // A non-empty agentIds means this run was started from the multi-agent
+    // picker (AC-5) — signal runReview to create a multi_agent_runs row and
+    // bind every member to it (AC-6). Legacy {agentId}/{all:true} bodies keep
+    // multiAgent false, unchanged.
+    const multiAgent = Boolean(body.agentIds && body.agentIds.length > 0);
     const { runs, reviews } = await service.runReview(
       workspaceId,
       req.params.id,
       targets,
       req.log,
+      multiAgent,
     );
     return { pr_id: req.params.id, runs, reviews };
   });
