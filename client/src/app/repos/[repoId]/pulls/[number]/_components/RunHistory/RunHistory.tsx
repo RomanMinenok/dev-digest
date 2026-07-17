@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Badge, Icon, CircularScore, type IconName } from "@devdigest/ui";
 import type { RunSummary, PrCommit, ReviewRecord } from "@devdigest/shared";
 import { api } from "@/lib/api";
-import { formatCost } from "../RunTraceDrawer/helpers";
+import { formatCost } from "@/components/RunTraceDrawer/helpers";
 import { SeverityChips } from "../../../_components/SeverityChips/SeverityChips";
 
 /**

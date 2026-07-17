@@ -1,7 +1,8 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
-import { render, screen, cleanup } from "@testing-library/react";
+import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
 import messages from "../../../../../../../../messages/en/prReview.json";
+import multiAgentMessages from "../../../../../../../../messages/en/multiAgent.json";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
@@ -12,6 +13,9 @@ vi.mock("../../../../../../../lib/hooks/agents", () => ({
 vi.mock("../../../../../../../lib/hooks/reviews", () => ({
   useRunReview: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
+vi.mock("@/lib/hooks/multi-agent", () => ({
+  useAgentEstimates: () => ({ data: [] }),
+}));
 
 import { RunReviewDropdown } from "./RunReviewDropdown";
 
@@ -19,7 +23,7 @@ afterEach(cleanup);
 
 function renderWithIntl(ui: React.ReactElement) {
   return render(
-    <NextIntlClientProvider locale="en" messages={{ prReview: messages }}>
+    <NextIntlClientProvider locale="en" messages={{ prReview: messages, multiAgent: multiAgentMessages }}>
       {ui}
     </NextIntlClientProvider>,
   );
@@ -29,5 +33,12 @@ describe("RunReviewDropdown (smoke)", () => {
   it("renders the trigger label", () => {
     renderWithIntl(<RunReviewDropdown prId="pr1" />);
     expect(screen.getByText("Run Review")).toBeInTheDocument();
+  });
+
+  it("opens the AgentRunPicker with the agent list", () => {
+    renderWithIntl(<RunReviewDropdown prId="pr1" />);
+    fireEvent.click(screen.getByText("Run Review"));
+    expect(screen.getByText("Security")).toBeInTheDocument();
+    expect(screen.getByText("Run multi-agent review (0)")).toBeInTheDocument();
   });
 });

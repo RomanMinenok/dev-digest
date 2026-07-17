@@ -131,18 +131,21 @@ export interface RunReviewInput {
   prId: string;
   agentId?: string;
   all?: boolean;
+  agentIds?: string[];
 }
 
 export function useRunReview() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ prId, agentId, all }: RunReviewInput) =>
+    mutationFn: ({ prId, agentId, all, agentIds }: RunReviewInput) =>
       api.post<ReviewRunResponse>(`/pulls/${prId}/review`, {
         ...(agentId ? { agentId } : {}),
         ...(all ? { all } : {}),
+        ...(agentIds && agentIds.length > 0 ? { agentIds } : {}),
       }),
     onSuccess: (_d, { prId }) => {
       qc.invalidateQueries({ queryKey: ["reviews", prId] });
+      qc.invalidateQueries({ queryKey: ["multi-agent-run", prId] });
     },
   });
 }
@@ -172,15 +175,27 @@ export function useFindingAction() {
   });
 }
 
+export type UseRunEventsOptions = {
+  /** Fired when one run's SSE stream closes (normally: that agent finished).
+      Held in a ref so identity churn does not tear down open EventSources. */
+  onRunClosed?: (runId: string) => void;
+};
+
 /**
  * Subscribe to a run's SSE event stream. Returns the accumulated RunEvents and a
- * `running` flag (true until the stream closes). Live status for the
- * RunReviewDropdown / Live Log. Multiple runIds are subscribed in parallel.
+ * `running` flag (true until **all** subscribed streams close). Live status for
+ * the RunReviewDropdown / Live Log. Multiple runIds are subscribed in parallel.
+ *
+ * Callers that show per-agent persisted state (scores, findings, lane body)
+ * should refetch on `onRunClosed` — waiting for the aggregate `running===false`
+ * freezes every finished lane until the slowest sibling ends.
  */
-export function useRunEvents(runIds: string[]) {
+export function useRunEvents(runIds: string[], opts?: UseRunEventsOptions) {
   const [events, setEvents] = React.useState<RunEvent[]>([]);
   const [running, setRunning] = React.useState(false);
   const key = runIds.join(",");
+  const onRunClosedRef = React.useRef(opts?.onRunClosed);
+  onRunClosedRef.current = opts?.onRunClosed;
 
   React.useEffect(() => {
     if (runIds.length === 0) return;
@@ -212,6 +227,7 @@ export function useRunEvents(runIds: string[]) {
       es.onerror = () => {
         es.close();
         open -= 1;
+        onRunClosedRef.current?.(runId);
         if (open <= 0) setRunning(false);
       };
       sources.push(es);

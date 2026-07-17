@@ -29,6 +29,7 @@ import { ReviewRepository } from '../modules/reviews/repository.js';
 import { IntentRepository } from '../modules/intent/repository.js';
 import { BriefRepository } from '../modules/brief/repository.js';
 import { EvalRepository } from '../modules/eval/repository.js';
+import { MultiAgentRepository } from '../modules/multi-agent/repository.js';
 import { RepoRepository } from '../modules/repos/repository.js';
 import { ProjectContextRepository } from '../modules/project-context/repository.js';
 import { ProjectContextService } from '../modules/project-context/service.js';
@@ -83,6 +84,7 @@ export class Container {
   private _intentRepo?: IntentRepository;
   private _briefRepo?: BriefRepository;
   private _evalRepo?: EvalRepository;
+  private _multiAgentRepo?: MultiAgentRepository;
   private _reposRepo?: RepoRepository;
   private _projectContextRepo?: ProjectContextRepository;
   private _projectContextService?: ProjectContextService;
@@ -142,6 +144,16 @@ export class Container {
    */
   get evalRepo(): EvalRepository {
     return (this._evalRepo ??= new EvalRepository(this.db));
+  }
+
+  /**
+   * Multi-agent review runs repository (SPEC-05, T-10). Mirrors
+   * `evalRepo`/`briefRepo`/`intentRepo` — lazy-singleton cross-cutting-repository
+   * pattern. Consumed by `modules/reviews/service.ts` as `container.multiAgentRepo`
+   * rather than importing `modules/multi-agent/*` directly.
+   */
+  get multiAgentRepo(): MultiAgentRepository {
+    return (this._multiAgentRepo ??= new MultiAgentRepository(this.db));
   }
 
   /**
