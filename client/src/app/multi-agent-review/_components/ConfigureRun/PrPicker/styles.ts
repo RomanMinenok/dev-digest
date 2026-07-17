@@ -59,16 +59,4 @@ export const s = {
     cursor: "pointer",
   } satisfies CSSProperties,
   rowMuted: { fontSize: 12.5, color: "var(--text-muted)", padding: "6px 8px" } satisfies CSSProperties,
-  divider: { height: 1, background: "var(--border)", margin: "4px 0" } satisfies CSSProperties,
-  backRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: 6,
-    padding: "6px 8px",
-    fontSize: 12.5,
-    color: "var(--text-secondary)",
-    cursor: "pointer",
-    border: "none",
-    background: "transparent",
-  } satisfies CSSProperties,
 } as const;

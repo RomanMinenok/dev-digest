@@ -22,8 +22,6 @@
       "placeholder": "Select a pull request…",
       "reposEmpty": "Connect a repository first to pick a pull request.",
       "pullsEmpty": "This repository has no pull requests yet.",
-      "repository": "Repository",
-      "backToRepos": "Back to repositories",
       "pullRequest": "Pull request",
       "loading": "Loading…",
       "item": "#{number} {title}"
