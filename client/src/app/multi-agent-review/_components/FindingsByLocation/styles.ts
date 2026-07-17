@@ -19,29 +19,42 @@ export const s = {
     textTransform: "uppercase",
     color: "var(--text-secondary)",
   } satisfies CSSProperties,
-  list: { display: "flex", flexDirection: "column", gap: 10 } satisfies CSSProperties,
+  // Shrink-wrap group cards to the cell row so a full-bleed card doesn't leave
+  // empty space past the last agent column (lanes above are also content-width).
+  list: { display: "flex", flexDirection: "column", gap: 10, alignItems: "flex-start" } satisfies CSSProperties,
   groupCard: {
     display: "flex",
     flexDirection: "column",
     gap: 10,
-    padding: "12px 14px",
+    width: "fit-content",
+    maxWidth: "100%",
+    padding: "12px 0",
     borderRadius: 8,
     background: "var(--bg-elevated)",
     border: "1px solid var(--border)",
   } satisfies CSSProperties,
-  groupHeader: { display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, flexWrap: "wrap" } satisfies CSSProperties,
+  groupHeader: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    fontSize: 12.5,
+    flexWrap: "wrap",
+    padding: "0 14px",
+  } satisfies CSSProperties,
   groupLocation: {
     fontFamily: "var(--font-mono, monospace)",
     color: "var(--text-secondary)",
   } satisfies CSSProperties,
   groupLabel: { fontWeight: 600, color: "var(--text-primary)" } satisfies CSSProperties,
-  cellRow: { display: "flex", flexWrap: "wrap", gap: 10 } satisfies CSSProperties,
+  // Gap + cell width match ResultsColumns/Lane (width: 260, gap: 14) so the
+  // matrix columns line up with the lanes above instead of stretching.
+  cellRow: { display: "flex", flexWrap: "wrap", gap: 14 } satisfies CSSProperties,
   cell: {
     display: "flex",
     flexDirection: "column",
     gap: 4,
-    minWidth: 150,
-    flex: "1 1 150px",
+    width: 260,
+    flexShrink: 0,
     padding: "8px 10px",
     borderRadius: 6,
     background: "var(--bg-hover)",
