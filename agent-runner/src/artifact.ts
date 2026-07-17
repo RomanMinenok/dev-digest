@@ -1,5 +1,6 @@
-import type { Finding } from '@devdigest/shared';
+import type { Finding, RunTrace } from '@devdigest/shared';
 import { CiResultArtifact } from '@devdigest/shared';
+import { severityCounts } from '@devdigest/reviewer-core';
 import { RunnerError } from './errors.js';
 
 /** Runner version string embedded in every artifact (informational only). */
@@ -11,16 +12,10 @@ export interface BuildResultArtifactInput {
   durationMs: number;
   agent: string;
   prNumber: number;
-}
-
-function severityCounts(findings: Finding[]): { critical: number; warning: number; suggestion: number } {
-  const counts = { critical: 0, warning: 0, suggestion: 0 };
-  for (const f of findings) {
-    if (f.severity === 'CRITICAL') counts.critical++;
-    else if (f.severity === 'WARNING') counts.warning++;
-    else counts.suggestion++;
-  }
-  return counts;
+  /** PR title from CI context (untrusted, author-controlled). */
+  prTitle: string;
+  /** Full run trace — built upstream via `buildRunTrace` (AC-21). */
+  trace: RunTrace;
 }
 
 /**
@@ -41,6 +36,8 @@ export function buildResultArtifact(input: BuildResultArtifactInput): CiResultAr
     agent: input.agent,
     version: RUNNER_VERSION,
     pr_number: input.prNumber,
+    pr_title: input.prTitle,
+    trace: input.trace,
   };
   const result = CiResultArtifact.safeParse(candidate);
   if (!result.success) {

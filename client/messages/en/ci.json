@@ -9,9 +9,12 @@
     "refreshing": "Refreshing…",
     "filters": {
       "last7Days": "Last 7 days",
+      "last30Days": "Last 30 days",
+      "last90Days": "Last 90 days",
       "allAgents": "All agents",
       "allRepos": "All repos",
-      "allStatuses": "All statuses"
+      "allStatuses": "All statuses",
+      "allSources": "All sources"
     },
     "table": {
       "timestamp": "Timestamp",
@@ -24,6 +27,8 @@
     "view": "View",
     "status": {
       "succeeded": "Succeeded",
+      "changesRequested": "Changes requested",
+      "error": "Error",
       "noFindings": "No findings",
       "failed": "Failed",
       "running": "Running"
@@ -60,7 +65,28 @@
     "filesToCreate": "FILES TO CREATE",
     "generating": "Generating…",
     "editable": "editable",
+    "regenerateConfirmTitle": "Discard manual workflow edits?",
+    "regenerateConfirmBody": "Changing this setting regenerates the file set from your configured values and discards your manual workflow edits.",
+    "regenerateConfirm": "Regenerate",
+    "regenerateCancel": "Cancel",
     "triggerLabel": "Trigger",
+    "secrets": {
+      "label": "Secrets expected",
+      "openRouterDesc": "Your OpenRouter key — same BYO key from L06",
+      "githubTokenDesc": "Auto-provided by Actions",
+      "hint": "Add these to your repo's Actions secrets before the workflow runs.",
+      "status": {
+        "not_set": "must be added",
+        "ready": "ready"
+      }
+    },
+    "blockMergeCallout": {
+      "prefix": "To block merges: set ",
+      "failCiOn": "Fail CI on",
+      "middle": " (CI tab) so the run exits non-zero, then add a ",
+      "requiredStatusCheck": "required status check",
+      "suffix": " in the repo's GitHub branch protection. No GitHub App needed."
+    },
     "postResultsLabel": "Post results as",
     "postAs": {
       "githubReview": "GitHub review",
@@ -70,18 +96,33 @@
     "blockMergeTitle": "Block merge on findings",
     "blockMergeDesc": "Requires a GitHub App — not available with PAT in local mode",
     "installCardTitle": "Open a PR with these files",
-    "installCardBody": "DevDigest opens a PR in {repo} titled “Add DevDigest CI review” with the {count} generated files.",
+    "installCardBodyBefore": "DevDigest opens a PR in",
+    "installCardBodyAfter": "titled “Add DevDigest CI review” with the {count} generated files.",
+    "installZipCardTitle": "Copy files as a zip",
+    "installZipCardHint": "add them manually",
+    "installHelpPrefix": "Need help? See the",
+    "installHelpLink": "GitHub Action setup docs",
+    "installSuccessPr": "Pull request ready —",
+    "installSuccessZip": "Archive downloaded — add the files to your repository manually.",
     "ownerRepo": "owner/repo",
     "secretNote": "Add {key} to the repo's Actions secrets before the workflow runs."
   },
   "ciTab": {
+    "deploymentTitle": "CI deployment",
+    "activeInRepos": "Active in {count} repos",
+    "addToCi": "Add to CI",
+    "updateConfig": "Update CI config",
+    "updatingConfig": "Updating…",
+    "addRepository": "Add repository",
+    "failCiOn": "Fail CI on",
+    "loading": "Loading installations…",
+    "empty": "Not deployed to CI yet. Use “Add to CI” to open a PR that adds the workflow and agent config.",
     "heading": "Continuous Integration",
     "subtitle": "Run this agent automatically on pull requests in a target repo.",
     "exportToCi": "Export to CI",
     "publish": "Publish to CI",
     "update": "Update CI",
     "noRepo": "Connect a repository first",
-    "empty": "Not deployed to CI yet. Use “Publish to CI” to open a PR that adds the workflow + agent config.",
     "installed": "installed {date}"
   },
   "publishDialog": {

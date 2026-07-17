@@ -119,6 +119,14 @@ export interface OpenPrPayload {
   body: string;
 }
 
+export interface CiWorkflowRun {
+  id: string;
+  conclusion: string | null;
+  status: string | null;
+  html_url: string;
+  created_at: string;
+}
+
 export interface GitHubClient {
   listPullRequests(repo: RepoRef): Promise<PrMeta[]>;
   getPullRequest(repo: RepoRef, n: number): Promise<PrDetail>;
@@ -133,6 +141,15 @@ export interface GitHubClient {
   ): Promise<PrReviewComment>;
   openPullRequest(repo: RepoRef, payload: OpenPrPayload): Promise<{ url: string }>;
   getIssue(repo: RepoRef, n: number): Promise<IssueMeta>;
+  /** List workflow runs for a named workflow file (e.g. `devdigest-review-<slug>.yml`). */
+  listWorkflowRuns(repo: RepoRef, workflow: string): Promise<CiWorkflowRun[]>;
+  /**
+   * Download a named workflow-run artifact as a zip buffer.
+   * Returns `null` when no such artifact exists — e.g. the run hard-failed
+   * without producing one, or the artifact is past GitHub's 90-day retention
+   * window. Those cases are indistinguishable and correctly so (AC-31).
+   */
+  downloadRunArtifact(repo: RepoRef, runId: string, name: string): Promise<Buffer | null>;
   /** GET /user — for "posting as @user". */
   currentLogin(): Promise<string>;
 }

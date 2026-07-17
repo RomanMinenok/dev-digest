@@ -127,6 +127,13 @@
       "when": 1784034785290,
       "tag": "0017_mushy_dust",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1784223303197,
+      "tag": "0018_cooing_katie_power",
+      "breakpoints": true
     }
   ]
 }
