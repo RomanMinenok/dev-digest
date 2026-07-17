@@ -5,6 +5,7 @@ import type {
   MultiAgentCell,
   MultiAgentGroup,
   MultiAgentGroupFinding,
+  MultiAgentLatestRunPointer,
   MultiAgentMember,
   MultiAgentRunView,
 } from '@devdigest/shared';
@@ -84,6 +85,23 @@ export class MultiAgentService {
       members: members.map(toMemberDto),
       groups: groups.map((g) => toGroupDto(g, cellMembers)),
     };
+  }
+
+  /**
+   * A pointer to the newest multi-agent run in a repo, or `null` when the
+   * repo has none. Backs the global "Multi-Agent Review" nav entry, which
+   * shows the Configure screen only when there is nothing to show yet.
+   *
+   * Like `latestForPull`, a repo in another workspace and a repo with no runs
+   * are indistinguishable here — both are `null`, so this never reveals
+   * whether a differently-scoped repo id exists.
+   */
+  async latestForRepo(
+    workspaceId: string,
+    repoId: string,
+  ): Promise<MultiAgentLatestRunPointer | null> {
+    const found = await this.repo.latestForRepo(workspaceId, repoId);
+    return found ? { id: found.id, pr_id: found.prId } : null;
   }
 
   /**

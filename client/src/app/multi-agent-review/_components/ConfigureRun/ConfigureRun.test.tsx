@@ -1,6 +1,8 @@
-/* ConfigureRun — AC-17 (empty state) and AC-5b (navigate to results once a
-   run is started). AC-5b is the one that matters here: the whole point of the
-   route split is that starting a run leaves this page. */
+/* ConfigureRun — AC-17 (empty state), AC-5b (navigate to results once a run is
+   started), and the global nav entry's landing rule: with no PR in the URL,
+   the active repo's latest run wins and this screen is only for repos that
+   have never had one. AC-5b is the one that matters most here: the whole point
+   of the route split is that starting a run leaves this page. */
 import { describe, it, expect, afterEach, vi } from "vitest";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
@@ -8,11 +10,27 @@ import multiAgentMessages from "../../../../../messages/en/multiAgent.json";
 import runsMessages from "../../../../../messages/en/runs.json";
 
 const push = vi.fn();
+const replace = vi.fn();
 let searchParams = new URLSearchParams("");
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push, replace: vi.fn() }),
+  useRouter: () => ({ push, replace }),
   useSearchParams: () => searchParams,
+}));
+
+let activeRepoId: string | null = "repo1";
+vi.mock("@/lib/repo-context", () => ({
+  useActiveRepo: () => ({ repoId: activeRepoId, reposLoaded: true }),
+}));
+
+// The pointer query's three states the page branches on: still loading, a run
+// exists, no run at all.
+let latestRun: { data: { id: string; pr_id: string } | null; isLoading: boolean } = {
+  data: null,
+  isLoading: false,
+};
+vi.mock("@/lib/hooks/multi-agent", () => ({
+  useLatestMultiAgentRunForRepo: () => latestRun,
 }));
 
 // AppShell calls useRouter() internally via useGlobalShortcuts and crashes in
@@ -47,6 +65,8 @@ afterEach(() => {
   cleanup();
   vi.clearAllMocks();
   searchParams = new URLSearchParams("");
+  activeRepoId = "repo1";
+  latestRun = { data: null, isLoading: false };
 });
 
 function renderConfigure() {
@@ -91,5 +111,41 @@ describe("ConfigureRun", () => {
     fireEvent.click(screen.getByText("run-stub"));
 
     expect(push).not.toHaveBeenCalled();
+  });
+
+  it("redirects to the active repo's latest run when the URL carries no PR", () => {
+    latestRun = { data: { id: "run1", pr_id: "pr9" }, isLoading: false };
+    renderConfigure();
+
+    expect(replace).toHaveBeenCalledWith("/multi-agent-review/results?pr=pr9");
+    // Never flashes the empty state on the way out.
+    expect(screen.queryByText("Pick a pull request first")).not.toBeInTheDocument();
+  });
+
+  it("holds the empty state back while the latest run is still unknown", () => {
+    latestRun = { data: null, isLoading: true };
+    renderConfigure();
+
+    expect(replace).not.toHaveBeenCalled();
+    expect(screen.queryByText("Pick a pull request first")).not.toBeInTheDocument();
+  });
+
+  it("keeps the user on Configure when a PR is already in the URL", () => {
+    // Results' back button lands here with `?pr=`, so a redirect would bounce
+    // the user straight back into the screen they just left.
+    searchParams = new URLSearchParams("pr=pr1");
+    latestRun = { data: { id: "run1", pr_id: "pr9" }, isLoading: false };
+    renderConfigure();
+
+    expect(replace).not.toHaveBeenCalled();
+    expect(screen.getByText("run-stub")).toBeInTheDocument();
+  });
+
+  it("shows the empty state when no repo is selected yet", () => {
+    activeRepoId = null;
+    renderConfigure();
+
+    expect(replace).not.toHaveBeenCalled();
+    expect(screen.getByText("Pick a pull request first")).toBeInTheDocument();
   });
 });

@@ -5,7 +5,11 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api";
-import type { AgentEstimate, MultiAgentRunView } from "@devdigest/shared";
+import type {
+  AgentEstimate,
+  MultiAgentLatestRunPointer,
+  MultiAgentRunView,
+} from "@devdigest/shared";
 
 /** Latest multi-agent run for a PR, or `null` when the PR has no such run —
    a legitimate value, not an error. */
@@ -14,6 +18,20 @@ export function useLatestMultiAgentRun(prId: string | null | undefined) {
     queryKey: ["multi-agent-run", prId],
     queryFn: () => api.get<MultiAgentRunView | null>(`/pulls/${prId}/multi-agent-run`),
     enabled: !!prId,
+  });
+}
+
+/** Newest multi-agent run in a repo as a pointer, or `null` when the repo has
+   never had one — a legitimate value, not an error. Lets the global nav entry
+   choose between Configure run and the latest run's results. */
+export function useLatestMultiAgentRunForRepo(repoId: string | null | undefined) {
+  return useQuery({
+    queryKey: ["multi-agent-latest-run", repoId],
+    queryFn: () =>
+      api.get<MultiAgentLatestRunPointer | null>(
+        `/multi-agent/latest-run?repo_id=${encodeURIComponent(repoId as string)}`,
+      ),
+    enabled: !!repoId,
   });
 }
 

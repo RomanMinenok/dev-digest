@@ -141,6 +141,32 @@ export class MultiAgentRepository {
   }
 
   /**
+   * The newest `multi_agent_runs` row in this repo, as a pointer only
+   * (`id` + `prId`) — the caller re-reads the full view through
+   * `latestForPull`. Joined to `pull_requests` because `multi_agent_runs` has
+   * no `repo_id` of its own; both sides of the join are workspace-scoped.
+   */
+  async latestForRepo(
+    workspaceId: string,
+    repoId: string,
+  ): Promise<{ id: string; prId: string } | undefined> {
+    const [row] = await this.db
+      .select({ id: t.multiAgentRuns.id, prId: t.multiAgentRuns.prId })
+      .from(t.multiAgentRuns)
+      .innerJoin(t.pullRequests, eq(t.pullRequests.id, t.multiAgentRuns.prId))
+      .where(
+        and(
+          eq(t.multiAgentRuns.workspaceId, workspaceId),
+          eq(t.pullRequests.workspaceId, workspaceId),
+          eq(t.pullRequests.repoId, repoId),
+        ),
+      )
+      .orderBy(desc(t.multiAgentRuns.ranAt))
+      .limit(1);
+    return row;
+  }
+
+  /**
    * Per agent, the last 5 `agent_runs` rows with `status = 'done'`, ordered
    * `ran_at DESC`, returning just `duration_ms`/`cost_usd` — the pure inputs
    * `estimateForAgent` (T-07) needs. One workspace-scoped query per agent.

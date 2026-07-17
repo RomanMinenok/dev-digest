@@ -144,6 +144,20 @@ export const MultiAgentRunView = z.object({
 export type MultiAgentRunView = z.infer<typeof MultiAgentRunView>;
 
 /**
+ * `GET /multi-agent/latest-run?repo_id=` response — a pointer to the newest
+ * multi-agent run in a repo, or `null` when the repo has never had one.
+ * Deliberately just the PR id: it exists so the global "Multi-Agent Review"
+ * nav entry can decide between the Configure screen and the latest run's
+ * Results screen, and the Results screen then loads the run itself through
+ * `GET /pulls/:id/multi-agent-run`.
+ */
+export const MultiAgentLatestRunPointer = z.object({
+  id: z.string(),
+  pr_id: z.string(),
+});
+export type MultiAgentLatestRunPointer = z.infer<typeof MultiAgentLatestRunPointer>;
+
+/**
  * Per-agent duration/cost estimate from recent completed-run history
  * (AC-9..AC-11). `duration_ms`/`cost_usd` are nullable, never `0` — `null`
  * means "no history"/"unknown price" and `0` is a legitimate value; they must

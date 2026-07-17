@@ -19,10 +19,12 @@
 import React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Card, EmptyState } from "@devdigest/ui";
+import { Card, EmptyState, Skeleton } from "@devdigest/ui";
 import { AppShell } from "@/components/app-shell";
 import { AgentRunPicker } from "@/components/agentRunPicker";
 import { useRunReview } from "@/lib/hooks/reviews";
+import { useLatestMultiAgentRunForRepo } from "@/lib/hooks/multi-agent";
+import { useActiveRepo } from "@/lib/repo-context";
 import { PrPicker } from "./PrPicker";
 import { s } from "./styles";
 
@@ -37,6 +39,26 @@ export function ConfigureRun() {
   const prId = search.get("pr");
 
   const run = useRunReview();
+
+  // Arriving with no PR in the URL means the global nav entry, which should
+  // land on the active repo's latest run and only fall back to configuring a
+  // new one when the repo has never had a run. Skipped entirely once a PR is
+  // in the URL — that includes Results' own back button, which always carries
+  // `?pr=`, so leaving Results can never bounce straight back into it.
+  const { repoId } = useActiveRepo();
+  const latest = useLatestMultiAgentRunForRepo(prId ? null : repoId);
+  const latestPrId = latest.data?.pr_id ?? null;
+
+  React.useEffect(() => {
+    if (!prId && latestPrId) {
+      router.replace(`/multi-agent-review/results?pr=${encodeURIComponent(latestPrId)}`);
+    }
+  }, [prId, latestPrId, router]);
+
+  // Hold the picker back while we still might redirect — showing it and then
+  // yanking it away reads as a flash of the wrong screen. A failed pointer
+  // fetch resolves to the picker rather than a dead end.
+  const resolvingLatest = !prId && !!repoId && (latest.isLoading || !!latestPrId);
 
   const selectPr = (id: string) => {
     const sp = new URLSearchParams(search.toString());
@@ -81,7 +103,9 @@ export function ConfigureRun() {
 
             <div style={s.stepContent}>
               <Card style={s.agentsCard}>
-                {!prId ? (
+                {resolvingLatest ? (
+                  <Skeleton height={160} />
+                ) : !prId ? (
                   <EmptyState icon="Users" title={t("configure.noPrTitle")} body={t("configure.noPrBody")} />
                 ) : (
                   <div style={{ width: "100%" }}>
