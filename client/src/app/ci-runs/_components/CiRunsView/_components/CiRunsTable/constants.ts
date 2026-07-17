@@ -37,4 +37,4 @@ export function statusVisual(status: string | null | undefined): StatusVisual {
 
 /** timestamp | pull request | agent | source | dur | findings | cost | status | trace */
 export const GRID_TEMPLATE_COLUMNS =
-  "130px minmax(160px, 1.4fr) minmax(120px, 1fr) 120px 56px 100px 64px 100px 56px";
+  "130px minmax(160px, 1.4fr) minmax(120px, 1fr) 120px 56px 72px 64px 140px 32px";

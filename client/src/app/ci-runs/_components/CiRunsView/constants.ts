@@ -38,7 +38,6 @@ export const DEFAULT_CI_RUNS_FILTERS: CiRunsFilters = {
 export const COLUMN_LABELS = {
   agent: "Agent",
   duration: "Dur.",
-  trace: "Trace",
 } as const;
 
 export function parseCiRunsDays(raw: string | null): CiRunsDays {

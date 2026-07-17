@@ -79,19 +79,27 @@ function TraceCell({
   run: CiRun;
   onOpenTrace: (run: CiRun) => void;
 }) {
+  const tPr = useTranslations("prReview");
   const active = run.run_id != null;
+  const label = tPr("timeline.openTrace");
 
   if (!active) {
-    return <span style={s.traceInactive}>{COLUMN_LABELS.trace}</span>;
+    return (
+      <span style={s.traceBtnInactive} aria-hidden>
+        <Icon.FileText size={13} />
+      </span>
+    );
   }
 
   return (
     <button
       type="button"
-      style={s.traceActive}
+      style={s.traceBtn}
+      title={label}
+      aria-label={label}
       onClick={() => onOpenTrace(run)}
     >
-      {COLUMN_LABELS.trace}
+      <Icon.FileText size={13} />
     </button>
   );
 }
