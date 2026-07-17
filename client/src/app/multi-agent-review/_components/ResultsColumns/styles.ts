@@ -1,21 +1,9 @@
 import type { CSSProperties } from "react";
 
+/** Co-located styles for ResultsColumns. The `root`/`contextStrip` styles that
+    used to live here moved to `results/_components/ResultsScreen` along with
+    the header row and totals — this component is now just the lanes grid. */
 export const s = {
-  root: { width: "100%", display: "flex", flexDirection: "column", gap: 16 } satisfies CSSProperties,
-  contextStrip: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-    fontSize: 12.5,
-    color: "var(--text-secondary)",
-  } satisfies CSSProperties,
-  contextText: {
-    display: "flex",
-    alignItems: "center",
-    gap: 6,
-    fontVariantNumeric: "tabular-nums",
-  } satisfies CSSProperties,
   grid: {
     display: "flex",
     gap: 14,

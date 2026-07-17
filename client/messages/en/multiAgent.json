@@ -18,7 +18,6 @@
     "loadErrorTitle": "Couldn't load this pull request's runs",
     "tryAgain": "Please try again.",
     "crumbStep": "Configure run",
-    "runAgain": "Run again with different agents",
     "prPicker": {
       "placeholder": "Select a pull request…",
       "reposEmpty": "Connect a repository first to pick a pull request.",
@@ -31,6 +30,10 @@
     }
   },
   "results": {
+    "back": "Configure run",
+    "title": "Multi-Agent Review",
+    "subtitle": "{count, plural, one {# selected agent} other {# selected agents}} · parallel",
+    "prNumber": "#{number}",
     "modeGroupLabel": "Results view",
     "modeColumns": "Columns",
     "modeTabs": "Tabs",

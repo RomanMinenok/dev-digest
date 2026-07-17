@@ -178,6 +178,19 @@ flowchart TD
 - **AC-5** — WHEN the user starts a run with N ≥ 1 checked agents, the system
   shall create one multi-agent run and start exactly N agent runs bound to it,
   including when N is 1. (Verify: integration test via `fastify.inject`)
+- **AC-5b** — WHEN a multi-agent run is successfully started from **either**
+  entry point — the PR page's Run Review dropdown or the Configure-run page —
+  the system shall navigate to the results page for that pull request
+  (`/multi-agent-review/results?pr=<id>`). IF the run fails to start, THEN the
+  system shall remain on the originating page so the error surfaces there.
+  (Verify: RTL test per entry point asserting the router push target)
+
+  > Added 2026-07-17. This was always in the flow diagram above — both entry
+  > points converge on `K → L → M[Results page]` — but no AC encoded it, so it
+  > was never built (the PR page switched to its findings tab and stayed put)
+  > and nothing caught it: `plan-verifier` traces ACs, not diagrams. AC-5 is a
+  > **server** AC (`Verify: fastify.inject`); its silence about navigation was
+  > not a decision. Do not re-derive "no redirect" from that silence again.
 - **AC-6** — The system shall continue to accept the existing `{agentId}` and
   `{all:true}` request bodies on `POST /pulls/:id/review` with unchanged
   behaviour, and runs started that way shall not be bound to a multi-agent run.
@@ -247,9 +260,23 @@ erDiagram
 - **AC-17** — WHEN the user opens `/multi-agent-review` without a pull request in
   the URL, the system shall show the "Pick a pull request first" empty state.
   (Verify: RTL test)
-- **AC-18** — WHERE a pull request is given in the URL, the system shall render
-  the latest multi-agent run for that pull request; the page shall offer no
-  navigation to earlier multi-agent runs. (Verify: RTL test + manual check)
+- **AC-18** — WHERE a pull request is given in the **results** route's URL
+  (`/multi-agent-review/results?pr=<id>`), the system shall render the latest
+  multi-agent run for that pull request; the page shall offer no navigation to
+  earlier multi-agent runs. IF that pull request has no multi-agent run, THEN
+  the system shall redirect to Configure run for it rather than render a dead
+  end. (Verify: RTL test + manual check)
+
+  > Amended 2026-07-17 (was: "WHERE a pull request is given in the URL…").
+  > Configure run and Results are two routes, not two states of one URL —
+  > `/multi-agent-review?pr=<id>` is Configure, `/multi-agent-review/results?pr=<id>`
+  > is Results. The old single-URL reading forced AC-8 ("WHEN a PR is selected,
+  > list every agent") and this AC to be simultaneously true at the same URL,
+  > which the implementation reconciled with a `reconfiguring` state flag and a
+  > "Run again" button — both now deleted, since the split dissolves the
+  > collision instead of papering over it.
+- **AC-18b** — The results page shall offer a control that returns to Configure
+  run for the same pull request. (Verify: RTL test)
 - **AC-19** — The system shall offer a two-mode switcher, Columns and Tabs, over
   the same multi-agent run data. (Verify: RTL test asserting both modes render
   from one fixture)

@@ -1,6 +1,14 @@
 import type { CSSProperties } from "react";
 
 export const s = {
+  /* AppShell/AppFrame supplies no padding of its own — every route body owns
+     its page padding (cf. components/page-shell/styles.ts). */
+  page: { padding: "28px 32px 48px" } satisfies CSSProperties,
+  /* A centered column, ~730px per design 02. Results are their own route
+     (`results/`) and own their own, wider container. */
+  column: { maxWidth: 730, margin: "0 auto" } satisfies CSSProperties,
+  /* Aligns a step's content under its label, clearing the badge + gap. */
+  stepContent: { paddingLeft: 30 } satisfies CSSProperties,
   pageHeader: { marginBottom: 28 } satisfies CSSProperties,
   pageTitle: { fontSize: 22, fontWeight: 700, margin: 0 } satisfies CSSProperties,
   pageSubtitle: {
@@ -40,16 +48,5 @@ export const s = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-  } satisfies CSSProperties,
-  runAgain: {
-    marginTop: 16,
-    padding: "6px 12px",
-    fontSize: 12.5,
-    fontWeight: 600,
-    color: "var(--text-secondary)",
-    background: "transparent",
-    border: "1px solid var(--border-strong)",
-    borderRadius: 7,
-    cursor: "pointer",
   } satisfies CSSProperties,
 } as const;

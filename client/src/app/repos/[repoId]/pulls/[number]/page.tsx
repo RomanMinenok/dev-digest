@@ -180,8 +180,17 @@ export default function PRDetailPage() {
         findingsCount={findingsCount}
         githubUrl={repoFullName ? githubPrUrl(repoFullName, pr.number) : null}
         onSetTab={setTab}
+        /* Fires before the request; only matters if the run fails to start,
+           since a successful one navigates away below. */
         onRunStart={() => setTab("findings")}
-        onRunsStarted={() => invalidateActiveRuns()}
+        /* Every run started from the Run Review dropdown is a multi-agent run
+           (one checked agent is still N=1, AC-5), and the spec's flow diagram
+           sends both entry points to the results page. So we leave this page
+           rather than staying on the findings tab — the results screen shows
+           each member's live status over the same SSE stream. */
+        onRunsStarted={() => {
+          if (prId) router.push(`/multi-agent-review/results?pr=${encodeURIComponent(prId)}`);
+        }}
       />
 
       <div style={{ padding: "24px 32px 44px", display: "flex", flexDirection: "column", gap: 24, maxWidth: 1080, margin: "0 auto" }}>

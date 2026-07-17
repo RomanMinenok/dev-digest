@@ -1,27 +1,28 @@
-/* ConfigureRun — the /multi-agent-review page body (SPEC-05, T-24). Global
-   route, always PR-scoped through `?pr=<id>`. One render path throughout:
-   the AppShell chrome and the two numbered steps always render; only the
-   *content* inside step 2's card varies by state (client/INSIGHTS.md — don't
-   early-return a stripped layout per edge state).
+/* ConfigureRun — the /multi-agent-review page body (SPEC-05, design 02/03).
+   Global route, always PR-scoped through `?pr=<id>`. Picks a PR and an agent
+   set; starting a run navigates to `/multi-agent-review/results?pr=<id>`,
+   which is where the spec's own flow diagram sends both entry points
+   (`K -> L -> M[Results page]`).
 
-   Results rendering (Columns/Tabs/matrix) is NOT this task — when a latest
-   run already exists this renders a placeholder seam for T-25/T-26/T-27,
-   never a fallback to unrelated single-agent runs from the PR's history.
+   This page never renders results. It used to — results lived inside step 2's
+   card behind a `latestRun.data && !reconfiguring` ternary, with a "Run again"
+   button to get the picker back. That existed only to satisfy AC-8 ("WHEN a
+   PR is selected, list every agent") and AC-18 ("WHERE a PR is in the URL,
+   render the latest run") at the same URL. With results on their own route the
+   two ACs no longer collide: here a selected PR always shows the agent list.
 
-   T-25 update: the placeholder is now `ResultsColumns` (Columns/Tabs
-   switcher + lanes); it owns everything below step 2's card header. */
+   One render path throughout: the AppShell chrome and both numbered steps
+   always render; only the *content* inside step 2's card varies by state
+   (client/INSIGHTS.md — don't early-return a stripped layout per edge state). */
 "use client";
 
 import React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Card, EmptyState, Skeleton, ErrorState } from "@devdigest/ui";
+import { Card, EmptyState } from "@devdigest/ui";
 import { AppShell } from "@/components/app-shell";
 import { AgentRunPicker } from "@/components/agentRunPicker";
-import { useLatestMultiAgentRun } from "@/lib/hooks/multi-agent";
 import { useRunReview } from "@/lib/hooks/reviews";
-import { ApiError } from "@/lib/api";
-import { ResultsColumns } from "../ResultsColumns";
 import { PrPicker } from "./PrPicker";
 import { s } from "./styles";
 
@@ -36,13 +37,6 @@ export function ConfigureRun() {
   const prId = search.get("pr");
 
   const run = useRunReview();
-  const latestRun = useLatestMultiAgentRun(prId);
-
-  // Reveals the picker over an existing run's results (AC-8). Keyed off the
-  // PR so switching PRs never carries the reconfiguring state across.
-  const [reconfiguringPr, setReconfiguringPr] = React.useState<string | null>(null);
-  const reconfiguring = prId !== null && reconfiguringPr === prId;
-  const setReconfiguring = (on: boolean) => setReconfiguringPr(on ? prId : null);
 
   const selectPr = (id: string) => {
     const sp = new URLSearchParams(search.toString());
@@ -50,65 +44,54 @@ export function ConfigureRun() {
     router.replace(`/multi-agent-review?${sp.toString()}`);
   };
 
+  // Navigate only once the run is actually created — on failure we stay put so
+  // the mutation's error surfaces here rather than on an empty results page.
   const startRun = (agentIds: string[]) => {
     if (!prId) return;
-    // Back to results: the new run replaces the one we were reconfiguring over.
-    setReconfiguringPr(null);
-    run.mutate({ prId, agentIds });
+    run.mutate(
+      { prId, agentIds },
+      { onSuccess: () => router.push(`/multi-agent-review/results?pr=${encodeURIComponent(prId)}`) },
+    );
   };
 
   return (
     <AppShell crumb={[{ label: tRuns("page.crumb") }, { label: t("configure.crumbStep") }]}>
-      <div style={s.pageHeader}>
-        <h1 style={s.pageTitle}>{t("configure.title")}</h1>
-        <p style={s.pageSubtitle}>{t("configure.subtitle")}</p>
-      </div>
+      <div style={s.page}>
+        <div style={s.column}>
+          <div style={s.pageHeader}>
+            <h1 style={s.pageTitle}>{t("configure.title")}</h1>
+            <p style={s.pageSubtitle}>{t("configure.subtitle")}</p>
+          </div>
 
-      <div style={s.step}>
-        <div style={s.stepHeader}>
-          <span style={s.stepBadge}>1</span>
-          <span style={s.stepLabel}>{t("configure.stepPr")}</span>
+          <div style={s.step}>
+            <div style={s.stepHeader}>
+              <span style={s.stepBadge}>1</span>
+              <span style={s.stepLabel}>{t("configure.stepPr")}</span>
+            </div>
+            <div style={s.stepContent}>
+              <PrPicker value={prId} onChange={selectPr} />
+            </div>
+          </div>
+
+          <div style={s.step}>
+            <div style={s.stepHeader}>
+              <span style={prId ? s.stepBadge : s.stepBadgeMuted}>2</span>
+              <span style={prId ? s.stepLabel : s.stepLabelMuted}>{t("configure.stepAgents")}</span>
+            </div>
+
+            <div style={s.stepContent}>
+              <Card style={s.agentsCard}>
+                {!prId ? (
+                  <EmptyState icon="Users" title={t("configure.noPrTitle")} body={t("configure.noPrBody")} />
+                ) : (
+                  <div style={{ width: "100%" }}>
+                    <AgentRunPicker onRun={startRun} isRunning={run.isPending} showSelectAll />
+                  </div>
+                )}
+              </Card>
+            </div>
+          </div>
         </div>
-        <PrPicker value={prId} onChange={selectPr} />
-      </div>
-
-      <div style={s.step}>
-        <div style={s.stepHeader}>
-          <span style={prId ? s.stepBadge : s.stepBadgeMuted}>2</span>
-          <span style={prId ? s.stepLabel : s.stepLabelMuted}>{t("configure.stepAgents")}</span>
-        </div>
-
-        <Card style={s.agentsCard}>
-          {!prId ? (
-            <EmptyState icon="Users" title={t("configure.noPrTitle")} body={t("configure.noPrBody")} />
-          ) : latestRun.isLoading ? (
-            <div style={{ width: "100%" }}>
-              <Skeleton height={120} />
-            </div>
-          ) : latestRun.isError ? (
-            <ErrorState
-              title={t("configure.loadErrorTitle")}
-              body={latestRun.error instanceof ApiError ? latestRun.error.message : t("configure.tryAgain")}
-              onRetry={() => latestRun.refetch()}
-            />
-          ) : latestRun.data && !reconfiguring ? (
-            <div style={{ width: "100%" }}>
-              <ResultsColumns run={latestRun.data} onRunSettled={() => latestRun.refetch()} />
-              {/* AC-8 requires the agent list + Select all whenever a PR is
-                  selected — not only before its first run. Results own the
-                  card by default (a re-run is the rarer intent), so the picker
-                  stays one click away rather than permanently doubling the
-                  card's height. */}
-              <button type="button" style={s.runAgain} onClick={() => setReconfiguring(true)}>
-                {t("configure.runAgain")}
-              </button>
-            </div>
-          ) : (
-            <div style={{ width: "100%" }}>
-              <AgentRunPicker onRun={startRun} isRunning={run.isPending} showSelectAll />
-            </div>
-          )}
-        </Card>
       </div>
     </AppShell>
   );
