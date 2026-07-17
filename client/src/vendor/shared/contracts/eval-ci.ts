@@ -329,7 +329,14 @@ export const CiExport = z.object({
 });
 export type CiExport = z.infer<typeof CiExport>;
 
-export const CiRunStatus = z.enum(['succeeded', 'failed', 'no_findings', 'running']);
+export const CiRunStatus = z.enum([
+  'succeeded',
+  'changes_requested',
+  'error',
+  'failed',
+  'no_findings',
+  'running',
+]);
 export type CiRunStatus = z.infer<typeof CiRunStatus>;
 
 /** A CI run row (mirrors `ci_runs`) — ingested from GitHub Actions artifacts. */

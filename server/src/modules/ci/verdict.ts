@@ -10,10 +10,10 @@ function totalFindings(counts: SeverityCounts): number {
  * agent's `ci_fail_on` gate — never from a model-reported verdict (AC-34).
  *
  * Zero findings → `no_findings` (valid review, e.g. all dropped by grounding).
- * Gate tripped → `failed`; findings present but gate clear → `succeeded`.
+ * Gate tripped → `changes_requested`; findings present but gate clear → `succeeded`.
  */
 export function ciRunStatus(counts: SeverityCounts, failOn: CiFailOn): CiRunStatus {
   if (totalFindings(counts) === 0) return 'no_findings';
-  if (gateTriggeredFromCounts(counts, failOn)) return 'failed';
+  if (gateTriggeredFromCounts(counts, failOn)) return 'changes_requested';
   return 'succeeded';
 }

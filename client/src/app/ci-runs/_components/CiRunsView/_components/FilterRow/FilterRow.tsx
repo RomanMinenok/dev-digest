@@ -25,8 +25,13 @@ import {
 } from "../../constants";
 import { s } from "./styles";
 
-const STATUS_I18N: Record<CiRunStatus, "succeeded" | "noFindings" | "failed" | "running"> = {
+const STATUS_I18N: Record<
+  CiRunStatus,
+  "succeeded" | "changesRequested" | "error" | "noFindings" | "failed" | "running"
+> = {
   succeeded: "succeeded",
+  changes_requested: "changesRequested",
+  error: "error",
   failed: "failed",
   no_findings: "noFindings",
   running: "running",

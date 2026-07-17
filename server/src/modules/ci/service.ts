@@ -5,6 +5,7 @@ import type {
   CiInstallation,
   CiPreview,
   CiRun,
+  CiRunStatus,
   GitHubClient,
   SecretsProvider,
 } from '@devdigest/shared';
@@ -61,6 +62,13 @@ function toCiInstallationDto(row: CiInstallationRow): CiInstallation {
   };
 }
 
+function ciRunStatusForDto(status: string | null, runId: string | null): CiRunStatus | null {
+  if (status === 'failed') {
+    return runId == null ? 'error' : 'changes_requested';
+  }
+  return status as CiRunStatus | null;
+}
+
 function toCiRunDto(row: CiRunListRow): CiRun {
   const { ciRun, agentName, repo, durationMs, runCostUsd } = row;
   return {
@@ -68,7 +76,7 @@ function toCiRunDto(row: CiRunListRow): CiRun {
     ci_installation_id: ciRun.ciInstallationId,
     pr_number: ciRun.prNumber,
     ran_at: ciRun.ranAt?.toISOString() ?? null,
-    status: ciRun.status,
+    status: ciRunStatusForDto(ciRun.status, ciRun.runId),
     findings_count: ciRun.findingsCount,
     cost_usd: ciRun.costUsd ?? runCostUsd ?? null,
     github_url: ciRun.githubUrl,
@@ -240,7 +248,10 @@ export class CiService {
       installations.map((installation) => installation.id),
     );
     const statusByInstallation = new Map(
-      latestRuns.map((row) => [row.ciInstallationId, row.ciRun.status]),
+      latestRuns.map((row) => [
+        row.ciInstallationId,
+        ciRunStatusForDto(row.ciRun.status, row.ciRun.runId),
+      ]),
     );
 
     return installations.map((installation) => ({

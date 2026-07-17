@@ -27,6 +27,8 @@
     "view": "View",
     "status": {
       "succeeded": "Succeeded",
+      "changesRequested": "Changes requested",
+      "error": "Error",
       "noFindings": "No findings",
       "failed": "Failed",
       "running": "Running"

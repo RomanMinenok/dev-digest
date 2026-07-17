@@ -22,7 +22,8 @@ export const CI_RUNS_REPO_ALL = "all";
 
 export const CI_RUNS_STATUS_OPTIONS: CiRunStatus[] = [
   "succeeded",
-  "failed",
+  "changes_requested",
+  "error",
   "no_findings",
   "running",
 ];

@@ -58,6 +58,7 @@ jobs:
       - name: Run DevDigest review
         run: node ${RUNNER_PATH}
       - name: Upload review result
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ${artifactName}

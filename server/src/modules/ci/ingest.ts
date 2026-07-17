@@ -78,19 +78,19 @@ function isCompletedRun(run: CiWorkflowRun): boolean {
 }
 
 /**
- * AC-31: status-only row when no artifact — derived from the Actions API
- * conclusion (completed runs without a downloadable artifact are failures).
+ * AC-31: status-only row when no artifact — this means DevDigest could not
+ * ingest a valid result artifact, not that the review requested changes.
  */
 function statusFromConclusion(conclusion: string | null): string {
-  if (conclusion === 'success') return 'failed';
-  if (conclusion === 'failure') return 'failed';
-  if (conclusion === 'cancelled') return 'failed';
-  if (conclusion === 'timed_out') return 'failed';
-  if (conclusion === 'action_required') return 'failed';
-  if (conclusion === 'skipped') return 'failed';
-  if (conclusion === 'stale') return 'failed';
-  if (conclusion === 'neutral') return 'failed';
-  return 'failed';
+  if (conclusion === 'success') return 'error';
+  if (conclusion === 'failure') return 'error';
+  if (conclusion === 'cancelled') return 'error';
+  if (conclusion === 'timed_out') return 'error';
+  if (conclusion === 'action_required') return 'error';
+  if (conclusion === 'skipped') return 'error';
+  if (conclusion === 'stale') return 'error';
+  if (conclusion === 'neutral') return 'error';
+  return 'error';
 }
 
 async function mapInBatches<T>(

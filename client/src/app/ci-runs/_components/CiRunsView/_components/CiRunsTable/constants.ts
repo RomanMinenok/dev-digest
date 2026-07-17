@@ -2,6 +2,8 @@ import type { CiRunStatus } from "@devdigest/shared";
 
 export const STATUS_KEYS = {
   succeeded: "succeeded",
+  changesRequested: "changesRequested",
+  error: "error",
   noFindings: "noFindings",
   failed: "failed",
   running: "running",
@@ -18,10 +20,14 @@ export function statusVisual(status: string | null | undefined): StatusVisual {
   switch (status as CiRunStatus | null | undefined) {
     case "succeeded":
       return { i18nKey: "succeeded", color: "var(--ok)", bg: "var(--ok-bg)" };
+    case "changes_requested":
+      return { i18nKey: "changesRequested", color: "var(--warn)", bg: "var(--warn-bg)" };
+    case "error":
+      return { i18nKey: "error", color: "var(--crit)", bg: "var(--crit-bg)" };
     case "no_findings":
       return { i18nKey: "noFindings", color: "var(--ok)", bg: "var(--bg-hover)" };
     case "failed":
-      return { i18nKey: "failed", color: "var(--crit)", bg: "var(--crit-bg)" };
+      return { i18nKey: "error", color: "var(--crit)", bg: "var(--crit-bg)" };
     case "running":
       return { i18nKey: "running", color: "var(--accent)", bg: "var(--accent-bg)" };
     default:
