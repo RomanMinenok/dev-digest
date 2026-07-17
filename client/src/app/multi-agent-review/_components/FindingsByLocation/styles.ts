@@ -47,6 +47,20 @@ export const s = {
     background: "var(--bg-hover)",
   } satisfies CSSProperties,
   cellAgentName: { fontSize: 12, fontWeight: 600, color: "var(--text-primary)" } satisfies CSSProperties,
+  // Two-line clamp. `WebkitLineClamp` needs all four of -webkit-box, the
+  // orient, the clamp and overflow:hidden — drop any one and the text runs
+  // to full height. `minWidth: 0` lets it shrink inside the flex cell instead
+  // of forcing the column wider than its `flex-basis`.
+  cellTitle: {
+    display: "-webkit-box",
+    WebkitBoxOrient: "vertical",
+    WebkitLineClamp: 2,
+    overflow: "hidden",
+    minWidth: 0,
+    fontSize: 12,
+    lineHeight: 1.35,
+    color: "var(--text-secondary)",
+  } satisfies CSSProperties,
   mutedState: { fontSize: 12, color: "var(--text-muted)" } satisfies CSSProperties,
   failedState: { fontSize: 12, color: "var(--crit)" } satisfies CSSProperties,
   emptyNote: {

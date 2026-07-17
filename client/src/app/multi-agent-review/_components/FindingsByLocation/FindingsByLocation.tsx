@@ -16,7 +16,7 @@ import { useTranslations } from "next-intl";
 import { Icon, SeverityBadge } from "@devdigest/ui";
 import type { MultiAgentCell, MultiAgentGroup, MultiAgentRunView } from "@devdigest/shared";
 import { DEFAULT_FILTER, type LocationFilter as LocationFilterValue } from "./constants";
-import { allMembersSettled, filterCounts, filteredGroups, groupKey, memberNamesByKey } from "./helpers";
+import { allMembersSettled, cellFinding, filterCounts, filteredGroups, groupKey, memberNamesByKey } from "./helpers";
 import { LocationFilter } from "./LocationFilter";
 import { s } from "./styles";
 
@@ -80,23 +80,34 @@ function LocationGroupRow({
       </div>
       <div style={s.cellRow}>
         {group.cells.map((cell) => (
-          <LocationCell key={cell.agent_id} cell={cell} name={names.get(cell.agent_id) ?? removedAgentLabel} />
+          <LocationCell
+            key={cell.agent_id}
+            cell={cell}
+            group={group}
+            name={names.get(cell.agent_id) ?? removedAgentLabel}
+          />
         ))}
       </div>
     </div>
   );
 }
 
-function LocationCell({ cell, name }: { cell: MultiAgentCell; name: string }) {
+function LocationCell({ cell, group, name }: { cell: MultiAgentCell; group: MultiAgentGroup; name: string }) {
   const t = useTranslations("multiAgent");
   // "did not flag" is reused verbatim from the existing "runs" namespace
   // rather than duplicated under a new key.
   const tRuns = useTranslations("runs");
+  // Only a `severity` cell gets a title line: "did not flag" is silence, and
+  // AC-36 forbids giving that silence a sentence — or space for one.
+  const finding = cell.state === "severity" ? cellFinding(group, cell.agent_id, cell.severity) : undefined;
   return (
     <div style={s.cell}>
       <span style={s.cellAgentName}>{name}</span>
       {cell.state === "severity" ? (
-        <SeverityBadge severity={cell.severity} />
+        <>
+          <SeverityBadge severity={cell.severity} />
+          {finding ? <span style={s.cellTitle}>{finding.title}</span> : null}
+        </>
       ) : cell.state === "did_not_flag" ? (
         <span style={s.mutedState}>{`● ${tRuns("conflicts.didNotFlag")}`}</span>
       ) : (

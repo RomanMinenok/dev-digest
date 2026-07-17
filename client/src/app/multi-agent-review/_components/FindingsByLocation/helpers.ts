@@ -3,7 +3,7 @@
    (client/INSIGHTS.md "derive, don't store"). The matched/divergent/agreed
    classification is entirely server-computed (T-05) — nothing here
    recomputes Jaccard or touches a similarity threshold. */
-import type { MultiAgentGroup, MultiAgentMember } from "@devdigest/shared";
+import type { MultiAgentGroup, MultiAgentGroupFinding, MultiAgentMember, Severity } from "@devdigest/shared";
 import type { LocationFilter } from "./constants";
 
 /**
@@ -28,6 +28,26 @@ export function memberNamesByKey(members: MultiAgentMember[], removedAgentLabel:
     map.set(member.agent_id ?? member.run_id, member.agent_name ?? removedAgentLabel);
   }
   return map;
+}
+
+/**
+ * The finding behind a `severity` cell — the one whose title the cell shows.
+ *
+ * Matches on the cell's own `severity` rather than re-deriving "highest wins":
+ * the server already applied that rule (`modules/multi-agent/cells.ts:66-70`),
+ * so re-implementing its `SEVERITY_RANK` here would be a second copy of the
+ * ordering, free to drift. First match wins, mirroring the server's reduce,
+ * which keeps the first of several equally-severe findings.
+ *
+ * Returns `undefined` if nothing matches — the cell then renders its badge
+ * alone, exactly as before this line existed.
+ */
+export function cellFinding(
+  group: MultiAgentGroup,
+  agentId: string,
+  severity: Severity,
+): MultiAgentGroupFinding | undefined {
+  return group.findings.find((f) => f.agent_id === agentId && f.severity === severity);
 }
 
 /** AC-38/AC-39/AC-43: a group may appear under both Divergent and Agreed —
