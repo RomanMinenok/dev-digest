@@ -92,5 +92,5 @@ function LaneHeaderMeta({
 function FindingSeverityIcon({ severity }: { severity: MultiAgentMember["findings"][number]["severity"] }) {
   const Icons = { CRITICAL: Icon.AlertOctagon, WARNING: Icon.AlertTriangle, SUGGESTION: Icon.Lightbulb } as const;
   const I = Icons[severity];
-  return <I size={13} style={{ color: findingIconColor(severity), flexShrink: 0, marginTop: 1 }} />;
+  return <I size={13} style={{ color: findingIconColor(severity), flexShrink: 0 }} />;
 }

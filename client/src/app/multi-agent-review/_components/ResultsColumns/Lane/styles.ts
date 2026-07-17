@@ -73,7 +73,7 @@ export function findingCard(severity: Severity): CSSProperties {
 
 export const findingTitleRow: CSSProperties = {
   display: "flex",
-  alignItems: "flex-start",
+  alignItems: "center",
   gap: 6,
   fontSize: 12.5,
   fontWeight: 600,
