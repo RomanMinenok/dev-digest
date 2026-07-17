@@ -1,8 +1,11 @@
 "use client";
 
 import React, { useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Icon, Avatar, Badge, Button, Tabs } from "@devdigest/ui";
 import { RunReviewDropdown } from "../RunReviewDropdown";
+import { useLatestMultiAgentRun } from "@/lib/hooks/multi-agent";
 import { s } from "./styles";
 import type { PrDetail } from "@/lib/types";
 
@@ -28,6 +31,11 @@ export function PrDetailHeader({
   onRunStart,
   onRunsStarted,
 }: PrDetailHeaderProps) {
+  const router = useRouter();
+  const tShell = useTranslations("shell");
+  const latestMultiAgentRun = useLatestMultiAgentRun(prId);
+  const hasMultiAgentRun = latestMultiAgentRun.data != null;
+
   const handleRunStart = useCallback(() => {
     onRunStart();
   }, [onRunStart]);
@@ -35,6 +43,11 @@ export function PrDetailHeader({
   const handleRunsStarted = useCallback(() => {
     onRunsStarted();
   }, [onRunsStarted]);
+
+  const openMultiAgentResults = useCallback(() => {
+    if (!prId || !hasMultiAgentRun) return;
+    router.push(`/multi-agent-review/results?pr=${encodeURIComponent(prId)}`);
+  }, [hasMultiAgentRun, prId, router]);
 
   const statusColor =
     pr.status === "merged"
@@ -89,6 +102,17 @@ export function PrDetailHeader({
           >
             View on GitHub
           </Button>
+          {prId && (
+            <Button
+              kind="secondary"
+              size="sm"
+              icon="Users"
+              disabled={latestMultiAgentRun.isLoading || !hasMultiAgentRun}
+              onClick={openMultiAgentResults}
+            >
+              {tShell("nav.multi-agent")}
+            </Button>
+          )}
           {prId && (
             <RunReviewDropdown
               prId={prId}
