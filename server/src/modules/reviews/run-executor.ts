@@ -102,36 +102,51 @@ export class ReviewRunExecutor {
       await failAll(`Failed to load PR diff: ${(err as Error).message}`);
       return;
     }
+
+    // T12 — sync the clone to this PR's exact head BEFORE any attached-doc
+    // read below. GitClient.readFile reads whatever is CURRENTLY checked
+    // out, not a pinned sha (server/INSIGHTS.md) — reading first and
+    // syncing later would silently read the wrong commit's docs. Best
+    // effort: never fail the run over a sync hiccup, just fall back to
+    // whatever is on disk already.
+    try {
+      await this.container.git.checkoutPullHead({ owner: repo.owner, name: repo.name }, pull.number);
+    } catch (err) {
+      runLog.info(`context docs: checkout PR head failed — ${(err as Error).message}`);
+    }
+
     runLog.info(`Diff ready — ${diff.files.length} changed file(s); starting ${jobs.length} agent run(s)`);
 
-    for (const { agent, runId } of jobs) {
-      const agentStart = Date.now();
-      logger?.info(
-        { runId, agent: agent.name, provider: agent.provider, model: agent.model, prId: pull.id },
-        `review: agent "${agent.name}" started (${agent.provider}/${agent.model})`,
-      );
-      try {
-        const outcome = await this.runOneAgent(workspaceId, pull, repo, diff, agent, runId, runLog);
+    await Promise.allSettled(
+      jobs.map(async ({ agent, runId }) => {
+        const agentStart = Date.now();
         logger?.info(
-          {
-            runId,
-            agent: agent.name,
-            findings: outcome.findings.length,
-            grounding: outcome.grounding,
-            durationMs: Date.now() - agentStart,
-          },
-          `review: agent "${agent.name}" done — ${outcome.findings.length} finding(s)`,
+          { runId, agent: agent.name, provider: agent.provider, model: agent.model, prId: pull.id },
+          `review: agent "${agent.name}" started (${agent.provider}/${agent.model})`,
         );
-      } catch (err) {
-        // runOneAgent already persisted the failure/cancel (status + error +
-        // trace) and completed the bus; here we only log at the run level.
-        const cancelled = err instanceof RunCancelledError;
-        logger?.[cancelled ? 'info' : 'error'](
-          { runId, agent: agent.name, err: (err as Error).message, durationMs: Date.now() - agentStart },
-          `review: agent "${agent.name}" ${cancelled ? 'cancelled' : 'failed'}`,
-        );
-      }
-    }
+        try {
+          const outcome = await this.runOneAgent(workspaceId, pull, repo, diff, agent, runId, runLog);
+          logger?.info(
+            {
+              runId,
+              agent: agent.name,
+              findings: outcome.findings.length,
+              grounding: outcome.grounding,
+              durationMs: Date.now() - agentStart,
+            },
+            `review: agent "${agent.name}" done — ${outcome.findings.length} finding(s)`,
+          );
+        } catch (err) {
+          // runOneAgent already persisted the failure/cancel (status + error +
+          // trace) and completed the bus; here we only log at the run level.
+          const cancelled = err instanceof RunCancelledError;
+          logger?.[cancelled ? 'info' : 'error'](
+            { runId, agent: agent.name, err: (err as Error).message, durationMs: Date.now() - agentStart },
+            `review: agent "${agent.name}" ${cancelled ? 'cancelled' : 'failed'}`,
+          );
+        }
+      }),
+    );
   }
 
   /** Execute a single agent's review against a PR, streaming progress. */
@@ -153,18 +168,6 @@ export class ReviewRunExecutor {
     runLog.info(`Starting review with agent "${agent.name}" (${agent.provider}/${agent.model})`);
 
     try {
-      // T12 — sync the clone to this PR's exact head BEFORE any attached-doc
-      // read below. GitClient.readFile reads whatever is CURRENTLY checked
-      // out, not a pinned sha (server/INSIGHTS.md) — reading first and
-      // syncing later would silently read the wrong commit's docs. Best
-      // effort: never fail the run over a sync hiccup, just fall back to
-      // whatever is on disk already.
-      try {
-        await this.container.git.checkoutPullHead({ owner: repo.owner, name: repo.name }, pull.number);
-      } catch (err) {
-        runLog.info(`context docs: checkout PR head failed — ${(err as Error).message}`);
-      }
-
       // Resolve the agent's LLM provider. (container.llm throws if the provider
       // key is missing — caught below and persisted as a failed run.)
       const llm = await runLog.step(

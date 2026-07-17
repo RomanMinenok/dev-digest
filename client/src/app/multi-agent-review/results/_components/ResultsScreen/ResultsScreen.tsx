@@ -61,19 +61,14 @@ export function ResultsScreen() {
 
   const run = latestRun.data ?? null;
   const liveIds = runningMemberIds(run?.members ?? []);
-  const { events, running } = useRunEvents(liveIds);
-
-  // Refetch once every previously-running member's stream has closed, so final
-  // scores/findings land. Fires exactly once per settle — never polled.
+  // Refetch as soon as *each* agent's SSE closes so finished lanes leave
+  // "Running…" and pick up scores/findings without waiting for siblings.
+  // (Aggregate `running===false` only fires when the slowest agent ends.)
   const refetch = latestRun.refetch;
-  const wasRunning = React.useRef(false);
-  React.useEffect(() => {
-    if (running) wasRunning.current = true;
-    if (!running && wasRunning.current) {
-      wasRunning.current = false;
-      refetch();
-    }
-  }, [running, refetch]);
+  const onRunClosed = React.useCallback(() => {
+    void refetch();
+  }, [refetch]);
+  const { events } = useRunEvents(liveIds, { onRunClosed });
 
   // This route is meaningless without a PR, and without a run there is
   // nothing to show — in both cases Configure run is the right home, so we

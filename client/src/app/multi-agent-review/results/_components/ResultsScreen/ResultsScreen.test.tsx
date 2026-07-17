@@ -23,6 +23,7 @@ vi.mock("@/components/app-shell", () => ({
 }));
 
 let latestRun: { data: MultiAgentRunView | null; isLoading: boolean; isError: boolean; error?: unknown; refetch: () => void };
+let capturedOnRunClosed: ((runId: string) => void) | undefined;
 vi.mock("@/lib/hooks/multi-agent", () => ({
   useLatestMultiAgentRun: () => latestRun,
 }));
@@ -30,7 +31,10 @@ vi.mock("@/lib/hooks/core", () => ({
   usePullDetail: () => ({ data: { number: 482, title: "Add rate limiting to public API endpoints" } }),
 }));
 vi.mock("@/lib/hooks/reviews", () => ({
-  useRunEvents: () => ({ events: [], running: false }),
+  useRunEvents: (_ids: string[], opts?: { onRunClosed?: (runId: string) => void }) => {
+    capturedOnRunClosed = opts?.onRunClosed;
+    return { events: [], running: false };
+  },
 }));
 
 vi.mock("../../../_components/ResultsColumns", () => ({
@@ -64,6 +68,7 @@ afterEach(() => {
   cleanup();
   vi.clearAllMocks();
   searchParams = new URLSearchParams("pr=pr1");
+  capturedOnRunClosed = undefined;
 });
 
 function renderScreen() {
@@ -118,5 +123,32 @@ describe("ResultsScreen", () => {
 
     fireEvent.click(screen.getByText("Configure run"));
     expect(push).toHaveBeenCalledWith("/multi-agent-review?pr=pr1");
+  });
+
+  it("refetches the multi-agent run when any agent's SSE closes (not only when all settle)", () => {
+    const refetch = vi.fn();
+    const base = runFixture();
+    latestRun = {
+      data: {
+        ...base,
+        status: "running",
+        members: base.members.map((m) => ({
+          ...m,
+          status: "running" as const,
+          score: null,
+          duration_ms: null,
+          cost_usd: null,
+          findings: [],
+        })),
+      },
+      isLoading: false,
+      isError: false,
+      refetch,
+    };
+    renderScreen();
+
+    expect(capturedOnRunClosed).toBeTypeOf("function");
+    capturedOnRunClosed!("r1");
+    expect(refetch).toHaveBeenCalledTimes(1);
   });
 });

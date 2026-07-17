@@ -38,8 +38,9 @@ export function lastEventMessage(events: RunEvent[], runId: string): string | un
 }
 
 /** Run ids of members whose *persisted* status is still `'running'` — the
-    set to subscribe `useRunEvents` to on mount (no polling: re-subscribing
-    to still-running members is all that's needed, per client/INSIGHTS.md). */
+    set to subscribe `useRunEvents` to. Shrinks after each per-agent refetch
+    (on SSE close); do not wait for every member to finish before refetching,
+    or finished lanes stay stuck on "Running…" until the slowest sibling ends. */
 export function runningMemberIds(members: MultiAgentMember[]): string[] {
   return members.filter((m) => m.status === "running").map((m) => m.run_id);
 }

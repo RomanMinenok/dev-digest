@@ -1,6 +1,7 @@
 /* hooks/multi-agent.ts — React Query hooks for the multi-agent review views
-   (SPEC-05). Live lane status comes from `useRunEvents`'s SSE stream, not
-   polling — these hooks fetch-once-per-mount + invalidate-on-mutation only. */
+   (SPEC-05). Live lane *subtitles* come from `useRunEvents` SSE; persisted
+   lane body (status/findings/score) comes from this query, refetched on each
+   per-agent SSE close in ResultsScreen — not only when all streams settle. */
 "use client";
 
 import { useQuery } from "@tanstack/react-query";

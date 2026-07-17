@@ -2,13 +2,13 @@
    AC-33, AC-36..AC-43). One row per location group, one column per member
    agent in the same order the server sent them (the lanes'/tabs' order,
    AC-33) — rendered as received, never re-sorted or re-grouped per row.
-   Each cell is exactly one of three states (severity / did not flag /
-   failed); "did not flag" carries no explanatory sentence and reserves no
-   space for one (AC-36). The block itself does not render at all while any
-   member run is still in flight (AC-37) — the lanes/tabs above it keep
-   streaming regardless; only this block waits. matched/divergent/agreed are
-   read as-is from the server's flags (T-05) — nothing here recomputes
-   Jaccard or a similarity threshold. */
+   Each cell is exactly one of four states (severity / did not flag /
+   failed / pending). "did not flag" carries no explanatory sentence and
+   reserves no space for one (AC-36). The block renders as soon as any
+   location groups exist (partial run OK) — in-flight members show
+   `pending`, not silence or failure (AC-37 amended 2026-07-17). matched/
+   divergent/agreed are read as-is from the server's flags (T-05) — nothing
+   here recomputes Jaccard or a similarity threshold. */
 "use client";
 
 import React from "react";
@@ -28,9 +28,9 @@ export function FindingsByLocation({ run }: FindingsByLocationProps) {
   const t = useTranslations("multiAgent");
   const [filter, setFilter] = React.useState<LocationFilterValue>(DEFAULT_FILTER);
 
-  // AC-37: nothing renders — not even an empty shell — until every member
-  // run is terminal (any status), so the lanes above are the sole live UI.
-  if (!allMembersSettled(run.members)) return null;
+  // Progressive: show once groups exist. Hide only while still mid-run with
+  // nothing to show yet (avoid flashing the empty-run note before first finish).
+  if (run.groups.length === 0 && !allMembersSettled(run.members)) return null;
 
   const removedAgentLabel = t("byLocation.removedAgent");
   const names = memberNamesByKey(run.members, removedAgentLabel);
@@ -110,6 +110,8 @@ function LocationCell({ cell, group, name }: { cell: MultiAgentCell; group: Mult
         </>
       ) : cell.state === "did_not_flag" ? (
         <span style={s.mutedState}>{`● ${tRuns("conflicts.didNotFlag")}`}</span>
+      ) : cell.state === "pending" ? (
+        <span style={s.mutedState}>{`● ${t("results.running")}`}</span>
       ) : (
         <span style={s.failedState}>{`● ${t("byLocation.failed")}`}</span>
       )}

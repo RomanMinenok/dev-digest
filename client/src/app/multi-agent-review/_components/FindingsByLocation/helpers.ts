@@ -7,10 +7,9 @@ import type { MultiAgentGroup, MultiAgentGroupFinding, MultiAgentMember, Severit
 import type { LocationFilter } from "./constants";
 
 /**
- * AC-37: the block renders only once every member run is terminal (any
- * status, not just `'done'`) — mirrors the server's own gate
- * (`server/src/modules/multi-agent/status.ts`) but is re-derived here since
- * only the persisted member `status` is available client-side.
+ * True when every member run is terminal (any status, not just `'done'`).
+ * Used to decide when an empty `groups` array means "truly no findings"
+ * vs "still waiting for the first agent to finish" (progressive AC-37).
  */
 export function allMembersSettled(members: MultiAgentMember[]): boolean {
   return members.every((m) => m.status !== "running");

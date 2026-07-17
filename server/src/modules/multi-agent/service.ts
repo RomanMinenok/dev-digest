@@ -212,6 +212,8 @@ function toCellDto(cell: Cell): MultiAgentCell {
       return { state: 'did_not_flag', agent_id: cell.agentId };
     case 'failed':
       return { state: 'failed', agent_id: cell.agentId };
+    case 'pending':
+      return { state: 'pending', agent_id: cell.agentId };
   }
 }
 

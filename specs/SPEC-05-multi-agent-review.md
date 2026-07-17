@@ -363,9 +363,19 @@ Two terms used below, for a location group `G`:
   in the cell. (Verify: unit test over a two-findings-one-agent fixture)
 - **AC-36** — The system shall render no explanatory sentence beneath a "did not
   flag" cell. (Verify: RTL test asserting the cell contains only the label)
-- **AC-37** — WHILE any member run has not reached a terminal state, the system
-  shall not render the block at all; it shall render WHEN every member run has
-  finished with any status. (Verify: RTL test with one member still running)
+- **AC-37** — WHILE any member run has not reached a terminal state **and no
+  location groups exist yet**, the system shall not render the block; WHEN at
+  least one location group exists (even while siblings are still running), the
+  system shall render the matrix with a **`pending`** cell for each still-running
+  member (never `did_not_flag` or `failed` for an in-flight agent). WHEN every
+  member run has finished with any status, the system shall render the block
+  (including the empty-run state when there are no groups). (Verify: RTL — mid-run
+  with groups shows pending cells; mid-run with zero groups shows nothing; all
+  terminal shows the block)
+  <!-- 2026-07-17: amended from "hide until all terminal". Original rationale
+  (no truthful cell for a running agent) still holds — solved by adding
+  `pending` rather than lying with silence/failure. Progressive display matches
+  per-lane live updates. -->
 
 **The filter**
 
@@ -408,9 +418,9 @@ guesses:
 ```mermaid
 flowchart TD
   A[Findings of the multi-agent run] --> B[Group by location:<br/>same file + intersecting lines]
-  B --> C{Every member run<br/>terminal?}
-  C -->|no| D[Block not rendered yet<br/>lanes above stay live]
-  C -->|yes| E[Matrix: rows = locations,<br/>cols = all members, stable order]
+  B --> C{Any location groups<br/>yet?}
+  C -->|no, and still running| D[Block not rendered yet<br/>lanes above stay live]
+  C -->|yes, or all terminal| E[Matrix: rows = locations,<br/>cols = all members, stable order<br/>running members → pending cells]
   E --> F{Filter}
   F -->|All| G[every group]
   F -->|Matched| H["|F| >= 2"]
@@ -460,10 +470,12 @@ sequenceDiagram
 - **A member fails.** Its lane shows failed + error (AC-25); its cells read
   "failed" (AC-33), and it is not in F, so it can never make a group Matched,
   Divergent, or Agreed on its own.
-- **A member is still running.** The block does not render at all (AC-37) while
-  the lanes above keep streaming (AC-24) — a not-yet-finished agent has no
-  truthful cell state, and "did not flag" would be a lie that silently rewrites
-  itself seconds later. Only this block waits; nothing else on the page does.
+- **A member is still running.** The matrix renders as soon as any location
+  groups exist from finished members (AC-37); the still-running agent's cells
+  read `pending` — not "did not flag" (that would be a lie that rewrites itself
+  seconds later) and not "failed". While no groups exist yet, the block stays
+  hidden so the empty-run note does not flash before the first finish. Lanes
+  above keep streaming regardless (AC-24).
 - **Two agents flag one location with unrelated titles.** One group, `|F| = 2`,
   low J → Matched and Divergent. This is the case the old Jaccard-in-grouping
   rule made unreachable.

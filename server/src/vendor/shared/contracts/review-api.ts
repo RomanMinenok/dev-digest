@@ -75,13 +75,14 @@ export type SmartDiffResponse = z.infer<typeof SmartDiffResponse>;
 /**
  * One matrix cell — mirrors the `Cell` discriminated union in
  * `modules/multi-agent/cells.ts`. Kept as a real discriminated union on the
- * wire too: the three states (`severity` / `did_not_flag` / `failed`) must
- * never collapse into a single string with optional extras.
+ * wire too: the four states (`severity` / `did_not_flag` / `failed` /
+ * `pending`) must never collapse into a single string with optional extras.
  */
 export const MultiAgentCell = z.discriminatedUnion('state', [
   z.object({ state: z.literal('severity'), agent_id: z.string(), severity: Severity }),
   z.object({ state: z.literal('did_not_flag'), agent_id: z.string() }),
   z.object({ state: z.literal('failed'), agent_id: z.string() }),
+  z.object({ state: z.literal('pending'), agent_id: z.string() }),
 ]);
 export type MultiAgentCell = z.infer<typeof MultiAgentCell>;
 
