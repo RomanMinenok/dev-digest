@@ -17,6 +17,7 @@ import type {
   OpenPrPayload,
   CommitFilesPayload,
   IssueMeta,
+  CiWorkflowRun,
   GitClient,
   CloneOptions,
   UnifiedDiff,
@@ -125,6 +126,15 @@ export interface MockGitHubOptions {
   login?: string;
   /** Existing inline review comments returned by listReviewComments. */
   comments?: PrReviewComment[];
+  /** Workflow runs returned by listWorkflowRuns (defaults to []). */
+  workflowRuns?: CiWorkflowRun[];
+  /**
+   * Artifacts keyed by `${runId}:${name}` for downloadRunArtifact lookups.
+   * Missing keys → `null` (same as the real adapter when no artifact matches).
+   */
+  artifacts?: Record<string, Buffer | null>;
+  /** When set, listWorkflowRuns throws this error (AC-28 403 path). */
+  throwOnListRuns?: Error;
 }
 
 export class MockGitHubClient implements GitHubClient {
@@ -132,6 +142,7 @@ export class MockGitHubClient implements GitHubClient {
   public openedPrs: OpenPrPayload[] = [];
   public committed: CommitFilesPayload[] = [];
   public createdComments: CreateReviewCommentInput[] = [];
+  public listWorkflowRunsCalls: { workflow: string }[] = [];
 
   constructor(private opts: MockGitHubOptions = {}) {}
 
@@ -236,6 +247,22 @@ export class MockGitHubClient implements GitHubClient {
 
   async currentLogin(): Promise<string> {
     return this.opts.login ?? 'mock-user';
+  }
+
+  async listWorkflowRuns(_repo: RepoRef, workflow: string): Promise<CiWorkflowRun[]> {
+    this.listWorkflowRunsCalls.push({ workflow });
+    if (this.opts.throwOnListRuns) throw this.opts.throwOnListRuns;
+    return this.opts.workflowRuns ?? [];
+  }
+
+  async downloadRunArtifact(
+    _repo: RepoRef,
+    runId: string,
+    name: string,
+  ): Promise<Buffer | null> {
+    const key = `${runId}:${name}`;
+    if (!this.opts.artifacts || !(key in this.opts.artifacts)) return null;
+    return this.opts.artifacts[key] ?? null;
   }
 }
 

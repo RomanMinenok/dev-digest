@@ -50,7 +50,10 @@ export {
 export {
   toReviewPayload,
   gateTriggered,
+  gateTriggeredFromCounts,
+  severityCounts,
   countBlockers,
+  type SeverityCounts,
   type ToReviewOptions,
 } from './output/to-review.js';
 

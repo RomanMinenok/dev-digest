@@ -21,8 +21,15 @@ export interface FsDeps {
   readDir?: typeof readdirSync;
 }
 
-/** Find the single agent manifest file under `<devdigestDir>/agents/`. */
-export function findManifestPath(devdigestDir: string, deps: FsDeps = {}): string {
+/** Find the agent manifest file under `<devdigestDir>/agents/`. */
+export function findManifestPath(
+  devdigestDir: string,
+  deps: FsDeps = {},
+  slug?: string,
+): string {
+  if (slug) {
+    return path.join(devdigestDir, 'agents', `${slug}.yaml`);
+  }
   const readDir = deps.readDir ?? readdirSync;
   const agentsDir = path.join(devdigestDir, 'agents');
   let entries: string[];
@@ -77,7 +84,11 @@ export function loadAgentManifest(manifestPath: string, deps: FsDeps = {}): Agen
 }
 
 /** Convenience: locate + load + validate in one call. */
-export function loadManifest(devdigestDir: string, deps: FsDeps = {}): AgentManifest {
-  const manifestPath = findManifestPath(devdigestDir, deps);
+export function loadManifest(
+  devdigestDir: string,
+  deps: FsDeps = {},
+  slug?: string,
+): AgentManifest {
+  const manifestPath = findManifestPath(devdigestDir, deps, slug);
   return loadAgentManifest(manifestPath, deps);
 }

@@ -170,6 +170,45 @@ export async function createAgentRun(
   return row!.id;
 }
 
+/** Persist a completed CI-ingested run (`source='ci'`, no PR link). */
+export async function createCiAgentRun(
+  db: Db,
+  values: {
+    workspaceId: string;
+    agentId: string;
+    provider: string | null;
+    model: string | null;
+    durationMs?: number | null;
+    tokensIn?: number | null;
+    tokensOut?: number | null;
+    findingsCount: number;
+    grounding?: string | null;
+    costUsd?: number | null;
+    ranAt: Date;
+  },
+): Promise<string> {
+  const [row] = await db
+    .insert(t.agentRuns)
+    .values({
+      workspaceId: values.workspaceId,
+      agentId: values.agentId,
+      prId: null,
+      provider: values.provider,
+      model: values.model,
+      status: 'done',
+      source: 'ci',
+      durationMs: values.durationMs ?? null,
+      tokensIn: values.tokensIn ?? null,
+      tokensOut: values.tokensOut ?? null,
+      findingsCount: values.findingsCount,
+      grounding: values.grounding ?? null,
+      costUsd: values.costUsd ?? null,
+      ranAt: values.ranAt,
+    })
+    .returning({ id: t.agentRuns.id });
+  return row!.id;
+}
+
 export async function completeAgentRun(
   db: Db,
   runId: string,

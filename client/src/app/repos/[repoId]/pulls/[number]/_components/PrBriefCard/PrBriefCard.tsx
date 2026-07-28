@@ -20,7 +20,7 @@ import type { Verdict } from "@devdigest/shared";
 import { usePrBrief, useRecomputeBrief } from "../../../../../../../lib/hooks/brief";
 import { usePrReviews } from "../../../../../../../lib/hooks/reviews";
 import { VERDICT_META } from "../VerdictBanner/constants";
-import { formatTokens, formatCost } from "../RunTraceDrawer/helpers";
+import { formatTokens, formatCost } from "@/components/run-trace-drawer/helpers";
 import { s } from "./styles";
 
 interface PrBriefCardProps {
