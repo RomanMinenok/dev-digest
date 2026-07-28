@@ -1,3 +1,7 @@
-node_modules/
-dist/
+# No `dist/` here. This package's bundle IS the shipped artifact: it is committed
+# and read back at export time (`server/src/modules/ci/files.ts` → BUNDLE_PATH).
+# A `dist/` rule in THIS file would win over the root .gitignore's
+# `!agent-runner/dist/**` re-include — git cannot re-include a path that a
+# nested .gitignore excludes — leaving the bundle permanently untracked.
+node_modules
 *.log

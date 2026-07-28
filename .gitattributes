@@ -1,0 +1,5 @@
+# The agent-runner bundle is a build artifact shipped verbatim into target
+# repos and executed there. Store it byte-for-byte: line-ending normalisation
+# would rewrite inlined dependency sources (the ncc output carries ~1.3k CRLF
+# lines) and make the committed file differ from the one that was tested.
+agent-runner/dist/** -text -diff
