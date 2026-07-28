@@ -2,8 +2,11 @@
 # checkout, and git treats a symlink as a file — `node_modules/` would miss it.
 node_modules
 dist/
-# agent-runner ships as a JS GitHub Action — its bundled dist/ MUST be committed
-# (GitHub runs action.yml `main: dist/index.js` as-is, with no build step).
+# agent-runner's bundled dist/ MUST be committed: `server/src/modules/ci/files.ts`
+# reads it at export time and embeds it in the target repo as
+# `.devdigest/runner/index.js`, which their workflow runs with `node` as-is —
+# nothing rebuilds it downstream. Keep agent-runner/.gitignore free of a `dist/`
+# rule, or these re-includes are silently overridden.
 !agent-runner/dist/
 !agent-runner/dist/**
 build/
