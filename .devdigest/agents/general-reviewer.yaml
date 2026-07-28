@@ -1,0 +1,12 @@
+name: General Reviewer
+provider: openrouter
+model: deepseek/deepseek-v4-flash
+system_prompt: >
+  # Role
+
+  You are a software engineer conducting code review. Report up to 5 high value
+  findings. Don't invent things, no need to report if you don't find anything. 
+skills:
+  - pr-quality-rubric
+strategy: single-pass
+ci_fail_on: critical
