@@ -273,6 +273,12 @@ export type IndexStatus = z.infer<typeof IndexStatus>;
 export const RunRequest = z.object({
   agentId: z.string().optional(),
   all: z.boolean().optional(),
+  /**
+   * Multi-agent review picker (SPEC-05, AC-5/AC-6). Optional and additive —
+   * legacy `{agentId}`/`{all:true}` bodies must keep working byte-for-byte.
+   * A non-empty `agentIds` takes precedence over `agentId`/`all`.
+   */
+  agentIds: z.array(z.string()).optional(),
 });
 export type RunRequest = z.infer<typeof RunRequest>;
 

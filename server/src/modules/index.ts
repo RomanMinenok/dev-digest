@@ -14,6 +14,7 @@ import blast from './blast/routes.js';
 import projectContext from './project-context/routes.js';
 import brief from './brief/routes.js';
 import evalModule from './eval/routes.js';
+import multiAgent from './multi-agent/routes.js';
 import ci from './ci/routes.js';
 
 /**
@@ -45,5 +46,6 @@ export const modules: Record<string, FastifyPluginAsync> = {
   projectContext,
   brief,
   eval: evalModule,
+  multiAgent,
   ci,
 };

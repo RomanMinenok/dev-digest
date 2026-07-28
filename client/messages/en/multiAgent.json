@@ -1,0 +1,64 @@
+{
+  "picker": {
+    "header": "PICK AGENTS TO RUN",
+    "clear": "Clear",
+    "selectAll": "Select all",
+    "noAgents": "No agents yet — create one",
+    "noHistory": "no history yet",
+    "fanOut": "parallel fan-out",
+    "runButton": "Run multi-agent review ({count})"
+  },
+  "configure": {
+    "title": "Run a Multi-Agent Review",
+    "subtitle": "Pick a pull request and choose which agents to fan out — they run in parallel and you compare their findings side by side.",
+    "stepPr": "Pull request",
+    "stepAgents": "Agents to run",
+    "noPrTitle": "Pick a pull request first",
+    "noPrBody": "Choose which PR to review above, then select the agents to run on it.",
+    "loadErrorTitle": "Couldn't load this pull request's runs",
+    "tryAgain": "Please try again.",
+    "crumbStep": "Configure run",
+    "prPicker": {
+      "placeholder": "Select a pull request…",
+      "reposEmpty": "Connect a repository first to pick a pull request.",
+      "pullsEmpty": "This repository has no pull requests yet.",
+      "pullRequest": "Pull request",
+      "loading": "Loading…",
+      "item": "#{number} {title}"
+    }
+  },
+  "results": {
+    "back": "Configure run",
+    "title": "Multi-Agent Review",
+    "subtitle": "{count, plural, one {# selected agent} other {# selected agents}} · parallel",
+    "prNumber": "#{number}",
+    "modeGroupLabel": "Results view",
+    "modeColumns": "Columns",
+    "modeTabs": "Tabs",
+    "removedAgent": "Removed agent",
+    "running": "Running…",
+    "noFindings": "No findings",
+    "findingsCount": "{count, plural, one {# finding} other {# findings}}",
+    "runFailed": "This agent's run failed.",
+    "failed": "Failed",
+    "acceptedTag": "Accepted",
+    "dismissedTag": "Dismissed",
+    "evalCaseAgentGone": "This agent no longer exists",
+    "contextAgents": "{count, plural, one {# agent} other {# agents}}",
+    "contextDuration": " · {duration} total",
+    "contextCost": " · {cost} total",
+    "durationCost": "{duration} · {cost}"
+  },
+  "byLocation": {
+    "title": "Findings by location",
+    "filterAll": "All ({count})",
+    "filterMatched": "Matched ({count})",
+    "filterDivergent": "Divergent ({count})",
+    "filterAgreed": "Agreed ({count})",
+    "removedAgent": "Removed agent",
+    "failed": "failed",
+    "emptyRun": "No findings from any agent.",
+    "emptyFilter": "No locations match this filter.",
+    "filterGroupLabel": "Filter findings by location"
+  }
+}

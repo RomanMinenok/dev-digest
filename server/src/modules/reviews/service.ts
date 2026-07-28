@@ -41,12 +41,26 @@ export class ReviewService {
   // ===========================================================================
 
   /**
-   * Resolve which agents to run. `all` → all enabled agents; else a single agent.
+   * Resolve which agents to run. `agentIds` (non-empty) wins over `all` and
+   * `agentId` (the multi-agent picker path, AC-5); else `all` → all enabled
+   * agents; else a single `agentId`. Legacy callers (`all`/`agentId`) keep
+   * their exact prior behaviour and are unaffected by `agentIds` being absent.
    */
   async resolveTargets(
     workspaceId: string,
-    opts: { agentId?: string; all?: boolean },
+    opts: { agentId?: string; all?: boolean; agentIds?: string[] },
   ): Promise<AgentRow[]> {
+    if (opts.agentIds && opts.agentIds.length > 0) {
+      const agents: AgentRow[] = [];
+      for (const id of opts.agentIds) {
+        // Workspace-scoped lookup IS the tenancy check here — an id from
+        // another workspace must 404, not silently run (server/INSIGHTS.md).
+        const agent = await this.agents.getById(workspaceId, id);
+        if (!agent) throw new NotFoundError('Agent not found');
+        agents.push(agent);
+      }
+      return agents;
+    }
     if (opts.all) return this.agents.listEnabled(workspaceId);
     if (opts.agentId) {
       const agent = await this.agents.getById(workspaceId, opts.agentId);
@@ -105,11 +119,23 @@ export class ReviewService {
     prId: string,
     targets: AgentRow[],
     logger?: Logger,
+    /**
+     * Set when the run was started from the multi-agent picker (AC-5). One
+     * `multi_agent_runs` row is created up front and bound to every member's
+     * `agent_runs.multi_agent_run_id` — including N = 1, still "a multi-agent
+     * run of one". Legacy `{agentId}`/`{all:true}` bodies pass this `false`
+     * (or omit it) and create no multi-run / bind nothing (AC-6).
+     */
+    multiAgent = false,
   ): Promise<{ runs: { run_id: string; agent_id: string; agent_name: string }[]; reviews: ReviewDto[] }> {
     const pull = await this.repo.getPull(workspaceId, prId);
     if (!pull) throw new NotFoundError('Pull request not found');
     const repo = await this.repo.getRepo(pull.repoId);
     if (!repo) throw new NotFoundError('Repo not found');
+
+    const multiAgentRunId = multiAgent
+      ? await this.container.multiAgentRepo.create(workspaceId, prId)
+      : null;
 
     // Create the agent_run rows up front so a runId is available IMMEDIATELY —
     // the client persists these in global state and subscribes to the SSE
@@ -123,6 +149,7 @@ export class ReviewService {
         prId,
         provider: agent.provider,
         model: agent.model,
+        multiAgentRunId,
       });
       runs.push({ run_id: runId, agent_id: agent.id, agent_name: agent.name });
       jobs.push({ agent, runId });

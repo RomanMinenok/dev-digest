@@ -1,7 +1,10 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
 import { z } from 'zod';
 import { homedir } from 'node:os';
 import { join, isAbsolute, resolve } from 'node:path';
+
+dotenv.config();
+dotenv.config({ path: join(process.cwd(), '.env.local'), override: true });
 
 /**
  * Central, zod-validated environment config. Loaded once at startup.

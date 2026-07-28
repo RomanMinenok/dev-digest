@@ -29,6 +29,7 @@ import { ReviewRepository } from '../modules/reviews/repository.js';
 import { IntentRepository } from '../modules/intent/repository.js';
 import { BriefRepository } from '../modules/brief/repository.js';
 import { EvalRepository } from '../modules/eval/repository.js';
+import { MultiAgentRepository } from '../modules/multi-agent/repository.js';
 import { CiRepository } from '../modules/ci/repository.js';
 import { createPersistCiIngestRun } from './ci-ingest-persist.js';
 import { CiService } from '../modules/ci/service.js';
@@ -89,6 +90,7 @@ export class Container {
   private _intentRepo?: IntentRepository;
   private _briefRepo?: BriefRepository;
   private _evalRepo?: EvalRepository;
+  private _multiAgentRepo?: MultiAgentRepository;
   private _ciRepo?: CiRepository;
   private _ciService?: CiService;
   private _reposRepo?: RepoRepository;
@@ -150,6 +152,16 @@ export class Container {
    */
   get evalRepo(): EvalRepository {
     return (this._evalRepo ??= new EvalRepository(this.db));
+  }
+
+  /**
+   * Multi-agent review runs repository (SPEC-05, T-10). Mirrors
+   * `evalRepo`/`briefRepo`/`intentRepo` — lazy-singleton cross-cutting-repository
+   * pattern. Consumed by `modules/reviews/service.ts` as `container.multiAgentRepo`
+   * rather than importing `modules/multi-agent/*` directly.
+   */
+  get multiAgentRepo(): MultiAgentRepository {
+    return (this._multiAgentRepo ??= new MultiAgentRepository(this.db));
   }
 
   /**

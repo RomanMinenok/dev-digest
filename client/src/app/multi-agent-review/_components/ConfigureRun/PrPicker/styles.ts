@@ -1,0 +1,62 @@
+import type { CSSProperties } from "react";
+
+/** Co-located styles for PrPicker. Mirrors RunReviewDropdown's own
+   click-outside popover. The kit's `Dropdown` renders a flat `DropdownItemDef[]`
+   and takes no children, so it cannot host this picker's custom content. */
+export const s = {
+  root: { position: "relative", display: "inline-block", width: 340 } satisfies CSSProperties,
+  trigger: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    width: "100%",
+    padding: "8px 12px",
+    borderRadius: 7,
+    border: "1px solid var(--border-strong)",
+    background: "var(--bg-elevated)",
+    color: "var(--text-primary)",
+    fontSize: 13.5,
+    cursor: "pointer",
+  } satisfies CSSProperties,
+  triggerLabel: { flex: 1, textAlign: "left", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } satisfies CSSProperties,
+  triggerPlaceholder: { color: "var(--text-muted)" } satisfies CSSProperties,
+  panel: {
+    position: "absolute",
+    top: "calc(100% + 6px)",
+    left: 0,
+    width: 380,
+    maxHeight: 360,
+    overflowY: "auto",
+    background: "var(--bg-elevated)",
+    border: "1px solid var(--border-strong)",
+    borderRadius: 9,
+    boxShadow: "var(--shadow-modal)",
+    padding: 6,
+    zIndex: 40,
+    animation: "ddpop .12s ease",
+  } satisfies CSSProperties,
+  section: { padding: "6px 8px" } satisfies CSSProperties,
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: 600,
+    letterSpacing: "0.04em",
+    color: "var(--text-muted)",
+    textTransform: "uppercase",
+    padding: "4px 4px 6px",
+  } satisfies CSSProperties,
+  row: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    width: "100%",
+    padding: "7px 8px",
+    borderRadius: 6,
+    border: "none",
+    background: "transparent",
+    color: "var(--text-primary)",
+    fontSize: 13,
+    textAlign: "left",
+    cursor: "pointer",
+  } satisfies CSSProperties,
+  rowMuted: { fontSize: 12.5, color: "var(--text-muted)", padding: "6px 8px" } satisfies CSSProperties,
+} as const;

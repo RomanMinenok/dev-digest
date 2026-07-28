@@ -36,6 +36,12 @@ export const NAV: NavGroup[] = [
       { key: "project-context", label: "Project Context", icon: "FileText", href: "/project-context", gKey: "x" },
     ],
   },
+  {
+    section: "GLOBAL",
+    items: [
+      { key: "multi-agent", label: "Multi-Agent Review", icon: "Users", href: "/multi-agent-review", gKey: "m" },
+    ],
+  },
 ];
 
 export const SETTINGS_ITEM: NavItemDef = {
@@ -68,6 +74,7 @@ export const SHORTCUTS: ShortcutDef[] = [
   { keys: "g e", label: "Go to Eval Dashboard", group: "Navigation" },
   { keys: "g i", label: "Go to CI Runs", group: "Navigation" },
   { keys: "g x", label: "Go to Project Context", group: "Navigation" },
+  { keys: "g m", label: "Go to Multi-Agent Review", group: "Navigation" },
   { keys: "j / k", label: "Next / previous finding", group: "Findings" },
   { keys: "a", label: "Accept finding", group: "Findings" },
   { keys: "d", label: "Dismiss finding", group: "Findings" },

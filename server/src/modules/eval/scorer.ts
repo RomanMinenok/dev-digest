@@ -8,6 +8,7 @@
 
 import type { ExpectedFinding, CaseScore, EvalRunRow } from './types.js';
 import type { Finding } from '@devdigest/shared';
+import { sameLocation } from '../_shared/finding-location.js';
 
 // ── Acceptance-criteria constants ─────────────────────────────────────────────
 //
@@ -28,7 +29,8 @@ import type { Finding } from '@devdigest/shared';
 // negatives (e.g. `truthiness-trap-drops-valid-falsy-settings-values`:
 // expected line 53, agent cited line 52 — recall scored 0% despite a correct
 // finding). Tolerance applied to the produced (actual) range only (AC-21).
-const LINE_TOLERANCE = 10;
+// Delegated to `_shared/finding-location.ts` (`LINE_TOLERANCE`, `sameLocation`)
+// — see that module's header for the symmetry proof grouping (T-04) relies on.
 
 /**
  * Returns `true` when `produced` satisfies `expected` (AC-21, AC-22):
@@ -43,16 +45,10 @@ const LINE_TOLERANCE = 10;
  * Severity, category, and title are deliberately ignored (AC-22).
  */
 export function matchesExpectation(expected: ExpectedFinding, produced: Finding): boolean {
-  if (expected.file !== produced.file) return false;
-
-  const eStart = expected.start_line;
-  const eEnd = expected.end_line ?? expected.start_line;
-  const pStart = produced.start_line - LINE_TOLERANCE;
-  const pEnd = produced.end_line + LINE_TOLERANCE;
-
-  // Two closed ranges [a,b] and [c,d] intersect iff a ≤ d AND c ≤ b.
-  // Touching boundaries (a === d or b === c) count as intersecting (AC-21).
-  return eStart <= pEnd && pStart <= eEnd;
+  return sameLocation(
+    { file: expected.file, start_line: expected.start_line, end_line: expected.end_line ?? expected.start_line },
+    { file: produced.file, start_line: produced.start_line, end_line: produced.end_line },
+  );
 }
 
 // ── scoreCase ─────────────────────────────────────────────────────────────────
