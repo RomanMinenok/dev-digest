@@ -21,7 +21,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Card, EmptyState, Skeleton } from "@devdigest/ui";
 import { AppShell } from "@/components/app-shell";
-import { AgentRunPicker } from "@/components/agentRunPicker";
+import { AgentRunPicker } from "@/components/agent-run-picker";
 import { useRunReview } from "@/lib/hooks/reviews";
 import { useLatestMultiAgentRunForRepo } from "@/lib/hooks/multi-agent";
 import { useActiveRepo } from "@/lib/repo-context";

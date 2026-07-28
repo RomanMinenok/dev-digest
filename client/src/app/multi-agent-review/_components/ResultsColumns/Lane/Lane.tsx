@@ -8,7 +8,7 @@ import React from "react";
 import { useTranslations } from "next-intl";
 import { Avatar, Button, CircularScore, Icon } from "@devdigest/ui";
 import type { MultiAgentMember } from "@devdigest/shared";
-import { formatCost, formatSeconds } from "@/components/RunTraceDrawer/helpers";
+import { formatCost, formatSeconds } from "@/components/run-trace-drawer/helpers";
 import { laneName, laneState, type LaneState } from "../helpers";
 import { s, findingCard, findingIconColor, findingLocation, findingTitleRow } from "./styles";
 

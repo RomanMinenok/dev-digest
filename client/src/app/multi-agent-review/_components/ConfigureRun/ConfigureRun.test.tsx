@@ -51,7 +51,7 @@ vi.mock("./PrPicker", () => ({
 
 // Stubbed so the test drives ConfigureRun's own onRun handler directly — the
 // picker's internals are AgentRunPicker's own concern.
-vi.mock("@/components/agentRunPicker", () => ({
+vi.mock("@/components/agent-run-picker", () => ({
   AgentRunPicker: ({ onRun }: { onRun: (ids: string[]) => void }) => (
     <button type="button" onClick={() => onRun(["a1", "a2"])}>
       run-stub

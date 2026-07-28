@@ -1,0 +1,135 @@
+import type { CSSProperties } from "react";
+
+/** Preview step layout — mock 03-wizard-preview.png. */
+export const s = {
+  shell: {
+    display: "grid",
+    gridTemplateColumns: "220px 1fr",
+    gap: 16,
+    minHeight: 360,
+  } satisfies CSSProperties,
+
+  fileListHeader: {
+    display: "flex",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+    gap: 8,
+    marginBottom: 10,
+  } satisfies CSSProperties,
+  fileListTitle: {
+    fontSize: 10,
+    fontWeight: 700,
+    letterSpacing: "0.06em",
+    textTransform: "uppercase" as const,
+    color: "var(--text-muted)",
+  } satisfies CSSProperties,
+  fileListSize: {
+    fontSize: 10,
+    color: "var(--text-muted)",
+    fontFamily: "var(--font-mono, monospace)",
+  } satisfies CSSProperties,
+
+  fileList: {
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: 2,
+    margin: 0,
+    padding: 0,
+    listStyle: "none",
+  } satisfies CSSProperties,
+  fileRow: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: 8,
+    width: "100%",
+    padding: "8px 10px",
+    borderWidth: 0,
+    borderRadius: 6,
+    background: "transparent",
+    textAlign: "left" as const,
+    cursor: "pointer",
+    color: "var(--text-secondary)",
+    fontSize: 12,
+    lineHeight: 1.35,
+    fontFamily: "var(--font-mono, monospace)",
+    transition: "background 0.12s ease, color 0.12s ease",
+  } satisfies CSSProperties,
+  fileRowSelected: {
+    background: "var(--accent-bg)",
+    color: "var(--text-primary)",
+  } satisfies CSSProperties,
+
+  previewPane: {
+    display: "flex",
+    flexDirection: "column" as const,
+    minWidth: 0,
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: "var(--border)",
+    borderRadius: 8,
+    overflow: "hidden",
+    background: "var(--bg-surface)",
+  } satisfies CSSProperties,
+  previewHeader: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    padding: "10px 14px",
+    borderBottom: "1px solid var(--border)",
+    background: "var(--bg-elevated)",
+  } satisfies CSSProperties,
+  previewPath: {
+    fontSize: 12,
+    fontFamily: "var(--font-mono, monospace)",
+    color: "var(--text-primary)",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap" as const,
+  } satisfies CSSProperties,
+  editableBadge: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 4,
+    flexShrink: 0,
+    padding: "2px 8px",
+    borderRadius: 999,
+    fontSize: 10,
+    fontWeight: 600,
+    color: "var(--text-muted)",
+    background: "var(--bg-surface)",
+    border: "1px solid var(--border)",
+  } satisfies CSSProperties,
+
+  previewBody: {
+    flex: 1,
+    minHeight: 280,
+    overflow: "auto",
+  } satisfies CSSProperties,
+  readOnlyCode: {
+    margin: 0,
+    padding: "14px 16px",
+    fontSize: 12,
+    lineHeight: 1.55,
+    fontFamily: "var(--font-mono, monospace)",
+    color: "var(--text-primary)",
+    whiteSpace: "pre-wrap" as const,
+    wordBreak: "break-word" as const,
+  } satisfies CSSProperties,
+  editableArea: {
+    padding: 12,
+  } satisfies CSSProperties,
+
+  stateMessage: {
+    padding: "48px 16px",
+    textAlign: "center" as const,
+    fontSize: 13,
+    color: "var(--text-muted)",
+  } satisfies CSSProperties,
+  errorMessage: {
+    padding: "24px 16px",
+    textAlign: "center" as const,
+    fontSize: 13,
+    color: "var(--danger)",
+  } satisfies CSSProperties,
+} as const;

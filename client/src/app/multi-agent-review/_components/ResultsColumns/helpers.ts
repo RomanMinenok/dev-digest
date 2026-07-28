@@ -47,7 +47,7 @@ export function runningMemberIds(members: MultiAgentMember[]): string[] {
 
 /** Context-strip total duration — the max across members with a known
     duration, since the runs fan out in parallel (mirrors
-    `components/agentRunPicker/helpers.ts`'s `estimateTotals`). Members with
+    `components/agent-run-picker/helpers.ts`'s `estimateTotals`). Members with
     no duration yet (still running / failed before starting) are excluded. */
 export function totalDurationMs(members: MultiAgentMember[]): number | null {
   const durations = members

@@ -7,7 +7,7 @@ import React from "react";
 import { useTranslations } from "next-intl";
 import { Avatar, Button, CircularScore } from "@devdigest/ui";
 import type { MultiAgentMember } from "@devdigest/shared";
-import { formatCost, formatSeconds } from "@/components/RunTraceDrawer/helpers";
+import { formatCost, formatSeconds } from "@/components/run-trace-drawer/helpers";
 import { tabName, type TabState } from "../helpers";
 import { s } from "./styles";
 

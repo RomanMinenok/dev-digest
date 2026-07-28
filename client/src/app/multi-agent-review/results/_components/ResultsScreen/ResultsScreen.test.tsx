@@ -46,7 +46,7 @@ vi.mock("../../../_components/ResultsTabs", () => ({
 vi.mock("../../../_components/FindingsByLocation", () => ({
   FindingsByLocation: () => <div data-testid="by-location" />,
 }));
-vi.mock("@/components/RunTraceDrawer", () => ({ RunTraceDrawer: () => null }));
+vi.mock("@/components/run-trace-drawer", () => ({ RunTraceDrawer: () => null }));
 
 import { ResultsScreen } from "./ResultsScreen";
 

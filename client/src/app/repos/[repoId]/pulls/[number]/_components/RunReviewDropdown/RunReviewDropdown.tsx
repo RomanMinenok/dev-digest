@@ -8,7 +8,7 @@
 import React from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@devdigest/ui";
-import { AgentRunPicker } from "@/components/agentRunPicker";
+import { AgentRunPicker } from "@/components/agent-run-picker";
 import { useRunReview } from "../../../../../../../lib/hooks/reviews";
 import { DROPDOWN_WIDTH } from "./constants";
 import { s } from "./styles";

@@ -30,7 +30,13 @@ import { IntentRepository } from '../modules/intent/repository.js';
 import { BriefRepository } from '../modules/brief/repository.js';
 import { EvalRepository } from '../modules/eval/repository.js';
 import { MultiAgentRepository } from '../modules/multi-agent/repository.js';
+import { CiRepository } from '../modules/ci/repository.js';
+import { createPersistCiIngestRun } from './ci-ingest-persist.js';
+import { CiService } from '../modules/ci/service.js';
+import { BUNDLE_PATH } from '../modules/ci/constants.js';
 import { RepoRepository } from '../modules/repos/repository.js';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { ProjectContextRepository } from '../modules/project-context/repository.js';
 import { ProjectContextService } from '../modules/project-context/service.js';
 import type { RepoIntel } from '../modules/repo-intel/types.js';
@@ -85,6 +91,8 @@ export class Container {
   private _briefRepo?: BriefRepository;
   private _evalRepo?: EvalRepository;
   private _multiAgentRepo?: MultiAgentRepository;
+  private _ciRepo?: CiRepository;
+  private _ciService?: CiService;
   private _reposRepo?: RepoRepository;
   private _projectContextRepo?: ProjectContextRepository;
   private _projectContextService?: ProjectContextService;
@@ -154,6 +162,35 @@ export class Container {
    */
   get multiAgentRepo(): MultiAgentRepository {
     return (this._multiAgentRepo ??= new MultiAgentRepository(this.db));
+  }
+
+  /**
+   * CI installations + runs repository (SPEC-05). Mirrors `evalRepo`/`briefRepo`
+   * — lazy-singleton cross-cutting-repository pattern.
+   */
+  get ciRepo(): CiRepository {
+    return (this._ciRepo ??= new CiRepository(this.db, createPersistCiIngestRun(this.db)));
+  }
+
+  /**
+   * CI export, ingest, and runs application service (SPEC-05). GitHub is
+   * resolved lazily on first use via `github()` so missing `GITHUB_TOKEN` does
+   * not block server boot — only CI routes that need GitHub fail at request time.
+   */
+  get ciService(): CiService {
+    return (this._ciService ??= new CiService({
+      repo: this.ciRepo,
+      github: () => this.github(),
+      secrets: this.secrets,
+      readBundle: () => readFileSync(resolve(process.cwd(), '..', BUNDLE_PATH)),
+      resolveAgent: (workspaceId, agentId) =>
+        this.agentsRepo.getById(workspaceId, agentId),
+      linkedSkills: (agentId) => this.agentsRepo.linkedSkills(agentId),
+      listWorkspaceAgents: async (workspaceId) => {
+        const agents = await this.agentsRepo.list(workspaceId);
+        return agents.map((agent) => ({ id: agent.id, name: agent.name }));
+      },
+    }));
   }
 
   /**
