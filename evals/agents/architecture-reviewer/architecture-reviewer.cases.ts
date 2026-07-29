@@ -3,12 +3,19 @@ import { fixtureReader } from "../../src/index.js";
 
 const fx = fixtureReader(import.meta.url);
 
+// Two real violations in one diff: a Presentation-layer type imported into a pure helper, and one
+// module constructing another module's repository instead of taking it from the container.
 const REVIEW_PROMPT = `Audit this diff against DevDigest's documented structural contracts.
 
-${fx("checkout-service.diff")}`;
+${fx("layering-di-violations.diff")}`;
 
-// A diff that violates NO documented rule (a callback-parameter rename inside a pure helper, no
-// new imports, no cross-layer edges). A grounded reviewer should report zero violations.
+// A diff that violates NO documented rule (a reducer-parameter rename, no new imports, no
+// cross-layer edges). A grounded reviewer should report zero violations.
+//
+// Deliberately targets a DIFFERENT file from the violations diff above. When both fixtures edited
+// blast/helpers.ts, a reviewer reading them side by side attributed the FastifyReply import from
+// one to the other and filed it as a critical bug. The fixtures were correct; their proximity was
+// not. Keep each fixture on its own file so neither the eval agent nor a human can cross-read them.
 const BENIGN_PROMPT = `Audit this diff against DevDigest's documented structural contracts.
 
 ${fx("benign-refactor.diff")}`;
@@ -50,7 +57,7 @@ ${fx("compliant-addition.diff")}`;
 // difference matters if you are deciding whether to restore either:
 //
 //   • "findings are anchored to path:line" — deleted as a BAD EVAL. It passed one run and scored
-//     0/1 the next on identical code, while the surviving checkout case asserts the same anchoring
+//     0/1 the next on identical code, while the surviving violations case asserts the same anchoring
 //     (as part of its evidence practice) and scored 4/4 in both runs. A single-practice case at
 //     threshold 1.0 has no tolerance, so one judge disagreement is a total failure. It bought
 //     variance, not coverage.
@@ -69,7 +76,7 @@ ${fx("compliant-addition.diff")}`;
 // ─────────────────────────────────────────────────────────────────────────────
 export const cases: AgentCase[] = [
   {
-    name: "flags both violations in the checkout diff with severity",
+    name: "flags the layering and DI violations in the blast module diff with severity",
     kind: "quality",
     prompt: REVIEW_PROMPT,
     practices: [

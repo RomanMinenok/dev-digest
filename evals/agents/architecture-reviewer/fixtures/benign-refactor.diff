@@ -1,20 +1,13 @@
-diff --git a/server/src/modules/blast/helpers.ts b/server/src/modules/blast/helpers.ts
+diff --git a/server/src/modules/blast/summary-prompt.ts b/server/src/modules/blast/summary-prompt.ts
 index eeeeeee..fffffff 100644
---- a/server/src/modules/blast/helpers.ts
-+++ b/server/src/modules/blast/helpers.ts
-@@ -14,10 +14,11 @@
-  */
- export function assembleBlast(result: BlastResult, index: IndexState): BlastRadius {
--  const changed_symbols: ChangedSymbol[] = result.changedSymbols.map((s) => ({
--    name: s.name,
--    file: s.file,
--    kind: s.kind,
--  }));
-+  // Renamed the callback parameter for readability; behaviour unchanged.
-+  const changed_symbols: ChangedSymbol[] = result.changedSymbols.map((changed) => ({
-+    name: changed.name,
-+    file: changed.file,
-+    kind: changed.kind,
-+  }));
+--- a/server/src/modules/blast/summary-prompt.ts
++++ b/server/src/modules/blast/summary-prompt.ts
+@@ -30,7 +30,8 @@
+ const TOP_N = 5;
 
-   const downstream: DownstreamImpact[] = result.changedSymbols.map((sym) => {
+ export function buildBlastSummaryInput(blast: BlastRadius): string {
+-  const totalCallers = blast.downstream.reduce((n, d) => n + d.callers.length, 0);
++  // Renamed the reducer parameters for readability; behaviour unchanged.
++  const totalCallers = blast.downstream.reduce((sum, impact) => sum + impact.callers.length, 0);
+   const endpoints = [...new Set(blast.downstream.flatMap((d) => d.endpoints_affected))];
+   const crons = [...new Set(blast.downstream.flatMap((d) => d.crons_affected))];
