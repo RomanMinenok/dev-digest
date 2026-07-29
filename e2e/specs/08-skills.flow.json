@@ -8,7 +8,7 @@
     { "cmd": ["wait", "--text", "pr-quality-rubric"], "label": "seeded rubric skill card visible" },
     { "cmd": ["wait", "--text", "test-coverage-rubric"], "label": "seeded test-coverage skill card visible" },
     { "cmd": ["wait", "--text", "api-contract-guard"], "label": "seeded api-contract skill card visible" },
-    { "cmd": ["find", "text", "pr-quality-rubric", "click"], "label": "open the rubric skill" },
+    { "cmd": ["find", "text", "pr-quality-rubric", "click", "--exact"], "label": "open the rubric skill" },
     { "cmd": ["wait", "--url", "/skills/"], "label": "skill detail route reached" },
     { "cmd": ["wait", "--load", "networkidle"], "label": "skill detail fetch settles" },
     { "cmd": ["wait", "--text", "Preview"], "label": "default Preview tab renders" },
