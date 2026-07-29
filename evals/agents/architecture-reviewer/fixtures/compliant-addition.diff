@@ -1,0 +1,42 @@
+diff --git a/reviewer-core/src/pipeline/severity.ts b/reviewer-core/src/pipeline/severity.ts
+new file mode 100644
+index 0000000..1111111
+--- /dev/null
++++ b/reviewer-core/src/pipeline/severity.ts
+@@ -0,0 +1,24 @@
++import type { Finding, Severity } from "../types.js";
++
++const ORDER: Record<Severity, number> = {
++  critical: 0,
++  high: 1,
++  medium: 2,
++  low: 3,
++  info: 4,
++};
++
++/** Sort findings most-severe first. Pure — no I/O, no clock, no randomness. */
++export function sortBySeverity(findings: Finding[]): Finding[] {
++  return [...findings].sort((a, b) => ORDER[a.severity] - ORDER[b.severity]);
++}
++
++/** True when any finding is at or above the blocking threshold. */
++export function hasBlocking(findings: Finding[]): boolean {
++  return findings.some((f) => ORDER[f.severity] <= ORDER.high);
++}
+diff --git a/reviewer-core/src/pipeline/run.ts b/reviewer-core/src/pipeline/run.ts
+index 2222222..3333333 100644
+--- a/reviewer-core/src/pipeline/run.ts
++++ b/reviewer-core/src/pipeline/run.ts
+@@ -1,6 +1,7 @@
+ import { groundFindings } from "./ground.js";
+ import { dedupe } from "./dedupe.js";
++import { sortBySeverity } from "./severity.js";
+ import type { LLMProvider } from "../ports/llm.js";
+ import type { Finding } from "../types.js";
+
+@@ -18,5 +19,5 @@ export async function runPipeline(
+   const deduped = dedupe(raw);
+   const grounded = await groundFindings(deduped, diff);
+-  return grounded;
++  return sortBySeverity(grounded);
+ }
