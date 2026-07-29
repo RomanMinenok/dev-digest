@@ -1,42 +1,43 @@
-diff --git a/reviewer-core/src/pipeline/severity.ts b/reviewer-core/src/pipeline/severity.ts
+diff --git a/reviewer-core/src/severity.ts b/reviewer-core/src/severity.ts
 new file mode 100644
-index 0000000..1111111
+index 0000000..a1b2c3d
 --- /dev/null
-+++ b/reviewer-core/src/pipeline/severity.ts
-@@ -0,0 +1,24 @@
-+import type { Finding, Severity } from "../types.js";
++++ b/reviewer-core/src/severity.ts
+@@ -0,0 +1,22 @@
++import type { Finding } from '@devdigest/shared';
 +
-+const ORDER: Record<Severity, number> = {
-+  critical: 0,
-+  high: 1,
-+  medium: 2,
-+  low: 3,
-+  info: 4,
++/**
++ * Severity ordering for findings. Pure — no I/O, no clock, no randomness, and
++ * no dependency on anything outside the shared contracts.
++ */
++
++const ORDER: Record<string, number> = {
++  CRITICAL: 0,
++  WARNING: 1,
++  SUGGESTION: 2,
 +};
 +
-+/** Sort findings most-severe first. Pure — no I/O, no clock, no randomness. */
-+export function sortBySeverity(findings: Finding[]): Finding[] {
-+  return [...findings].sort((a, b) => ORDER[a.severity] - ORDER[b.severity]);
-+}
++const rank = (f: Finding): number => ORDER[f.severity] ?? Number.MAX_SAFE_INTEGER;
 +
-+/** True when any finding is at or above the blocking threshold. */
-+export function hasBlocking(findings: Finding[]): boolean {
-+  return findings.some((f) => ORDER[f.severity] <= ORDER.high);
++/** Sort findings most-severe first. Does not mutate the input. */
++export function sortBySeverity(findings: Finding[]): Finding[] {
++  return [...findings].sort((a, b) => rank(a) - rank(b));
 +}
-diff --git a/reviewer-core/src/pipeline/run.ts b/reviewer-core/src/pipeline/run.ts
-index 2222222..3333333 100644
---- a/reviewer-core/src/pipeline/run.ts
-+++ b/reviewer-core/src/pipeline/run.ts
-@@ -1,6 +1,7 @@
- import { groundFindings } from "./ground.js";
- import { dedupe } from "./dedupe.js";
-+import { sortBySeverity } from "./severity.js";
- import type { LLMProvider } from "../ports/llm.js";
- import type { Finding } from "../types.js";
+diff --git a/reviewer-core/src/review/run.ts b/reviewer-core/src/review/run.ts
+index 1111111..2222222 100644
+--- a/reviewer-core/src/review/run.ts
++++ b/reviewer-core/src/review/run.ts
+@@ -9,6 +9,7 @@ import { Review as ReviewSchema } from '@devdigest/shared';
+ import { assemblePrompt } from '../prompt.js';
+ import { groundFindings, groundingSummary } from '../grounding.js';
+ import { reduceReviews, scoreFromFindings, sliceDiff } from './reduce.js';
++import { sortBySeverity } from '../severity.js';
 
-@@ -18,5 +19,5 @@ export async function runPipeline(
-   const deduped = dedupe(raw);
-   const grounded = await groundFindings(deduped, diff);
--  return grounded;
-+  return sortBySeverity(grounded);
- }
+@@ -196,7 +197,7 @@ export async function reviewPullRequest(input: ReviewInput): Promise<ReviewOutco
+   // findings list, and the deterministic event always agree.
+   return {
+-    review: { ...merged, findings: ground.kept, score: scoreFromFindings(ground.kept) },
++    review: { ...merged, findings: sortBySeverity(ground.kept), score: scoreFromFindings(ground.kept) },
+     grounding,
+     dropped: ground.dropped,
+     mode,
