@@ -26,6 +26,15 @@ ${fx("benign-refactor.diff")}`;
 // module is pure (no I/O, no clock), it lives inside reviewer-core rather than crossing into it,
 // the import edge points inward, and the mandatory groundFindings() gate is still called before the
 // return. Zero findings is the only correct answer.
+//
+// The first version of this fixture added a `sortBySeverity` helper with its own severity ORDER
+// map — and the agent correctly filed a Medium for fragmenting severity logic, because
+// reviewer-core ALREADY ranks severity in review/reduce.ts and output/to-review.ts. The fixture,
+// not the agent, was wrong. It now sorts by LOCATION (file, then start_line), which nothing in
+// reviewer-core does today, so the addition duplicates no existing concept. If you rewrite this
+// fixture again, grep reviewer-core for the concept you are adding before assuming it is novel —
+// a "compliant" addition that quietly duplicates existing logic is a real finding, and a
+// true-negative case that contains one tests nothing.
 const COMPLIANT_ADDITION_PROMPT = `Audit this diff against DevDigest's documented structural contracts.
 
 ${fx("compliant-addition.diff")}`;
@@ -111,7 +120,7 @@ export const cases: AgentCase[] = [
     prompt: COMPLIANT_ADDITION_PROMPT,
     practices: [
       "reports no critical/high/medium architecture violations for this diff — the new module is pure, the import edge points inward, and the groundFindings() gate is still called",
-      "does not flag the new severity.ts module as an I/O or layering violation, since it imports only types and performs no I/O",
+      "does not flag the new review/order.ts module as an I/O or layering violation, since it imports only types and performs no I/O",
       "does not claim the mandatory groundFindings() gate was skipped — it is still called before the return",
     ],
     threshold: 1.0,
