@@ -1,0 +1,36 @@
+diff --git a/reviewer-core/src/review/order.ts b/reviewer-core/src/review/order.ts
+new file mode 100644
+index 0000000..a1b2c3d
+--- /dev/null
++++ b/reviewer-core/src/review/order.ts
+@@ -0,0 +1,20 @@
++import type { Finding } from '@devdigest/shared';
++
++/**
++ * Stable presentation order for grounded findings: by file path, then by the
++ * first line of the cited range. Pure — no I/O, no clock, no randomness, and
++ * no severity logic (severity ranking already lives in output/to-review.ts).
++ */
++export function sortFindingsByLocation(findings: Finding[]): Finding[] {
++  return [...findings].sort(
++    (a, b) => a.file.localeCompare(b.file) || a.start_line - b.start_line,
++  );
++}
+diff --git a/reviewer-core/src/review/run.ts b/reviewer-core/src/review/run.ts
+index 1111111..2222222 100644
+--- a/reviewer-core/src/review/run.ts
++++ b/reviewer-core/src/review/run.ts
+@@ -9,6 +9,7 @@ import { Review as ReviewSchema } from '@devdigest/shared';
+ import { assemblePrompt } from '../prompt.js';
+ import { groundFindings, groundingSummary } from '../grounding.js';
+ import { reduceReviews, scoreFromFindings, sliceDiff } from './reduce.js';
++import { sortFindingsByLocation } from './order.js';
+
+@@ -196,7 +197,7 @@ export async function reviewPullRequest(input: ReviewInput): Promise<ReviewOutco
+   // findings list, and the deterministic event always agree.
+   return {
+-    review: { ...merged, findings: ground.kept, score: scoreFromFindings(ground.kept) },
++    review: { ...merged, findings: sortFindingsByLocation(ground.kept), score: scoreFromFindings(ground.kept) },
+     grounding,
+     dropped: ground.dropped,
+     mode,

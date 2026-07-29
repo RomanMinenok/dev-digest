@@ -214,8 +214,9 @@ Three things that are easy to get wrong:
 - `OPENROUTER_BASE_URL` is set **per job**, not workflow-wide. The content tier reads the same
   variable, so hoisting it would send the proxy-less `skills` job to a `localhost:4000` that isn't
   running there.
-- The vitest filter needs a **trailing slash** (`agents/<name>/`). Without it,
-  `agents/architecture-reviewer` also matches `architecture-reviewer-lite`.
+- The vitest filter needs a **trailing slash** (`agents/<name>/`). It is a substring match, so a
+  bare `agents/foo` would also pull in a sibling `agents/foo-lite` or `agents/foo-v2`. Keep the
+  slash even when no such sibling exists today — one is only ever a `pnpm eval:scaffold` away.
 - The `changes` job needs `fetch-depth: 0`, otherwise there is no base commit to diff against.
 
 ubuntu runners ship Docker + `docker compose`, so the proxy needs no extra setup; the container

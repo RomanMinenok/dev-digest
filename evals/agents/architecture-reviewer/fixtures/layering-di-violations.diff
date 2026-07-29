@@ -1,0 +1,32 @@
+diff --git a/server/src/modules/blast/helpers.ts b/server/src/modules/blast/helpers.ts
+index 1111111..2222222 100644
+--- a/server/src/modules/blast/helpers.ts
++++ b/server/src/modules/blast/helpers.ts
+@@ -1,5 +1,6 @@
+ import type { BlastCaller, BlastRadius, BlastStatus, ChangedSymbol, DownstreamImpact } from '@devdigest/shared';
+ import type { BlastResult, IndexState } from '../repo-intel/types.js';
++import type { FastifyReply } from 'fastify';
+
+ const MAX_CALLERS_PER_SYMBOL = 20;
+
+@@ -14,7 +15,7 @@
+  */
+-export function assembleBlast(result: BlastResult, index: IndexState): BlastRadius {
++export function assembleBlast(result: BlastResult, index: IndexState, reply?: FastifyReply): BlastRadius {
+   const changed_symbols: ChangedSymbol[] = result.changedSymbols.map((s) => ({
+     name: s.name,
+     file: s.file,
+diff --git a/server/src/modules/blast/service.ts b/server/src/modules/blast/service.ts
+index 3333333..4444444 100644
+--- a/server/src/modules/blast/service.ts
++++ b/server/src/modules/blast/service.ts
+@@ -14,10 +14,12 @@
+ export class BlastService {
+   private repo: BlastRepository;
+
+   constructor(private container: Container) {
+-    this.repo = new BlastRepository(container.db);
++    this.repo = new BlastRepository(container.db);
++    // Bypass the container and build another module's repository here.
++    this.intent = new IntentRepository(container.db);
+   }

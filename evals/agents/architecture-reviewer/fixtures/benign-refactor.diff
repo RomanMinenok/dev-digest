@@ -1,16 +1,13 @@
-diff --git a/server/src/modules/blast/score.ts b/server/src/modules/blast/score.ts
+diff --git a/server/src/modules/blast/summary-prompt.ts b/server/src/modules/blast/summary-prompt.ts
 index eeeeeee..fffffff 100644
---- a/server/src/modules/blast/score.ts
-+++ b/server/src/modules/blast/score.ts
-@@ -1,10 +1,12 @@
- export interface BlastRow {
-   id: string;
-   score: number;
- }
+--- a/server/src/modules/blast/summary-prompt.ts
++++ b/server/src/modules/blast/summary-prompt.ts
+@@ -30,7 +30,8 @@
+ const TOP_N = 5;
 
--export function summarize(rows: BlastRow[]) {
--  return rows.map((r) => ({ id: r.id, score: r.score }));
-+// Renamed locals for readability; behaviour unchanged.
-+export function summarize(rows: BlastRow[]) {
-+  return rows.map((row) => ({ id: row.id, score: row.score }));
- }
+ export function buildBlastSummaryInput(blast: BlastRadius): string {
+-  const totalCallers = blast.downstream.reduce((n, d) => n + d.callers.length, 0);
++  // Renamed the reducer parameters for readability; behaviour unchanged.
++  const totalCallers = blast.downstream.reduce((sum, impact) => sum + impact.callers.length, 0);
+   const endpoints = [...new Set(blast.downstream.flatMap((d) => d.endpoints_affected))];
+   const crons = [...new Set(blast.downstream.flatMap((d) => d.crons_affected))];
