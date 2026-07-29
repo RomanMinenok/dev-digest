@@ -8,9 +8,15 @@
 #
 # Models (all inference goes to OpenRouter; override per-run from the Actions tab):
 #   skills → DeepSeek v4 Flash. Content-only, so it speaks OpenAI format natively — no proxy.
-#   agents/workflow → Gemini 2.5 Flash. These tiers assert on real subagent DISPATCH, and
-#     evals/README.md's measured table shows DeepSeek does the work inline instead of dispatching.
-#     Switch tool_model to a DeepSeek slug once it is verified to dispatch.
+#   agents/workflow → DeepSeek v4 Flash as well, set 2026-07-29 to put every tier on one model.
+#     READ THIS BEFORE TRUSTING A RED TOOL TIER. These tiers assert on real subagent DISPATCH,
+#     and evals/README.md's measured table rates `deepseek/deepseek-chat` ❌ "does the work inline
+#     instead of dispatching" against `google/gemini-2.5-flash` ✅ "recommended". That measurement
+#     is on a sibling DeepSeek slug, not on v4-flash, so it is evidence rather than proof — but it
+#     means a dispatch-assertion failure here may be the MODEL declining to dispatch, not the agent
+#     artifact being wrong. Diagnose by re-running from the Actions tab with
+#     tool_model=google/gemini-2.5-flash and comparing. The proxy needs no change either way: its
+#     route is a wildcard (evals/proxy/litellm.config.yaml), so any slug forwards through.
 name: evals
 
 on:
@@ -209,7 +215,7 @@ jobs:
     env:
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       OPENROUTER_BASE_URL: http://localhost:4000
-      EVAL_MODEL: ${{ inputs.tool_model || 'google/gemini-2.5-flash' }}
+      EVAL_MODEL: ${{ inputs.tool_model || 'deepseek/deepseek-v4-flash' }}
       EVAL_JUDGE_MODEL: ${{ inputs.judge_model || 'deepseek/deepseek-v4-flash' }}
     steps:
       - uses: actions/checkout@v4
@@ -267,7 +273,7 @@ jobs:
     env:
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       OPENROUTER_BASE_URL: http://localhost:4000
-      EVAL_MODEL: ${{ inputs.tool_model || 'google/gemini-2.5-flash' }}
+      EVAL_MODEL: ${{ inputs.tool_model || 'deepseek/deepseek-v4-flash' }}
       EVAL_JUDGE_MODEL: ${{ inputs.judge_model || 'deepseek/deepseek-v4-flash' }}
     steps:
       - uses: actions/checkout@v4
