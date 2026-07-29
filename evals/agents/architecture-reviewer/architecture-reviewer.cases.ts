@@ -7,7 +7,7 @@ const REVIEW_PROMPT = `Audit this diff against DevDigest's documented structural
 
 ${fx("checkout-service.diff")}`;
 
-// A diff that violates NO documented rule (a pure local-variable rename inside a domain file, no
+// A diff that violates NO documented rule (a callback-parameter rename inside a pure helper, no
 // new imports, no cross-layer edges). A grounded reviewer should report zero violations.
 const BENIGN_PROMPT = `Audit this diff against DevDigest's documented structural contracts.
 
@@ -73,8 +73,8 @@ export const cases: AgentCase[] = [
     kind: "quality",
     prompt: REVIEW_PROMPT,
     practices: [
-      "flags the domain file (checkout.ts) importing a type from 'fastify' as a violation of the inward-only dependency rule between Domain and Presentation layers",
-      "flags the `new PgCheckoutRepository()` call inside service.ts as a violation of DI discipline (concrete adapters/repositories must be constructed only in the composition root / container)",
+      "flags the pure helper module (blast/helpers.ts) importing FastifyReply from 'fastify' as a violation of the inward-only dependency rule — a Presentation-layer type reaching into logic that had no framework dependency",
+      "flags the `new IntentRepository(container.db)` call added to BlastService's constructor as a violation of DI discipline and of module boundaries — one module reaching into another module's repository instead of going through the container",
       "assigns a severity (critical/high/medium/low/info) to each finding",
       // Softened from "quotes the offending line verbatim". The agent documents evidence, not
       // verbatim quotation, so a path:line anchor or a quoted fragment both satisfy the contract.
