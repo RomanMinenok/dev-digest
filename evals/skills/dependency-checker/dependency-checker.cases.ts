@@ -1,3 +1,16 @@
+// SMOKE TEST — DO NOT MERGE. This comment is the entire change on this branch.
+//
+// Purpose: prove the restored evals.yml routes a real PR to the skills tier and reports a
+// PASS honestly. Touching any file under evals/skills/dependency-checker/ makes
+// scripts/ci-detect.mjs emit skills=["dependency-checker"], which fans out to the matrix.
+// Nothing executable is modified, so the three real cases below must score exactly as they
+// always have — a red job on this branch would mean the tier is broken or non-deterministic,
+// not that this edit broke something.
+//
+// Paired with test/evals-smoke-skills-red, which adds a deliberately impossible case to the
+// same file and must go red. Green-here + red-there is the actual assertion; either result
+// alone proves nothing about the gate.
+
 import type { SkillCase } from "../../src/index.js";
 
 // This skill's job is to analyze real files (package.json, tsconfig.json, node_modules sizes),
