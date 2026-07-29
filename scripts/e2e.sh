@@ -7,9 +7,18 @@
 #   ./scripts/e2e.sh
 #   E2E_PG_PORT=5440 E2E_API_PORT=3201 E2E_WEB_PORT=3200 ./scripts/e2e.sh
 #
-# Mirrors what .github/workflows/e2e-web.yml does, but with an ephemeral
+# Mirrors what .github/workflows/e2e-web.yml does — including a PRODUCTION web
+# build (`pnpm build` + `next start`, not `next dev`) — but with an ephemeral
 # Postgres (no persistent volume → empty every run, so the seeded demo repo
 # acme/payments-api is the ONLY repo and the home redirect lands on it).
+#
+# The production build is the point, not an optimisation. Under `next dev` this
+# script reported 9/9 while CI reported 8/9: `08-skills` fails only on a built
+# app, because Next.js inlines the RSC flight payload as
+# `<script>self.__next_f.push([1,"…pr-quality-rubric…"])</script>`, giving
+# agent-browser's substring `find text` a second, unclickable match. A runner
+# that cannot reproduce CI failures cannot give pre-push confidence, so the
+# build cost (~40 s) is deliberate. See e2e/INSIGHTS.md.
 #
 # Exits with the e2e run's status. On success, failure, or Ctrl-C it tears down
 # the API/web child processes AND removes the isolated Postgres container.
@@ -54,7 +63,7 @@ command -v agent-browser >/dev/null || \
 # --- teardown trap (installed before we start anything) ----------------------
 SERVER_PID=""
 WEB_PID=""
-# Recursively kill a process and all its descendants. `pnpm exec tsx` / `next dev`
+# Recursively kill a process and all its descendants. `pnpm exec tsx` / `next start`
 # spawn the real listener as a GRANDCHILD, so a plain `kill $PID` + `pkill -P`
 # leaves it orphaned (port stays bound). Walk the tree leaves-first instead.
 kill_tree() {
@@ -143,13 +152,18 @@ done
 [ "$api_up" -eq 1 ] || { echo "API never became healthy on :$API_PORT"; exit 1; }
 log "API healthy"
 
-# --- web on :$WEB_PORT (next dev → reads NEXT_PUBLIC_API_BASE from env) -------
-log "starting web on :$WEB_PORT"
-(cd client && pnpm exec next dev -p "$WEB_PORT") &
+# --- web on :$WEB_PORT (prod build, as CI does) ------------------------------
+# NEXT_PUBLIC_API_BASE is inlined at BUILD time, not read at runtime, so it must
+# already be exported here (it is, at the top) — same as the workflow, which sets
+# it job-wide before `pnpm build`.
+log "building + starting web on :$WEB_PORT (production build, ~40s)"
+(cd client && pnpm build && pnpm exec next start -p "$WEB_PORT") &
 WEB_PID=$!
 log "waiting for web :$WEB_PORT"
 web_up=0
-for _ in $(seq 1 60); do
+# 300 not 60: the readiness clock now covers a full production build, not just a
+# dev-server boot. 60 s reliably times out before `next build` finishes.
+for _ in $(seq 1 300); do
   curl -fsS "http://localhost:${WEB_PORT}" >/dev/null 2>&1 && { web_up=1; break; }
   kill -0 "$WEB_PID" 2>/dev/null || { echo "web process exited before becoming reachable"; exit 1; }
   sleep 1
