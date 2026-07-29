@@ -80,4 +80,29 @@ export const cases: SkillCase[] = [
     threshold: 0.6,
     maxTurns: 10,
   },
+
+  // ---------------------------------------------------------------------------
+  // SMOKE TEST — DO NOT MERGE. Deliberately unsatisfiable, so the skills tier goes red.
+  //
+  // Proves the *negative* half of the gate: that a failing skills case actually turns the
+  // check red and, because `skills` has no continue-on-error, takes the whole run with it.
+  // The three cases above are untouched and should still pass, so the job reads 3 passed /
+  // 1 failed — a realistic gate demonstration rather than an all-red job.
+  //
+  // Engineered to fail DETERMINISTICALLY, not on model whim: `grounding` is a plain substring
+  // check (patternMatch) that runs before the judge, must equal exactly 1.0, and short-circuits
+  // the judge when it fails (src/dsl/case.ts:103-114). The sentinel below is not in the prompt
+  // and has no reason to appear in any answer, so no model can accidentally satisfy it. Because
+  // there are no `practices`, the judge is never called — this case costs one cheap completion.
+  //
+  // If this case ever PASSES, do not shrug it off: it would mean the grounding gate is not being
+  // evaluated at all, which would silently invalidate the `grounding` gate on the first case above.
+  // ---------------------------------------------------------------------------
+  {
+    name: "SMOKE: impossible grounding sentinel — MUST FAIL",
+    kind: "grounding",
+    prompt: "In one sentence, what does a dependency check report tell a developer?",
+    grounding: ["DEVDIGEST_SMOKE_SENTINEL_bd41f0c2_MUST_NEVER_APPEAR"],
+    maxTurns: 1,
+  },
 ];
