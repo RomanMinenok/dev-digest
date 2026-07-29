@@ -236,8 +236,8 @@ jobs:
       - name: Wait for proxy
         run: pnpm proxy:wait
 
-      # Trailing slash anchors the filter to this agent's directory — without it
-      # `agents/architecture-reviewer` would also match `architecture-reviewer-lite`.
+      # Trailing slash anchors the filter to this agent's directory. vitest matches the pattern as
+      # a substring, so a bare `agents/foo` would also pull in a sibling `agents/foo-lite`.
       - run: pnpm exec vitest run 'agents/${{ matrix.agent }}/'
 
       - name: Proxy logs
