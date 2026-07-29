@@ -1,3 +1,20 @@
+// SMOKE TEST — DO NOT MERGE. This comment is the entire change on this branch.
+//
+// The agents tier has never been verified in this repo: one CI run ever (29249607092,
+// 2026-07-13, scored 1/4), and nothing since. This PR answers three questions for the price of
+// one run, without touching a single executable line:
+//
+//   1. Does the LiteLLM proxy actually boot in CI? `docker compose up` + `pnpm proxy:wait` have
+//      zero successful runs here.
+//   2. Does `continue-on-error: true` behave as the workflow comment claims — job red, RUN green?
+//      That claim is what the whole non-blocking design rests on and it is currently unverified.
+//   3. Do the tool tiers still work after being moved off gemini-2.5-flash onto deepseek-v4-flash?
+//      evals/README.md rates a sibling DeepSeek slug as "does the work inline instead of
+//      dispatching", so a NEW failure shape here would point at the model, not the agent.
+//
+// Expected: the job goes RED (the known 1/4), and the run conclusion stays GREEN.
+// A green job would be a surprise worth investigating, not a win.
+
 import type { AgentCase } from "../../src/index.js";
 import { fixtureReader } from "../../src/index.js";
 
